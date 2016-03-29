@@ -1,0 +1,135 @@
+@class Wlabel (Wheel)
+
+@PUBLIC
+@var String label = <String> NULL
+@var int cornerRoundPercent = 0
+@var XtCallbackProc draw_override = NULL
+@var int heightIncreasePercent = 0
+@var int leftOffsetPercent = 5
+
+@PRIVATE
+@var XftDraw *draw
+
+@METHODS
+
+@proc initialize
+{
+  XGlyphInfo extents;
+  Display *dpy = XtDisplay($);
+  char *s = $label;
+
+  if( ! s || ! *s )
+    s=$name;
+
+  $label = XtNewString(s);
+
+  if( $width == 0 ) {
+    XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
+		       strlen( s ), &extents);
+
+    $width = increase_by_percent( extents.xOff, $leftOffsetPercent );
+  }
+
+  if( $height == 0 )
+    $height = increase_by_percent( $xftFont->height, $heightIncreasePercent);
+
+  if( $draw_override == 0 )
+    $draw_override = default_label_draw;
+
+}
+
+@proc realize
+ {
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	reshape_widget($);
+}
+
+@proc resize
+{
+    TRACE(3, "%s: resize: %dx%d", $name, $width, $height );
+    if (XtIsRealized($)) reshape_widget($);
+}
+
+
+@proc destroy
+{
+  if( $draw) XftDrawDestroy( $draw );
+  XtFree($label);
+}
+
+
+@ ARGS: old, request, $, args, num_args_ptr
+@proc set_values
+{
+	int do_expose = 0;
+
+  if ($label != $old$label) {
+    XtFree($old$label);
+    $label = XtNewString($label);
+    do_expose = 1;
+  }
+
+  if( $state != $old$state) do_expose=1;
+
+  return do_expose;
+}
+
+
+@proc expose
+{
+  if( !XtIsRealized($)) return;
+  Display *dpy = XtDisplay($);
+  if( ! $draw ) {
+    $draw = XftDrawCreate(dpy, XtWindow($),
+			  DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    if( ! $draw ) ERR("%s: cannot create xftdraw", $name );
+  }
+
+  if( $draw_override ) {
+      $draw_override( $, NULL, $draw );
+      return;
+  }
+}
+
+@ parameter list ($, int cmd, int val)
+@proc int exec_command
+{
+  return 0;
+}
+
+@UTILITIES
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
+@proc default_label_draw($,void *a, void *b)
+{
+  int x,y;
+  XRectangle rect;
+  char *s = $label;
+  Display *dpy = XtDisplay($);
+  XFillRectangle(dpy,XtWindow($) , $gc[$state], 0,0,$width,$height );
+  if( s && *s ) {
+    y = ($height - $xftFont->height)/2;
+    x = calc_percent( $width, $leftOffsetPercent ); x = (x+1) / 2;
+    rect.x = 0; rect.y=0; rect.width=$width; rect.height=$height;
+    XftDrawSetClipRectangles( $draw,0,0,&rect, 1);
+    XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+    XftDrawSetClip($draw,0);
+  }
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"

@@ -1,0 +1,22 @@
+@class Gridbox (Constraint) @nodoc @nocode @file="../wc/Gridbox"
+# @nopubinclude
+
+@public
+@var int defaultDistance = 4
+
+@private
+@var    int		nx
+@var    int		ny 
+@var    Dimension	maxgw
+@var    Dimension	maxgh
+@var    Dimension	*max_wids
+@var    Dimension	*max_hgts 
+@var    Dimension	*wids
+@var    Dimension       *hgts 
+@var    int		*max_weightx
+@var    int		*max_weighty 
+@var    Dimension	total_wid
+@var    Dimension	total_hgt 
+@var    int		total_weightx
+@var    int		total_weighty 
+@var    Boolean	needs_layout 

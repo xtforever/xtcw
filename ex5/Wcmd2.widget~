@@ -1,0 +1,141 @@
+@class Wcmd2 (Core)
+@ button Rectangle
+
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Sans-22"
+@var Pixel foreground = XtDefaultForeground
+@var Pixel bg_norm    = <String> "red"
+@var Pixel lineColor  = <String> "red"
+@var int lineWidth = 1
+@var <Callback> XtCallbackList callback   = NULL
+@var String label = <String> NULL
+@var XtPointer user = <Pointer> NULL
+@var int leftOffsetPercent = 0
+
+@PRIVATE
+@var GC gc_bg
+@var GC gc_fg
+@var int resize
+@var int slh
+@var int sly
+@var XftDraw *draw
+@var XftColor xft_col[2]
+
+
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+
+@var visible_interest = False
+
+@METHODS
+@proc initialize
+{
+  XGCValues     values = {
+  		foreground: $bg_norm,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc_bg = XtGetGC($, mask, &values);
+  values.foreground = $lineColor;
+  $gc_fg = XtGetGC($,mask,&values);
+  xft_color_alloc( $, $foreground, $xft_col );
+  xft_color_alloc( $, $background_pixel, $xft_col+1 );
+
+
+  $resize = 1;
+  $sly = 0;
+
+  char *s = $label;
+  if( ! s || ! *s )
+    s=$name;
+  $label = XtNewString(s);
+
+  XGlyphInfo extents;
+  XftTextExtentsUtf8(XtDisplay($), $xftFont, (FcChar8*)  s,
+                       strlen( s ), &extents);
+
+  $width = increase_by_percent( extents.xOff, $leftOffsetPercent );
+  $height = $xftFont->ascent + $xftFont->descent + $lineWidth*2+2;
+}
+
+@proc set_values
+{
+  return False;
+}
+
+
+@proc destroy
+{
+  if( $gc_bg ) XtReleaseGC($,$gc_bg);
+  if( $gc_fg ) XtReleaseGC($,$gc_fg);
+}
+
+@proc expose
+{
+  if( !XtIsRealized($)) return;
+
+  Display *dpy = XtDisplay($);
+  if( ! $draw ) {
+    $draw = XftDrawCreate(dpy, XtWindow($),
+                          DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    if( ! $draw ) ERR("%s: cannot create xftdraw", $name );
+  }
+
+  XClearWindow( XtDisplay($), XtWindow($) );
+
+  int b = ($lineWidth+1) / 2;
+  int x = ( $width*15 ) / 100 + 1;
+  int y = ( $height*40) / 100 + 1;
+  printf( "%d %d\n", $width, x );
+  XPoint p[6];
+  p[0].x = x + b;
+  p[0].y = 0 + b;
+  p[1].x = $width-1 - b;
+  p[1].y = 0 + b;
+  p[2].x = $width-1 - b;
+  p[2].y = $height-1 -b;
+  p[3].x = 0 + b;
+  p[3].y = $height-1 - b;
+  p[4].x = 0 + b;
+  p[4].y = y + b;
+  p[5].x = x + b;
+  p[5].y = 0 + b;
+
+  XFillPolygon( XtDisplay($), XtWindow($), $gc_bg, p, 6, Convex, CoordModeOrigin );
+
+  XDrawLines( XtDisplay($), XtWindow($), $gc_fg, p, 6, CoordModeOrigin );
+  char *s = $label;
+  x += 1 + 2*$lineWidth;
+  y = $lineWidth +1;
+  XftDrawStringUtf8($draw, $xft_col, $xftFont,
+                             x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+
+
+}
+
+@UTILITIES
+
+@proc draw($)
+{
+
+}
+
+
+@translations
+@trans <Btn1Up>: set()
+
+@actions
+@proc set
+{
+        XtCallCallbackList( $, $callback, $user );
+}
+
+@IMPORTS
+
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "mls.h"

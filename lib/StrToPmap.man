@@ -1,0 +1,15 @@
+./"" StrToPmap.3  1.0  Feb 10, 1994
+./""  Copyright 94 Robert Forsman
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH StrToPmap 3 "10 February 1994" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+
+StrToPmap - package that provides an Xt converter from String to
+Pixmap.  It reads XPM files.
+
+.SH EXCUSE
+
+  I don't have time to document this right now.  If you are interested
+in using it, bug me and I'll write docs.

@@ -1,0 +1,324 @@
+@class WpixBtn(Wheel)
+
+@ einfaches Widget zur Anzeige verschiedener icons
+  und funktion eines Buttons.
+  |pixmanNames| dateinamen der icons. Durch Komma od. Leerzeichen getrennt
+  durch die resource |value| werden die icons ausgewählt.
+  ist kein icon vorhanden ist value negativ
+  fg_norm,fg_sel,fg_hi wird für den rahmen verwendet
+  bg_norm,bg_sel,bg_hi für den hintergrund
+
+
+@TRANSLATIONS
+@ trans   <EnterWindow>: highlight()
+@ trans   <LeaveWindow>: reset()
+@trans   <BtnDown>:     notify()
+
+@ACTIONS
+@proc  next_pixmap
+{
+	int step=1;
+
+	if( *num_params > 0 )
+	    step = atoi( params[0] );
+	$value += step;
+	if( $value < 0 ) $value=0;
+	$expose($,NULL,NULL);
+}
+
+@proc highlight
+{
+  if( $state == STATE_SELECTED ) return;
+  $state = STATE_SELECTED;
+  $expose($,NULL,NULL);
+}
+
+@proc reset
+{
+  if( $state == STATE_NORMAL ) return;
+  $state = STATE_NORMAL;
+  $expose($,NULL,NULL);
+}
+
+@proc notify
+{
+  XtCallCallbackList( $, $callback, event );
+}
+
+
+@PUBLIC
+@var String pixmapNames = <String> NULL
+@var int value = 0
+@var int cornerRoundPercent = 0
+@var int innerBorderPercent = 0
+@var String fileName = <String> NULL
+
+@PRIVATE
+
+@type pix_t = struct {
+  char *fileName;
+  Pixmap map,mask;
+  XRectangle pm_rect;
+  int pm_depth; }
+
+@var GC         pix_gc
+@var int	m_pix
+@var int        cur_pix
+@var String     name_cache;
+
+@METHODS
+@proc exec_command
+{
+  Cardinal null;
+  if( cmd == WHEEL_FIRE ) {
+    if( $state == STATE_SELECTED ) { notify($, NULL,NULL, &null ); return 1; }
+  }
+
+  return 0;
+}
+
+
+@proc class_initialize
+{
+  m_init();
+  converters_init();
+}
+
+@proc initialize
+{
+
+  int           w,h;
+
+  $name_cache = 0;
+  w=10; h=10;
+  $cur_pix = -1; /* pixmap cache, undefined */
+  $pix_gc=0;
+  $m_pix = m_create( 3, sizeof( pix_t ) );
+
+  /* load all pixmaps and compute maximum width,height */
+  parsePixmapNames($, &w, &h);
+  /* set size of this widget if not set already by geometry manager */
+  if( $width == 0 )  $width   = increase_by_percent( w, $innerBorderPercent );
+  if( $height == 0 ) $height =  increase_by_percent( h, $innerBorderPercent );
+
+  /* if there are no pixmaps set |value| to -1 to indicate that there is */
+  /* nothing to draw */
+  if( m_len($m_pix)==0 ) $value = -1;
+  compute_layout($);
+}
+
+@proc realize
+ {
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+        /* this gc is Not shared and its writeable */
+        $pix_gc    = XCreateGC(XtDisplay($),XtWindow($),0,NULL );
+  	reshape_widget($);
+}
+
+@proc resize
+{
+    if (XtIsRealized($)) {
+            $cur_pix = -1;
+            compute_layout($);
+            reshape_widget($);
+    }
+}
+
+@proc destroy
+{
+  if( $pix_gc ) XtReleaseGC($,$pix_gc);
+  unloadPixmaps($);
+  if( $name_cache ) free($name_cache);
+  m_free($m_pix);
+}
+
+@proc expose
+{
+  Display *dpy = XtDisplay($);
+  if( !XtIsRealized($)) return;
+
+  XSetWindowBorder( dpy, XtWindow($), $pixel[ $state ] );
+  XFillRectangle( dpy, XtWindow($), $gc[$state], 0,0, $width, $height );
+
+  /* check if we should display a pixmap */
+  if( $value < 0 || m_len($m_pix) == 0 ) return;
+
+  /* check for overflow */
+  if( $value >= m_len($m_pix) ) $value=0;
+
+  /* check if we shall display a new pixmap and */
+  /* need to apply a new pixmask */
+  pix_t *p = mls($m_pix, $value);
+  if( $value != $cur_pix ) {
+    $cur_pix = $value;
+    XSetClipMask(dpy, $pix_gc,  p->mask);
+    XSetClipOrigin(dpy, $pix_gc, p->pm_rect.x, p->pm_rect.y );
+  }
+
+  /* display the image if it is not corrupted */
+  if( p->pm_depth > 0 ) {
+    XCopyArea(dpy, p->map, XtWindow($), $pix_gc,
+	      0, 0, p->pm_rect.width, p->pm_rect.height,
+   	      p->pm_rect.x, p->pm_rect.y );
+     $fileName = p->fileName;
+  } else $fileName = 0;
+}
+
+@proc set_values
+{
+  Boolean redisplay = True;
+  int w,h;
+
+  /* user changes current pixmap */
+  if( $value != $old$value ) {
+  };
+
+  /* user changes pixmap cache */
+  if( $pixmapNames != $old$pixmapNames ) {
+      $cur_pix=0; /* expose needs to set a new clipmask */
+      parsePixmapNames($,&w,&h);
+      /* change widget size: only set width/height to a new value */
+  }
+
+  return redisplay;
+}
+
+
+@UTILITIES
+
+
+@proc unloadPixmaps($)
+{
+  int i; pix_t *p;
+  m_foreach( $m_pix, i, p ) {
+  	     XFreePixmap( XtDisplay($), p->map );
+	     XFreePixmap( XtDisplay($), p->mask );
+  }
+  m_clear( $m_pix ); /* set array size to zero */
+}
+
+
+@ parse the resource |pixmapNames| and load pixmaps
+  calculate maximum bounding box
+  all curently loaded pixmaps are removed from memory
+@proc parsePixmapNames($,int *wp, int *hp)
+{
+  pix_t		pix;
+  char		*fn, *p;
+  unloadPixmaps($);
+  if(! $pixmapNames  ) return;
+  if(! *$pixmapNames ) { $pixmapNames=0; return; }
+
+  if( $name_cache ) free($name_cache);
+  $name_cache = strdup($pixmapNames); /* make sure we can modifiy memory */
+
+  fn=p=$pixmapNames;
+  *wp=*hp=0;
+  while( (fn=xstrsep(&p)) ) {
+      if( !load_pix( $,fn, &pix ) ) {
+	if( pix.pm_rect.width >  *wp ) *wp=pix.pm_rect.width;
+	if( pix.pm_rect.height > *hp ) *hp=pix.pm_rect.height;
+	m_put( $m_pix, &pix );
+      }
+  }
+}
+
+@proc compute_layout($)
+{
+  /* center images */
+  int i;
+  pix_t *p;
+  m_foreach( $m_pix, i, p ) {
+    p->pm_rect.x = ($width  - p->pm_rect.width) / 2;
+    p->pm_rect.y = ($height - p->pm_rect.height) / 2;
+
+    TRACE(2,"%s (%dx%d+%d+%d)", p->fileName, p->pm_rect.width, p->pm_rect.height,
+    p->pm_rect.x, p->pm_rect.y );
+  }
+}
+
+
+@ suche das erste zeichen das kein leerzeichen und kein delimiter ist
+@proc int skip( char **p )
+{
+  char ch;
+  if( p==0 || *p==0 ) return -1;
+  while(1) {
+    ch = **p;
+    if( ch == 0 ) return -1;
+    if( ! isspace(ch) && ch != ',' ) return 0;
+    (*p)++;
+  }
+  return -1; /* never reached */
+}
+
+@  fangt ab p an nach dem ersten
+   nicht leeren und nicht delim zeichen zu suchen
+   diese adresse wird zurückgegeben
+   danach wird das ende dieses wortes gesucht
+   dort wird ein null-byte gespeichert
+   danach wird p auf den anfang des nächsten wortes gesetzt
+   oder auf null.
+@proc char* xstrsep( char **p )
+{
+  char ch;
+  char *start;
+
+  if( skip(p) ) return NULL;
+  start = *p;
+
+  while(1) {
+    ch = **p;
+    if( ch == 0 ) break;
+    if( isspace(ch) || ch == ',' ) {
+      **p=0; (*p)++;
+      break;
+    }
+    (*p)++;
+  }
+  return start;
+}
+
+@ load a pixmap. store information about pixmap in |*p|.
+  the filename ptr is stored too - but not a copy of that string.
+@proc int load_pix( $, char *name, pix_t *p )
+{
+  Display *dpy = XtDisplay($);
+  unsigned int width, height, bw, depth;
+  Window win;
+  int x,y;
+
+  TRACE(2,"%s try loading %s\n",$name, name );
+
+  if( load_pixmap_from_file($, name, & p->map, & p->mask) )
+    return -1;
+
+  if (! XGetGeometry(dpy, p->map, &win, &x, &y, &width, &height, &bw, &depth))
+    return -1;
+
+  /* printf("loading success %s\n", name ); */
+  p->fileName = name;
+  p->pm_rect.width  = (unsigned short) width;
+  p->pm_rect.height = (unsigned short) height;
+  p->pm_depth = depth;
+  return 0;
+}
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xmu/Converters.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"

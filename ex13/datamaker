@@ -1,0 +1,10 @@
+#!/bin/bash
+echo $$
+for((i=0;i<15;i++))
+do
+	v=$RANDOM
+	echo $i hallo $v
+	sleep 1
+done
+## exit $i
+exit 42

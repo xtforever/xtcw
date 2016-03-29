@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ -z  "$1" ] 
+then
+  echo where are your music files?
+  exit 1
+fi
+
+./test-id3read $1 >database.dat

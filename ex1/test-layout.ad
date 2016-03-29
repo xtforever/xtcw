@@ -1,0 +1,108 @@
+#define SMALL Sans-6
+
+vexmo-test.wcChildren: gb
+
+
+*gb.wcClass: Gridbox
+*gb.wcChildren:u0 u1 u2 u3 u4 u5 l0 l1 l2 l3 l4 l5 m1
+*gb.defaultDistance: 1
+
+*gb.Wlabel.Fill: Both
+*gb.Wlabel.weightx: 1
+*gb.Wlabel.weighty: 1
+
+*u0.wcClass: Wlabel
+*u0.gridx: 0
+*u0.gridy: 0
+*u0.label: ?
+
+*u1.wcClass: Wlabel
+*u1.gridx: 1
+*u1.gridy: 0
+*u1.label: ?
+
+*u2.wcClass: Wlabel
+*u2.gridx: 2
+*u2.gridy: 0
+*u2.label: ?
+
+*u3.wcClass: Wlabel
+*u3.gridx: 3
+*u3.gridy: 0
+*u3.label: ?
+
+*u4.wcClass: Wlabel
+*u4.gridx: 4
+*u4.gridy: 0
+*u4.label: ?
+
+*u5.wcClass: Wlabel
+*u5.gridx: 5
+*u5.gridy: 0
+*u5.label: ?
+
+*l0.wcClass: Wlabel
+*l0.gridx: 0
+*l0.gridy: 1
+*l0.label: ?
+
+*l1.wcClass: Wlabel
+*l1.gridx: 1
+*l1.gridy: 1
+*l1.label: ?
+
+*l2.wcClass: Wlabel
+*l2.gridx: 2
+*l2.gridy: 1
+*l2.label: ?
+
+*l3.wcClass: Wlabel
+*l3.gridx: 3
+*l3.gridy: 1
+*l3.label: ?
+
+*l4.wcClass: Wlabel
+*l4.gridx: 4
+*l4.gridy: 1
+*l4.label: ?
+
+*l5.wcClass: Wlabel
+*l5.gridx: 5
+*l5.gridy: 1
+*l5.label: ?
+
+
+*m1.wcClass: Gridbox
+*m1.gridy: 2
+*m1.gridWidth: 6
+*m1.weighty: 0
+*m1.fill: Width
+*m1.wcChildren: m1a m1b m1c 
+*m1.?.bg_norm: White
+*m1.?.xftFont: SMALL
+*m1.borderWidth: 0
+
+*m1a.wcClass: Wbutton
+*m1a.label: Konfiguration
+*m1a.fill: Width
+*m1a.weighty: 0
+*m1a.weightx: 1
+*m1a.callback: WcExit()
+
+*m1b.wcClass: Wlabel
+*m1b.label:   Connected
+*m1b.fill: Width
+*m1b.weighty: 0
+*m1b.weightx: 1
+*m1b.gridx: 1
+*m1b.borderWidth: 0
+
+*m1c.wcClass: Wlabel
+*m1c.label:   192.168.0.1:3001
+*m1c.fill: Width
+*m1c.weighty: 0
+*m1c.weightx: 1
+*m1c.gridx: 2
+*m1c.borderWidth: 0
+
+

@@ -1,0 +1,260 @@
+@class Wim2 (Core)
+
+@ Widget zur Anzeige verschiedener Images
+
+@CLASSVARS
+@var compress_exposure = True
+@var compress_motion = True
+
+
+@PUBLIC
+@var String picName = <String> NULL
+@var int xoff = 100
+@var int yoff = 100
+@var int zoom = 100
+@var <Callback> XtCallbackList callback   = NULL
+@var int user_data = 0
+
+@PRIVATE
+@var float scale
+@var Imlib_Updates upd
+@var ulong drag_time
+@var int dx
+@var int dy
+@var Display    *dpy;
+@var GC bg_fill_gc
+
+
+@TRANSLATIONS
+@trans <Btn1Motion>: motion_start()
+@trans <Btn3Motion>: b5_start()
+@trans <BtnUp>:     motion_end()
+
+@METHODS
+
+@proc class_initialize
+{
+  m_init();
+}
+
+@proc initialize
+{
+  XGCValues     values;
+  $dpy = XtDisplay($);
+  if( $width == 0 )  $width   = 100;
+  if( $height == 0 ) $height =  100;
+  values.foreground = $background_pixel;
+  $bg_fill_gc = XtGetGC($, GCForeground, &values);
+}
+@proc destroy
+{
+    XtReleaseGC($,$bg_fill_gc);
+}
+
+@proc expose
+{
+    if( !XtIsRealized($)) return;
+    redisplay( $, region );
+}
+
+@proc set_values
+{
+
+  /* user changes current pixmap */
+  if( ($old$xoff != $xoff ) ||
+      ($old$yoff != $yoff ) ||
+      ($old$zoom != $zoom ) ||
+      ($old$picName != $picName))   {	redisplay($,NULL); return True; }
+
+  return False;
+}
+
+@UTILITIES
+
+@ merge update rects
+@proc Imlib_Updates get_imlib_update( $, Region reg )
+{
+    int i;
+    Imlib_Updates up = NULL;
+
+    if( reg ) {
+	Box *b = reg->rects;
+	for(i=0;i<reg->numRects;i++, b++) {
+	    up = imlib_update_append_rect(up, b->x1,b->y1,
+					      b->x2 - b->x1 +1,
+					      b->y2 - b->y1 +1 );
+	}
+    } else {
+	up = imlib_update_append_rect(up, 0,0, $width, $height );
+    }
+
+    /* merge and clip rectangles */
+    up = imlib_updates_merge_for_rendering(up, $width, $height );
+    return up;
+}
+
+@ das rectangle r im window aktualisieren
+  xoff,yoff und scale wird verwendet
+  die quelle wird vor dem update scaliert
+@proc put_image( $, Imlib_Image image, XRectangle *r )
+{
+    Imlib_Image src;
+    int src_x, src_y, src_w, src_h;
+
+    src = imlib_create_image(r->width,r->height);
+    imlib_context_set_image(src);
+
+    src_x = ($xoff+r->x) / $scale;
+    src_y = ($yoff+r->y) / $scale;
+    src_w = r->width / $scale;
+    src_h = r->height / $scale;
+
+
+
+    imlib_blend_image_onto_image( image,0,
+				src_x,src_y,src_w,src_h,
+				0,0,r->width,r->height );
+
+  imlib_render_image_on_drawable(r->x, r->y);
+  imlib_free_image();
+
+    TRACE(2,"SRC(%d %d %d %d) DST(%d %d %d %d)", src_x,src_y,src_w,src_h,
+	r->x,r->y,r->width, r->height );
+}
+
+
+@proc redisplay($, Region reg )
+{
+    Imlib_Updates up,c;
+    Imlib_Image image;
+    int w,h;
+
+    image = imlib_load_image($picName);
+    if( !image ) return;
+    imlib_context_set_image(image);
+
+    up = get_imlib_update($,reg);
+    if( !up ) { imlib_free_image(); return; }
+
+    imlib_context_set_display($dpy);
+    imlib_context_set_visual(DefaultVisual($dpy, DefaultScreen($dpy))) ;
+    imlib_context_set_colormap(DefaultColormap($dpy,DefaultScreen($dpy)));
+    imlib_context_set_drawable(XtWindow($));
+    imlib_set_cache_size(204800 * 1024);
+    imlib_context_set_blend(1);
+
+    w = imlib_image_get_width();
+    h = imlib_image_get_height();
+
+    /* ZOOM */
+    $scale = ($zoom) * 1.0 / 100;
+    if( $scale <= 0 ) $scale = 1;
+    w = w * $scale;
+    h = h * $scale;
+
+    /* SCROLL */
+    if( $xoff+$width >  w ) $xoff = w-$width;
+    if( $yoff+$height >  h ) $yoff = h-$height;
+    if( $xoff < 0 ) $xoff = 0;
+    if( $yoff < 0 ) $yoff = 0;
+
+    /* DRAW */
+    int up_x, up_y, up_w, up_h;
+    XRectangle r;
+    for (c = up; c; c = imlib_updates_get_next(c) )
+	{
+	    imlib_updates_get_coordinates(c,&up_x, &up_y, &up_w, &up_h);
+	    r.x = up_x; r.y = up_y; r.width = up_w; r.height = up_h;
+	    put_image( $, image, &r );
+	}
+    imlib_context_set_image(image);
+    imlib_free_image();
+    imlib_updates_free(up);
+
+    /* CLEAR BACKGROUND */
+    /* check if src image is small than window */
+    TRACE(2,"SRC (%d %d)", w, h );
+    if( w < $width ) {
+    	XFillRectangle( $dpy, XtWindow($), $bg_fill_gc,
+		    w,0, $width-w, $height );
+    }
+    if( h < $height ) {
+    	XFillRectangle( $dpy, XtWindow($), $bg_fill_gc,
+		    0,h, $width, $height - h );
+
+    }
+
+
+}
+
+
+@actions
+
+@proc motion_end
+{
+	$drag_time=0;
+	XtCallCallbackList( $, $callback, event );
+}
+
+@proc b5_start
+{
+	TRACE(2,"");
+	int y = event->xbutton.y;
+	int x = event->xbutton.x;
+	ulong t = (ulong ) event->xbutton.time;
+
+	if( $drag_time == 0
+	|| $drag_time +1000 < t ) goto restart_drag;
+
+	int mvx = $dx - x;
+	int mvy = $dy -	y;
+	TRACE(2,"%d %d", mvx, mvy );
+	if( mvx == 0 && mvy== 0 ) return;
+
+	mvx += mvy;
+	$zoom += mvx;
+	if( $zoom < 1 ) $zoom = 1;
+	else if( $zoom > 400 ) $zoom = 400;
+
+	$expose( $, NULL, NULL );
+
+	restart_drag:
+	$dx = x;
+	$dy = y;
+	$drag_time = t;
+
+}
+
+@proc motion_start
+{
+
+	int y = event->xbutton.y;
+	int x = event->xbutton.x;
+	ulong t = (ulong ) event->xbutton.time;
+
+	if( $drag_time == 0
+	|| $drag_time +1000 < t ) goto restart_drag;
+
+	int mvx = $dx - x;
+	int mvy = $dy -	y;
+	TRACE(2,"%d %d", mvx, mvy );
+	if( mvx == 0 && mvy== 0 ) return;
+	$xoff += mvx;
+	$yoff += mvy;
+	$expose( $, NULL, NULL );
+
+	restart_drag:
+	$dx = x;
+	$dy = y;
+	$drag_time = t;
+}
+
+
+
+@IMPORTS
+@incl <X11/Xregion.h>
+@incl <Imlib2.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "xutil.h"
+@incl "mls.h"

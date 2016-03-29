@@ -1,0 +1,50 @@
+@class Wbutton (Wlabel)
+@ simple Button with Wheel Support 
+
+@METHODS 
+@proc initialize
+{
+        TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
+}
+
+@proc exec_command
+{
+  Cardinal null;
+  if( cmd == WHEEL_FIRE ) {
+    if( $state == STATE_SELECTED ) { notify($, NULL,NULL, &null ); return 1; }
+  }
+  
+  return 0;
+}
+
+
+@TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <BtnDown>:     notify()
+
+@ACTIONS
+
+@proc highlight
+{
+  if( $state == STATE_SELECTED ) return;
+  $state = STATE_SELECTED;
+  $expose($,NULL,NULL);
+}
+
+@proc reset
+{
+  if( $state == STATE_NORMAL ) return;
+  $state = STATE_NORMAL;
+  $expose($,NULL,NULL);
+}
+
+@proc notify
+{
+  XtCallCallbackList( $, $callback, event );
+}
+
+@IMPORTS
+@incl "mls.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"

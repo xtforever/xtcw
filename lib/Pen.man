@@ -1,0 +1,40 @@
+./"" Pen.3  1.0  Feb 10, 1994
+./""  Copyright 94 Robert Forsman
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH Pen 3 "10 February 1994" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+
+Pen - an object that provides proper resource management for an X
+Graphics Context and allows specification of solids, stipples, and
+tiles from an Xt converter.
+
+.SH EXCUSE
+
+  I don't have time to document this right now.  If you are interested
+in using it, bug me and I'll write docs.
+
+.SH NAPKIN
+
+spec:
+        mono:spec|spec
+        solid:pixel
+        stipple:pixel,bitmap
+        opaque-stipple:pixel,pixel,bitmap
+        tile:pixmap
+        # maybe later:
+        # font:fname;spec
+        # line_width:
+        # ts_origin:x,y;spec
+
+struct XfwfIcon {
+  Pixmap        pmap;
+  Pixmap        mask;
+  unsigned      width,height;
+  GC            pen;
+  Pixels        *colors;
+  unsigned      ncolors;
+}
+
+void XfwfRenderIcon(dpy, win, XfwfIcon, x, y);

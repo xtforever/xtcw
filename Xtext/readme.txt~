@@ -1,0 +1,119 @@
+Text Ausgabe für X
+
+Beispieltext:
+
+Hello World\n
+Newline nur mit backslash cr/lf wird übergangen\n
+{\s ab jetzt nur noch small text}\n
+und wieder normal
+{\u underline geht auch noch}\n
+{\h huge HUGE}
+
+\n
+\t tab
+\Fh huge
+\Fs small
+\Fu underline
+\Fi italic
+\Fr regular
+
+1) CR/LF werden ignoriert
+2) Erstes Leerzeichen nach Steuerkommando wird ignoriert
+3) Mit "{" auf und "}" zu wird ein Block erstellt. Fonts gelten nur innerhalb des Blocks
+
+
+Word Wrap:
+
+text in zeilen setzen (zeilen werden durch \n begrenzt)
+zeilen umbrechen      (zeilen werden durch \r begrenzt)
+
+VAR:
+XftGlyphFontSpec: font, glyph, x,y
+$width,$height
+$x0,$y0
+
+
+  TEXT: Array of [font,glyph,x,y]
+  LINE_DESC: Array of Integer,Integer: Line-End, Line-Height
+
+  Mapping: (font,glyph) -> glyphspec
+
+  font = Sans-22
+  while(   unicode = next_utf8_char(str) )
+           if( unicode == '\\' ) {
+               switch(get_cmd()) {
+                      case newline:
+                          next_line( glyph_list_size );
+                          continue;
+                      case start-block:
+                           push_settings
+                           continue;
+                      case end-block
+                           pop-settings
+                           continue;
+                      case small_font:
+                           font = small_font;
+                           continue;
+                      case large_font:
+                           font = large_font;
+                           continue;
+                      case smily:
+                           add_unicode( symbol_font, UNICODE_SMILY  );
+                           continue;
+                      default:
+                           continue;
+                }
+              }
+              add_unicode( font, unicode )
+  }
+  calc_size( &width, &height )
+
+
+
+  break_line:
+
+    line = aktuelle zeile
+    p    = aktuelles zeichen
+
+    für alle zeilen (line) im text:
+      bis zum ende der zeile
+        if( TEXT[p].x >= $width ) {
+          suche rückwärts nach einem punkt zum umbrechen
+          diff_x += TEXT[p].x;
+          p1=p; while( p1 < LINE_OFFSET[line] ) { TEXT[p1].x -= diff_x; TEXT[p1].y += diff_y; }
+          diff_y += line_height;
+       }
+      }
+      diff_x = 0;
+    }
+
+          TEXT[p].x -= diff;
+          TEXT[p].y += LINE_HEIGHT
+
+
+
+------------------------------
+
+
+foreach uni=get-unicode:
+  not-command(uni):
+    if( cur_x + width(uni) >= wrap_x ):
+    {  charpos = curpos
+
+      while( 1 )
+      { if( charpos <= 0 )
+           charpos = curpos
+           break
+        else
+           if( prev_char(charpos) == 32 )
+               break
+        charpos--
+      }
+      add_line(charpos)
+    }
+    add_char(uni)
+
+
+      while(charpos >=0 && prev(charpos) != 32) charpos--
+
+      add_line( charpos+1 )

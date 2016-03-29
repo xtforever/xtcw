@@ -1,0 +1,52 @@
+ex15.wcChildren: gb1
+
+*weightx: 1
+*weighty: 1
+*fill: Both
+*Gridbox.background: Darkblue
+*background: Lightblue
+*foreground: black
+*cornerRoundPercent: 25
+*Wedit.cursorColor: Black
+
+*gb1.wcClass: gridbox
+*gb1.wcChildren: ent filter fileList
+
+
+*ent.wcClass: gridbox
+*ent.weighty: 0
+*ent.wcChildren: entry b1 b2
+*ent.borderWidth: 0
+
+
+*entry.wcClass: Wedit
+*entry.label: Hello World
+*entry.callback: user_entry
+*entry.translations: #override <Key>Return: notify()
+
+
+*b1.wcClass: Wbutton
+*b1.label: rst
+*b1.weightx: 0
+*b1.gridx: 1
+*b1.callback: reset_filter
+
+*b2.wcClass: Wbutton
+*b2.label: del
+*b2.weightx: 0
+*b2.gridx: 2
+*b2.callback: remove_last_filter
+
+
+*filter.wcClass: Wlabel
+*filter.label: No filter
+*filter.gridWidth: 1
+*filter.gridy: 1
+*filter.weighty: 0
+*filter.xftFont: Sans-10
+
+*fileList.wcClass: Wlist4
+*fileList.label: Hello Computer
+*fileList.gridy: 2
+*fileList.gridWidth: 1
+*fileList.list_max: 20

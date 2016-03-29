@@ -1,0 +1,924 @@
+@class Wlist4 (Wheel)
+
+@ simple list widget with wheel support
+Initialisierung: 1. Aufruf von getEntry bis ein leerer String geliefert wird. Der längste String bestimmt die Puffer Breite. 2. Es wird ein Puffer erzeugt
+Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
+3. berechnen der aktuell sichtbaren ersten zeile in absoluten Koordinaten (top/left)
+4. Anzeigen und ggf. Puffer neuberechnen
+
+@exports
+
+@proc void wlist4_gotoxy(Widget w, int x, int y)
+{
+  Wlist4WidgetClass wc = (Wlist4WidgetClass)XtClass(w);
+  if( XtIsSubclass( w, wlist4WidgetClass) && wc->wlist4_class.gotoxy )
+    {
+      wc->wlist4_class.gotoxy(w,x,y);
+    }
+}
+
+@proc void wlist4_update_line(Widget w, int line)
+{
+  Wlist4WidgetClass wc = (Wlist4WidgetClass)XtClass(w);
+  if( XtIsSubclass( w, wlist4WidgetClass) && wc->wlist4_class.update_line )
+    {
+      wc->wlist4_class.update_line(w,line);
+    }
+}
+
+@proc void wlist4_set_line_state( Widget w, int lineno, wheel_colors col )
+{
+  Wlist4WidgetClass wc = (Wlist4WidgetClass)XtClass(w);
+  if( XtIsSubclass(w, wlist4WidgetClass) )
+      set_line_state(  w, lineno, col );
+}
+
+@proc void wlist4_clear_selection( Widget w )
+{
+  Wlist4WidgetClass wc = (Wlist4WidgetClass)XtClass(w);
+  if( XtIsSubclass(w, wlist4WidgetClass) )
+      clear_selection(  w );
+}
+
+
+@proc void wlist4_update_all($)
+{
+	init_graphics($);
+	update_pixmap_complete($);
+	$expose($,0,0);
+}
+
+@public
+@ mstringlist
+@var int tableStrs = 0
+@var <XftColor> XftColor fg = <String> "White"
+@var <Callback> XtCallbackList notify   = NULL
+@var <Callback> XtCallbackList getEntry = NULL
+@var <Int> int line_distance = 2
+@var int top_x = 0
+@var int top_y = 0
+
+@ Die Anzahl Texzeilen pro Feld
+        @var int multiline = 1
+
+@ Die Anzahl der anzuzeigenden Zeilen
+
+        @var int line_max = 0
+
+@ die Höhe einer Zeile in Pixel
+
+        @var int line_height = 0
+
+@ die Höhe des sichtbaren Bereichs der Liste in Pixel
+
+        @var int list_height = 0
+
+@var int line_width = 0
+
+@var ArrayInt tabs = 0
+
+@ Falls |unit| ==0 wird die breite des Buchstaben "w" angebommen
+        @var Distance unit = 0
+
+@var int line_bh = 0
+@var ArrayChar titleBar = 0
+@var Pixel titleBarCol = <String> "#101010"
+@def relgc(var) = do if( var ) { XtReleaseGC($, var ); var=0; } while(0)
+
+@translations
+@trans <Btn1Motion>: motion_start()
+@trans <Btn1Up>: motion_end()
+@trans <EnterWindow>: highlight()
+@trans <LeaveWindow>: reset()
+
+@private
+@def AUTO_SCROLL_TIME_MS = 200
+@def PREFETCH_BUFFER   = 4
+@var int key_cursor
+@var int key_cursor_drawn
+@var int key_cursor_state
+@var int titleBarHeight
+@var int titleBarWidth
+@var GC gc_copy
+@var Pixmap pixmap
+@var rect32_t buf
+@var XftDraw *draw
+@var XftDraw *draw_title
+@var Display *dpy
+@var int line_state
+@var ulong drag_time
+@var ulong drag_update
+@var int   drag_line_start
+@var int   drag_start_y
+@var int   drag_last_y
+@var XtIntervalId autoscroll_id
+@var int pixel_to_scroll
+@var int autoscroll_cnt
+@var int tab_pos
+@var GC titleBarGC
+@actions
+
+@proc highlight
+{
+  if( $state == STATE_NORMAL ) {
+    $state = STATE_SELECTED;
+    update_widget_state($);
+  }
+}
+
+@proc reset
+{
+  if( $state != STATE_NORMAL ) {
+    $state = STATE_NORMAL;
+    update_widget_state($);
+  }
+}
+
+
+@proc motion_start
+{
+	int y = event->xbutton.y;
+	int lineno;
+	ulong t = (ulong ) event->xbutton.time;
+	lineno = translate_ypos_to_lineno($,y );
+	if( $drag_time == 0 ) goto restart_drag;
+
+	/* drag startete vor über einer sekunde, seitdem keine änderung */
+	/* darum: vergessen und neu starten */
+	if( $drag_update + 1000 < t ) goto restart_drag;
+	$drag_update = t;
+
+	if( y != $drag_last_y ) {
+	    int top = $top_y + ($drag_last_y - y);
+	    $drag_last_y = y;
+	    gotoxy( $, -1, top );
+	}
+	return; /* drag in progress */
+
+  restart_drag:
+	$drag_start_y = event->xbutton.y;
+	$drag_last_y = event->xbutton.y;
+	$drag_time = t;
+	$drag_update = t;
+	$drag_line_start = lineno;
+	/* printf( "start %d\n",  lineno ); */
+}
+
+@proc motion_end
+{
+      int y = event->xbutton.y;
+      ulong t = (ulong ) event->xbutton.time;
+      int lineno = translate_ypos_to_lineno($,event->xbutton.y );
+
+      if( $drag_time == 0 || t < $drag_time ) goto click;
+
+      t -= $drag_time;
+      /* printf( "line: start: %d, end: %d, time: %ld\n", $drag_line_start, lineno, t ); */
+
+      y -= $drag_start_y;
+      if( y > -15 && y < 15 ) goto click;
+
+      /*      if( t < AUTO_SCROLL_TIME_MS ) { start_autoscroll($, event->xbutton.y, t ); }
+      */
+
+      goto reset_drag;
+
+      /* kein drag nur ein click */
+      click:
+      XtCallCallbackList($, $notify, lineno );
+      // toggle_line_state( $, lineno );
+      goto reset_drag;
+
+      reset_drag:
+      $drag_time = 0;
+}
+
+
+
+
+@ Der |select| Action-Handler wertet auswählen eines Eintrags der Liste aus
+er muss anhand der Koordinaten das Listen-Element finden auf Highlight setzen
+ist schon ein anderes element ausgewählt wird dies wieder abgewählt
+zusätzlich wird der |notify| Handler aufgerufen.
+
+@proc select_line
+{
+	XtCallCallbackList($,$notify,event);
+}
+
+
+@methods
+@ up, down usw. usf.
+@proc exec_command
+{
+  switch( cmd ) {
+  case WHEEL_FIRE:
+    if( $state == STATE_ARMED ) {
+      $state = STATE_SELECTED;
+      $key_cursor = -1;
+    }
+    else {
+      $state = STATE_ARMED;
+      $key_cursor = $top_y / $line_height;
+    }
+    update_widget_state($);
+    update_cursor($);
+    return 1;
+
+  case WHEEL_LEFT:
+    if( $state != STATE_ARMED ) return 0;
+    if( $key_cursor > 0 )
+      $key_cursor--;
+    update_cursor($);
+    return 1;
+
+  case WHEEL_RIGHT:
+    if( $state != STATE_ARMED ) return 0;
+    $key_cursor++;
+    update_cursor($);
+    return 1;
+  }
+
+  return 0; /* not used */
+}
+
+
+@ die |gotoxy| Funktion stellt die Liste ab Pos (x,y) im Fenster dar.
+
+@proc gotoxy( $, int x, int y)
+{
+	if( x >= 0 ) $top_x = x;
+	if( y >= 0 ) $top_y = y;
+	update_list($);
+}
+
+@ die |make_visible| Funktion stellt sicher,
+ das die Zeile mit der Nummer |line_number| sichtbar wird.
+
+@proc make_visible( $, int line_number )
+{
+  /* falls line_number im Cache -- redraw */
+
+  /* setze buf.y so dass line_number am ende des cache liegt */
+  /* setze top_y so dass letzte cache zeile angezeigt werden kann */
+}
+
+@ die |update_line| Funktion stellt sicher,
+ das die Zeile mit der Nummer |line_number| aktuell und sichtbar ist.
+ Algo: solange die liste nicht das fenster ausfüllt
+ ($line_max < $height / $line_height)
+ Zeile line_number in den Cache schreiben und expose() aufrufen
+   Ansonsten:
+  Falls die Zeile im Cache liegt, cache aktualisieren.
+
+@proc update_line( $, int line_number )
+{
+  int y;
+
+  if( ! $draw ) return;
+  update_line_state($);
+  y = line_number * $line_height;
+  /* inside cache ? */
+  if( y >= $buf.y && y < $buf.height + $buf.y ) {
+    $draw_line($, line_number);
+    /* visible ? */
+    if( y >= $top_y && y < $top_y + $height ) {
+      $expose( $, NULL, NULL );
+      return;
+    }
+    /* not visible, but inside cache, move top_y */
+  }
+
+  /* outside cache! move top_y */
+  $top_y = y - $height + $line_height;
+  $expose( $, NULL, NULL );
+}
+
+@proc draw_line( $, int line_number )
+{
+  int y = line_number * $line_height;
+  /* outside  cache ? */
+  if( y < $buf.y || y >= $buf.height + $buf.y ) return;
+  y = line_number - ($buf.y / $line_height); /* pos. im cache */
+  print_pixmap( $, line_number, y );
+}
+
+@proc initialize
+{
+        /* TODO: dpy initialisierung in andere wlist widgets uebertragen */
+        $dpy = XtDisplay($);
+
+  if( $multiline == 0 ) $multiline = 1;
+  $gc_copy =  XtGetGC($, 0,0 );
+  $draw = NULL;
+  /* trennlinie ist 2 pixel hoch */
+  $line_height = $xftFont->height * $multiline + $line_distance + 2;
+  $line_state = m_create(100,1);
+
+  update_tabs($);
+  if( $titleBar ) {
+      $titleBarHeight = $xftFont->height+3;
+      $titleBarWidth = tabbed_str_width($dpy, $tab_pos, $xftFont, m_buf($titleBar));
+   }
+   else {
+     $titleBarHeight = 1;
+     $titleBarWidth  = 20;
+   }
+
+  if( $width == 0 ) $width = $titleBarWidth;
+  $line_width = $width;
+
+
+  $key_cursor_drawn = -1;
+  $key_cursor = -1;
+
+  XtGCMask mask;
+  XGCValues values;
+  mask = GCForeground;
+  values.foreground = $titleBarCol;
+  $titleBarGC = XtGetGC($,mask,&values);
+
+  if( $height == 0 ) $height = 20;
+}
+
+@proc destroy
+{
+  XtReleaseGC($,$titleBarGC);
+  XtReleaseGC($,$gc_copy);
+  if( $draw) XftDrawDestroy( $draw );
+  if( $pixmap ) XFreePixmap( $dpy, $pixmap );
+  if( $titleBar ) { m_free( $titleBar ); $titleBar=0; }
+  m_free( $tab_pos );
+  m_free( $tabs);
+  m_free( $line_state );
+}
+
+@proc realize
+ {
+     XtCreateWindow($, (unsigned int) InputOutput,
+                    (Visual *) CopyFromParent, *mask, attributes);
+     $draw_title = XftDrawCreate( $dpy, XtWindow($),
+                                  DefaultVisual($dpy, DefaultScreen($dpy)), None);
+
+     init_graphics($);
+     update_pixmap_complete($);
+ }
+
+@proc expose
+{
+	if( !XtIsRealized($)) return;
+        if( $titleBar ) update_titlebar($);
+        $list_height = $height - $titleBarHeight;
+        update_list($);
+}
+
+
+@proc class_initialize
+{
+	  converters_init();
+}
+
+@ todo: diese funktion muss umbedingt getestet werden
+
+@proc resize
+{
+	/* der buffer sollte immer 3 zeilen größer als das window sein */
+	if( XtIsRealized($) )
+	  if( $height + 3 * $line_height > $buf.height || $width > $buf.width )
+	  {
+	 	init_graphics($);
+		update_pixmap_complete($);
+	  }
+}
+
+@proc set_values
+{
+	int n = *num_args;
+
+	/* wenn farben, font, zeilen-daten geändert worden sind,
+           muss der cache aktualisiert werden
+         */
+
+         if( XtIsRealized($) )
+	 while( n-- )
+	 {
+                 if(strncmp( args[n].name, "tableS",6 ) == 0 )
+                 {
+                   clear_selection($);
+                   update_pixmap_complete($);
+                   break;
+                 }
+
+
+                 if( ( strncmp( args[n].name, "bg_",3 ) == 0 )
+		     || ( strncmp( args[n].name, "fg", 2 ) == 0 )
+		     || ( strncmp( args[n].name, "xftFont", 7 ) == 0 ) )
+                  {
+			update_pixmap_complete($);
+			break;
+		  }
+	 }
+
+
+	return True; /* im zweifelsfall ist ein expose() immer richtig */
+}
+
+
+
+@utilities
+
+@ den Puffer um |n| Zeilen nach oben kopieren
+@proc scroll_up_lines($, int n)
+{
+  int dst_y = 0;
+  int src_y = n * $line_height;
+  int h = $buf.height - src_y;
+  assert( h > 0 );
+  XCopyArea(XtDisplay($),$pixmap, $pixmap, $gc_copy,
+            0, src_y,
+            $line_width, h,
+            0, dst_y );
+}
+
+@ den Puffer um |n| Zeilen nach unten kopieren
+
+@proc scroll_down_lines($, int n)
+{
+  int src_y = 0;
+  int dst_y = n * $line_height;
+  int h = $buf.height - dst_y;
+  assert( h > 0 );
+  XCopyArea($dpy,$pixmap, $pixmap, $gc_copy,
+            0, src_y,
+            $line_width, h,
+            0, dst_y );
+}
+
+
+@proc String get_line_intern( $, int line )
+{
+      $line_max = m_len($tableStrs);
+      m_setlen( $line_state, $line_max );
+      if( m_len($tableStrs) <= line ) return "";
+      return STR($tableStrs,line);
+}
+
+
+@ Zeile |line| als String holen und zurückgeben.
+  |getEntry| callback benutzen
+  |line_state| buffer aktualisieren
+  |line_max| aktualisieren
+@proc String get_line_str($, int line)
+{
+  if( $tableStrs ) {
+      return get_line_intern( $, line );
+  }
+
+  wlist_entry_t ent;
+  ent.pos = line; ent.max=0; ent.state = $line_state; ent.data="";
+  XtCallCallbackList( $, $getEntry, &ent );
+  if( ent.max != m_len($line_state) )
+    m_setlen( $line_state, ent.max );
+  $line_max = m_len($line_state);
+  return ent.data;
+}
+
+@proc update_line_state($)
+{
+  get_line_str($,0);
+}
+
+
+
+@proc render_multiline($, int tabs,
+                       XftDraw *draw, XftColor *col, XftFont *font,
+                       int x, int y, char *s )
+{
+  int subs=m_split(0,s, '\n', 0 );
+  int p;
+  char **str;
+  m_foreach( subs, p, str ) {
+             render_mstr($,tabs,draw,col,font,x,y + $xftFont->ascent,*str);
+             y += $xftFont->height;
+  }
+  m_free_strings(subs,0);
+}
+
+@ schreibe die zeile |line| in die Puffer |pixmap| an die Zeilen-position |ypos|. Die Hintergrundfarbe wird durch state bestimmt, wobei 0=norm,1=sel,2=hi bedeutet.
+falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
+
+@proc print_pixmap( $, int line, int ypos )
+{
+  uint col;
+  char *s = NULL;
+  int x,y,w,h;
+
+  if( line < 0 || line >= $line_max )
+    return;
+
+
+  s = get_line_str($,line);
+  if( line >= m_len($line_state) ) col=0;
+  else
+    col = UCHAR( $line_state, line);
+
+  if( col > 2 ) col=0;
+
+  TRACE(2,"line %d color %d\n",line, col);
+
+  x=0;
+  y=ypos * $line_height;
+  w=$buf.width;
+  h=$line_height;
+
+  int font_height = $xftFont->ascent +  $xftFont->descent;
+  int font_y_off  = (h - font_height-2) / 2 + $xftFont->ascent;
+
+  /* zeile zeichnen: Rect( x,y, w,h ) Inhalt: s, Farbe: gc */
+  /*  XFillRectangle($dpy, $pixmap, $gc_copy, x,y,w,h ); */
+  XFillRectangle($dpy, $pixmap, $gc[col], x,y,w,h );
+
+  render_multiline($, $tab_pos, $draw, $xft_col+col, $xftFont,
+                      x, y + $line_distance/2, s);
+
+  XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
+  TRACE(2, "Update Line: %d\n", line );
+}
+
+@proc print($, int x, int y, char *s)
+{
+  if( s && *s )
+    XftDrawStringUtf8($draw, $xft_col+0, $xftFont, x,y, (FcChar8*)s,strlen(s) );
+}
+
+@ erzeuge die pixmap für den Puffer und initialisiere xftDraw
+@proc init_graphics($)
+{
+  if( $line_width < $width ) $line_width = $width;
+
+  /* berechnen der puffer Größe: 4-Zeilen größer als das fenster */
+  int height;
+  height = ((int)($height / $line_height) + PREFETCH_BUFFER) * $line_height;
+  $buf.height = height;
+  $buf.width  = $line_width;
+  $buf.x = 0;
+  $buf.y = 0;
+
+  if( $pixmap ) XFreePixmap( $dpy, $pixmap );
+  $pixmap = XCreatePixmap($dpy, XtWindow($), $buf.width, $buf.height,
+                         DefaultDepth($dpy, DefaultScreen($dpy)));
+
+  if( $draw) XftDrawDestroy( $draw );
+  $draw = XftDrawCreate($dpy, $pixmap,
+                       DefaultVisual($dpy, DefaultScreen($dpy)), None);
+}
+
+@proc update_pixmap_complete($)
+{
+	int i = 0;
+	int line_no = $buf.y / $line_height;
+	int max = $buf.height / $line_height;
+
+	update_line_state($); // check line_max
+
+	if( line_no + max -1 >= $line_max ) {
+	    max = ($line_max - line_no);
+	    int h = $buf.height - max * $line_height;
+	    int w = $buf.width;
+	    XFillRectangle( $dpy, $pixmap, $gc[0],
+	    		    0, max * $line_height, w, h );
+	}
+
+	while( i< max ) {
+	       print_pixmap( $, line_no+i, i );
+	       i++;
+	}
+}
+
+@ |update_cache| stellt fest ob der gewünschte anzuzeigende
+@ bereich (top_x,top_y,width,height) im cache vorhanden ist.
+@ falls nicht wird der cache aktualisiert
+
+@proc update_cache($)
+{
+  int ln_pos, ln_no, buf_a, buf_h, cur_buf_a, buf_d, list_h;
+  update_line_state($); // check line_max
+  list_h = $line_max * $line_height;
+  /* top_y, top_x korrigieren */
+  /* falls der x-offset zu groß ist, verkleinern */
+  if( $top_x &&  ($top_x + $width > $line_width) ) {
+    if( $width < $line_width ) $top_x = $line_width - $width;
+    else 	     		   $top_x = 0;
+  }
+  /* falls die liste vollständig angezeigt werden kann, */
+  /* oder der rest der liste das fenster nicht füllt */
+  if( $top_y + $list_height > list_h ) {
+    /* printf( "top_y:%d\n", $top_y ); */
+    if( $list_height >= list_h ) $top_y = 0;
+    else                    $top_y = list_h - $list_height;
+
+    /* printf( "top_y:%d\n", $top_y ); */
+  }
+
+  /* anzuzeigender bereich liegt im puffer */
+  if( $top_y + $height <= $buf.y + $buf.height &&
+      $top_y >= $buf.y ) return;
+
+  buf_h = $buf.height / $line_height;	/* anzahl zeilen im Puffer */
+  cur_buf_a = $buf.y / $line_height;	/* erste zeile */
+  buf_a = $top_y / $line_height;        /* neue erste zeile */
+  buf_d = buf_a - cur_buf_a;		/* abstand in zeilen */
+
+  if( buf_d == 0 ) goto update_all;
+
+  if( buf_d > 0 ) {	/* neue erste zeile > puffer erste zeile */
+    if( buf_d >= buf_h ) goto update_all;
+    scroll_up_lines($, buf_d );
+    ln_pos = buf_h - buf_d;
+    ln_no = cur_buf_a + buf_h;  /* letzte zeile +1*/
+  }
+  else {                  /* neue erste zeile < puffer erste zeile */
+    buf_d = -buf_d;
+    if( buf_d >= buf_h ) goto update_all;
+
+	    if( buf_d < PREFETCH_BUFFER ) {
+	    	if( buf_a > PREFETCH_BUFFER - buf_d ) {
+		    buf_a -= PREFETCH_BUFFER - buf_d;
+		    buf_d = PREFETCH_BUFFER;
+		} else {
+		    buf_d += buf_a;
+		    buf_a = 0;
+		}
+	    }
+
+	    scroll_down_lines($, buf_d );
+	    ln_pos = 0; ln_no = buf_a;
+            /*
+	    printf( "cur_buf_a=%d, buf_h = %d, buf_a=%d\n", cur_buf_a, buf_h, buf_a );
+	    printf( "buf_d = %d, ln_no=%d, ln_pos = %d\n", buf_d, ln_no, ln_pos );
+            */
+
+	}
+
+	while( buf_d-- ) {
+      	    print_pixmap($, ln_no + buf_d, ln_pos + buf_d );
+    	}
+
+	$buf.y = buf_a * $line_height; /* neue startposition setzen */
+	return;
+	/*-----------------------------------------------------------------*/
+
+	update_all:
+	$buf.y = buf_a * $line_height;
+	update_pixmap_complete($);
+	/*-----------------------------------------------------------------*/
+}
+
+@proc int translate_ypos_to_lineno($, int y )
+{
+  int line_no;
+  y -= $titleBarHeight;
+  line_no = ($top_y + y) / $line_height;
+  return line_no;
+}
+
+
+@proc autoscroll_cb(XtPointer client_data, XtIntervalId *id)
+{
+	Widget self = (Widget) client_data;
+
+	int new_y = $top_y + $pixel_to_scroll;
+
+	if( new_y > 0 && new_y + $height < $line_max * $line_height && $autoscroll_cnt > 0 )
+	{
+		$autoscroll_id =
+	  	   XtAppAddTimeOut( XtWidgetToApplicationContext( self ), 100, autoscroll_cb, self );
+		$autoscroll_cnt--;
+		gotoxy( $, -1, new_y );
+	}
+}
+
+@proc void start_autoscroll( $, int y, ulong t )
+{
+	$autoscroll_cnt  =  25;
+	float speed = fabs( ($drag_start_y - y) * 1.0 / t );
+	float pixel_total = ($drag_start_y - y) / speed;
+	float pixel_per_update = 1+ pixel_total / $autoscroll_cnt;
+	printf( "drag_y0:%d, y1:%d\n", $drag_start_y, y );
+	printf( "autoscroll started: speed:%f, pixel_total:%f\n", speed, pixel_total );
+
+	$pixel_to_scroll =  pixel_per_update;
+
+	$autoscroll_id = XtAppAddTimeOut( XtWidgetToApplicationContext( $ ), 40, autoscroll_cb, $ );
+}
+
+@proc void set_line_state( $, int lineno, wheel_colors col )
+{
+	if( lineno < 0 || lineno >= m_len($line_state) ) return;
+
+	CHAR($line_state, lineno) = col;
+	/* check screen update */
+	int first_line = $buf.y / $line_height;
+	int last_line = first_line + $buf.height / $line_height;
+	if( lineno >= first_line && lineno < last_line ) {
+	    print_pixmap( $, lineno, lineno - first_line );
+	    update_list($);
+	}
+}
+
+@proc void toggle_line_state( $, int lineno )
+{
+  if( lineno < 0 || lineno >= m_len($line_state) ) return;
+  wheel_colors col = CHAR( $line_state, lineno );
+  col = !col;
+  set_line_state( $, lineno, col );
+}
+
+@ aus der Liste |tabs| und der eingestellten |unit|
+  die Offsets der Tab-Stops berechnen und in
+  der Liste |tab_pos| speichern.
+@proc update_tabs($)
+{
+  if( ! $tabs ) return;
+  int mult = $unit;
+  if( mult == 0 ) mult = xft_textwidth( $dpy, $xftFont, "w" );
+  if( $tab_pos )
+    m_clear($tab_pos);
+  else $tab_pos = m_create(10,sizeof(int));
+
+  int p,*d, v;
+  m_foreach( $tabs, p, d ) {
+    v = (*d) * mult;
+    m_put( $tab_pos, &v );
+  }
+}
+
+@proc int tabbed_str_width(Display *dpy, int tabs, XftFont *font, char *buf )
+{
+  char **str;
+  int p,
+      cur_x = 0,
+      cur_tab = 0;
+  int subs=m_split(0,buf, '\t', 1 );
+  int last_substr = m_len(subs) > 0 ? m_len(subs)-1 : 0;
+
+  m_foreach( subs, p, str ) {
+    cur_x +=  xft_textwidth( dpy, font, *str );
+
+    if( p != last_substr && tabs ) {
+        while( cur_tab < m_len(tabs) ) {
+           if( INT(tabs,cur_tab) > cur_x )
+           {
+              cur_x = INT(tabs,cur_tab);
+              break;
+           }
+           cur_tab++; /* skip this tab */
+        }
+    }
+  }
+  m_free_strings(subs,0);
+  return cur_x;
+}
+
+
+@proc int render_substr($, XftDraw *draw, XftColor *col, XftFont *font,
+                        int x,int y, char *s)
+{
+  int xoff;
+  if(is_empty(s) ) return 0;
+
+  xoff = xft_textwidth( $dpy, font, s );
+  XftDrawStringUtf8(draw, col, font,
+                    x,y, (FcChar8*)s,strlen(s) );
+  return xoff;
+}
+
+
+@proc render_mstr($, int tabs, XftDraw *draw, XftColor *col, XftFont *font, int pix_x, int pix_y, char* buf)
+{
+  if( is_empty(buf) ) return;
+
+  int cur_tab = 0; /* index des nächsten tab */
+  int xoff;        /* größe des teil-str. in pixel */
+  int cur_x = 0;   /* x-pos. des nächsten str. in pixel */
+  int subs=m_split(0,buf, '\t', 0 );
+  int p;
+  char **str;
+  m_foreach( subs, p, str ) {
+    if( cur_x >= $buf.width ) break;
+    xoff = render_substr($, draw,col,font, pix_x + cur_x, pix_y, *str);
+    cur_x += xoff;
+    if( tabs ) {
+        while( cur_tab < m_len(tabs) ) {
+           if( INT(tabs,cur_tab) > cur_x )
+           {
+              cur_x = INT(tabs,cur_tab);
+              break;
+           }
+           cur_tab++; /* skip this tab */
+        }
+    }
+  }
+
+  m_free_strings(subs,0);
+}
+
+@proc update_widget_state($)
+{
+  if( $state >= STATE_MAX ) $state=0;
+  XSetWindowBorder( $dpy, XtWindow($),
+                        $pixel[$state + COLOR_FG_MAX] );
+}
+
+@proc update_titlebar($)
+{
+
+  uint y = $titleBarHeight;
+  XFillRectangle( $dpy,XtWindow($),$titleBarGC, 0,0,$width,y);
+  XDrawLine( $dpy,XtWindow($),$gc[1],0,y-2,$width, y-2 );
+  render_mstr( $, $tab_pos, $draw_title, $xft_col, $xftFont,
+               0, $xftFont->ascent, m_buf($titleBar) );
+}
+
+
+@proc int is_cached($, int lineno)
+{
+  int first_line = $buf.y / $line_height;
+  int last_line = first_line + $buf.height / $line_height;
+  return( lineno >= first_line && lineno < last_line );
+}
+
+@proc int redraw_line( $, int lineno )
+{
+  int first_line = $buf.y / $line_height;
+  int last_line = first_line + $buf.height / $line_height;
+  if( lineno >= first_line && lineno < last_line ) {
+    print_pixmap( $, lineno, lineno - first_line );
+    return 1;
+  }
+  return 0;
+}
+
+@proc update_cursor($)
+{
+  int dirty = 0;
+  if( $key_cursor == $key_cursor_drawn ) return;
+
+  if( $key_cursor_drawn >= 0 ) {
+    CHAR( $line_state, $key_cursor_drawn ) = $key_cursor_state;
+    dirty += redraw_line($,$key_cursor_drawn);
+    $key_cursor_drawn=-1;
+  }
+
+  if( $key_cursor >= 0 ) {
+
+    if( $key_cursor >= m_len($line_state) )
+      $key_cursor = m_len($line_state)-1;
+
+    $key_cursor_state = CHAR( $line_state, $key_cursor );
+    CHAR($line_state, $key_cursor) = STATE_ARMED;
+    $key_cursor_drawn = $key_cursor;
+    redraw_line($,$key_cursor);
+    dirty = 1;
+    int last_visible_line = ($top_y + $list_height) / $line_height;
+    printf( "crsr:%d Vis:%d\n", $key_cursor, last_visible_line );
+
+    if( $key_cursor >= last_visible_line ) {
+      int y=($key_cursor+1) * $line_height - $list_height;
+      $gotoxy($,-1,y); dirty=0;
+    }
+    else if( $key_cursor < ($top_y / $line_height) )
+      {
+        $gotoxy($,-1,$key_cursor*$line_height); dirty=0;
+      }
+  }
+
+  if( dirty ) update_list($);
+}
+
+@proc clear_selection($)
+{
+        int len = m_len($line_state);
+        while( len-- ) CHAR($line_state,len)=0;
+}
+
+
+@proc update_list($)
+{
+  uint bx = 1;
+  uint by = $titleBarHeight;
+  update_cache($);
+  XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
+            $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
+	    bx, by );
+}
+
+
+@imports
+@incl <assert.h>
+@incl <math.h>
+@incl <X11/Xft/Xft.h>
+@incl "xutil.h"
+@incl "Wlist-common.h"
+@incl "mls.h"
+@incl "converters.h"

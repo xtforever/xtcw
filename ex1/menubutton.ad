@@ -1,0 +1,43 @@
+exbasic1.wcChildren: gb
+
+
+*menuButton.wcClass:    menuButtonWidgetClass
+*menuButton.wcPopups:   menu
+*menuButton.xftFont:    Sans-30:Style=bold
+*menuButton*font:       -bitstream-*-*-r-*-*-*-240-*-*-*-*-*-*
+
+*menu.wcClass:          simpleMenuWidgetClass
+*menu.wcManaged:        False
+*menu.wcChildren:       menuEntry1, menuEntry2, menuLine, \
+                        menuEntry3, menuEntry4, menuEntry5
+
+*menuLine.wcClass:      smeLineObjectClass
+*menuEntry1.wcClass:    smeBSBObjectClass
+*menuEntry2.wcClass:    smeBSBObjectClass
+*menuEntry3.wcClass:    smeBSBObjectClass
+*menuEntry4.wcClass:    smeBSBObjectClass
+*menuEntry5.wcClass:    smeBSBObjectClass
+*menuEntry5.label:      quit
+*menuEntry5.callback:   WcExitCB
+
+
+*gb.wcClass: gridbox 
+*gb.wcChildren: menuButton EXIT
+
+*menuButton.gridy: 0
+*menuButton.gridx: 0
+
+
+!
+! Immer unten
+!
+*EXIT.gridy:		1
+
+*EXIT.wcClass:		Wbutton
+
+*EXIT.label:		- EXIT - 
+*EXIT.callback:		quit_gui()
+*EXIT.weightx:		1
+*EXIT.weighty:		1
+*EXIT.fill: 		None
+*EXIT.gravity:		South

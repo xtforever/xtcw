@@ -1,0 +1,111 @@
+@class Woptc (Core)
+@ Rectangle Slider
+
+@PUBLIC
+@var Pixel foreground = XtDefaultForeground
+@var int lineWidth = 1
+@var Boolean filled = False
+@var float frac = <String> "0.1"
+@var float pos = <String> "0.1"
+@var <Callback> XtCallbackList callback   = NULL
+
+@PRIVATE
+@var GC gc_background
+@var GC gc_fg
+@var int resize
+@var int slh
+@var int sly
+
+
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+
+@var visible_interest = False
+@METHODS
+@proc initialize
+{
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc_background = XtGetGC($, mask, &values);
+  values.foreground = $foreground;
+  $gc_fg = XtGetGC($,mask,&values);
+  if( $width == 0 ) $width=10;
+  if( $height == 0 ) $height=10;
+  $resize = 1;
+  $sly = 0;
+}
+
+@proc set_values
+{
+  int y;
+  if( $old$pos != $pos ) {
+      if( $pos < 0 ) $pos = 0;
+      if( $pos > 1.0 ) $pos = 1.0;
+      y = $height * $pos;
+      draw_slider($,y);
+  }
+
+  if( $old$frac != $frac ) return True;
+
+  return False;
+}
+
+
+@proc destroy
+{
+  if( $gc_background ) XtReleaseGC($,$gc_background);
+  if( $gc_fg ) XtReleaseGC($,$gc_fg);
+}
+
+@proc expose
+{
+  XClearWindow( XtDisplay($), XtWindow($) );
+  int y = $sly; $sly=-1;
+  draw_slider($, y );
+
+}
+
+@UTILITIES
+@proc draw_slider($, int y)
+{
+        int h;
+        if( $frac <= 0 || $frac > 1 ) $frac = 1;
+        h = $height * $frac;
+        if( y < 0 ) y = 0;
+        if( h > $height ) h = $height;
+        if( y+h > $height ) y = $height-h;
+        if( $sly >= 0) {
+            if( $sly == y && $slh == h ) return;
+            XDrawRectangle(XtDisplay($), XtWindow($),$gc_background,
+                             0,$sly,$width, $slh );
+        }
+
+        $sly = y; $slh = h;
+        XDrawRectangle(XtDisplay($), XtWindow($),$gc_fg,
+                             0,$sly,$width, $slh );
+
+}
+
+@translations
+@trans <Btn1Motion>: sl_motion()
+@trans <Btn1Up>: sl_motion()
+
+@actions
+@proc sl_motion
+{
+        static float p;
+	int y = event->xbutton.y;
+        draw_slider($,y);
+        p = $sly * 1.0 / $height;
+        if( p + $frac > 1.0 ) p = 1.0 - $frac;
+        if( p < 0 ) p = 0;
+        $pos = p;
+        XtCallCallbackList( $, $callback, (XtPointer) & ($pos) );
+}

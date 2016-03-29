@@ -1,0 +1,12 @@
+wbuild 3.3
+Copyright (C) 1996  Joel N. Weber II <nemo@koa.iolani.honolulu.hi.us>
+
+
+re-packed:
+Jens Harms <au1064@gmail.com>
+
+Version History:
+
+3.4	at generatec.c 
+	__attribute__((unused)) for super,c in _resolve_inheritance
+

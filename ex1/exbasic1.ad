@@ -1,0 +1,18 @@
+*xftFont: Serif-44
+*borderWidth: 0
+*background: #008080
+*hgap: 40
+
+exbasic1.wcChildren: gb
+
+*gb.wcClass: hbox
+*gb.wcChildren: l1 l2 nb l3 l4
+*l1.wcClass: wbutton
+*l2.wcClass: wbutton
+*l3.wcClass: wbutton
+*l4.wcClass: wbutton
+
+*nb.wcClass: hbox
+*nb.wcChildren: n1 n2
+*n1.wcClass: wbutton
+*n2.wcClass: wbutton

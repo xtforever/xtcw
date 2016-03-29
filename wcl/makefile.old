@@ -1,0 +1,95 @@
+# makefile wcl
+include ../rules.mk
+
+ADD_C:=focus_group.c Gridbox.c converters-xft.c xutil.c mls.c
+ADD_C+=ini_parse.tab.c ini_lex.lex.c ini_read2.c MurphyW.c
+ADD_C+=converters.c util.c xlayout.c wcreg2.c xprint2.c
+ADD_C+=micro_vars.c parser_util.c
+# ADD_C+=Gasbench.c
+
+WIDGET_OBJ:=${WIDGETS:.widget=.o}
+WIDGET_C:=${WIDGETS:%.widget=src/%.c}
+
+SRC=.
+##### 2MAKEFILE #### INSTALL_DIR=$(PREFIX)
+INSTALL_DIR=$(PREFIX)/build
+INSTALL_INCLUDE=$(INSTALL_DIR)/include/vexmo
+INSTALL_LIB=$(INSTALL_DIR)/lib
+INSTALL_DOC=$(INSTALL_DIR)/doc
+
+CFLAGS+=-DWC_HAS_dlopen_AND_dlsym -DWCL_ERRORDB=\"/usr/lib/X11/WclErrorDB\" -DXAPPDIR=\"/etc/X11/app-defaults\"
+
+SL_BASE_NAME=vexmo
+SL_MAJOR=1
+SL_MINOR=0
+SL_REV=0
+
+SL_VERSION=$(SL_MAJOR).$(SL_MINOR).$(SL_REV)
+SL_NAME=lib$(SL_BASE_NAME).so.$(SL_VERSION)
+SL=lib$(SL_BASE_NAME).so
+
+# Zu behandelnde Dateien
+.SUFFIXES: .o .c .lo .so .widget
+
+# create all widgets
+VPATH=../lib:src
+
+all: $(WIDGET_C) $(WIDGET_OBJ) $(SL_NAME)
+
+.PHONY: PREPARE
+
+src/%.c vexmo/%.h: %.widget
+	-${MKDIR} -p vexmo src doc
+	$(WBUILD) $(WFLAGS) ../lib/Wheel.widget ../lib/Wlabel.widget ../lib/Wtext.widget ../lib/Gridbox.widget  $^
+
+# $(WIDGET_C): $(WIDGETS)
+#	-${MKDIR} -p vexmo src doc
+#	$(WBUILD) $(WFLAGS) $^
+
+# src/Gasbench.c: Gasbench.widget
+#	$(WBUILD) $(WFLAGS) ../lib/Gridbox.widget $^
+
+Xp.o Xp.lo: Xp.c register-vexmo.inc
+
+
+
+
+ini_lex.lex.o: ini_parse.tab.h
+
+ini_read2.o: ini_lex.lex.o
+
+register-vexmo.inc: $(WIDGET_C)
+	./generate-register-code.sh >$@
+	cp ../lib/Gridbox*.h vexmo
+
+# for shared libes
+# do not forget to link with
+# -Wl,-rpath,/home/kpc/DB/mysql/LIB
+#
+%.lo: %.c
+	$(CC) -c -fPIC $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+ALL_C:=${notdir $(wildcard *.c)} $(ADD_C)
+ALL_O=${ALL_C:.c=.o}
+ALL_LO=${ALL_C:.c=.lo}  ${WIDGET_OBJ:.o=.lo}
+
+#
+# Anweisung zur Erzeugung der Library
+libvexmo.a: ${ALL_O}
+	${AR} ${ARFLAGS} $@ ${ALL_O}
+
+$(SL_NAME): ${ALL_LO}
+	$(LINK.c) $^ $(LOADLIBES) -shared -Wl,-soname,$@ -o $@
+
+clean:
+	$(RM) *.o *.a *.so.* *.lo doc/* src/* vexmo/* register-vexmo.inc *.tab.h *.tab.c *.lex.c *.lex.h
+
+install:
+	${MKDIR} -p $(INSTALL_LIB)
+	cp *.so*   $(INSTALL_LIB)
+	${MKDIR} -p $(INSTALL_INCLUDE)
+	cp *.h     $(INSTALL_INCLUDE)
+	cp vexmo/*.h $(INSTALL_INCLUDE)
+	ln -sf $(SL_NAME) $(INSTALL_LIB)/$(SL).$(SL_MAJOR).$(SL_MINOR)
+	ln -sf $(SL_NAME) $(INSTALL_LIB)/$(SL).$(SL_MAJOR)
+	ln -sf $(SL_NAME) $(INSTALL_LIB)/$(SL)

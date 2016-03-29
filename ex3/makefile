@@ -1,0 +1,20 @@
+include ../rules.mk
+
+M=$(CURDIR)/..
+LOADLIBES+=-lrt
+CPPFLAGS+=-I$(M)/lib -I$(M) -I$(M)/wcl -DMLS_DEBUG -I$(M)/wb
+VPATH=$(M)/lib
+CFLAGS+=-g -Wall
+
+all: UPDATE_WCL ex3
+
+UPDATE_WIDGETS:
+	make -C ../wb
+
+UPDATE_WCL: UPDATE_WIDGETS
+	make -C ../wcl
+
+ex3: src/Woptc.o $(M)/wcl/libxtcw.a
+
+clean:
+	${RM} ex3 *.o src/*

@@ -1,0 +1,12 @@
+Global V-ARRAY example
+
+
+vam_str_to_int
+
+len = m_len(key)
+
+char* vam_get_str( key, pos )
+int   vam_get_int( key, pos )
+
+void vam_put_str(key,pos,str)
+void vam_put_int(key,pos,num)

@@ -1,0 +1,639 @@
+@class Wedit (Core)
+@ Editor Widget
+
+
+
+
+
+@TRANSLATIONS
+@trans <Key>Right:     forward_char()
+@trans <Key>Left:      backward_char()
+@trans <Key>Delete:    remove_char()
+@trans <Key>BackSpace: backward_char() remove_char()
+@trans <Ctrl>x:        info()
+@trans <Ctrl>v:        insert_selection()
+@trans <Btn1Down>:     set_cursor()
+@trans <Key>Return:    info()
+@trans <Key>:          insert_char()
+
+
+
+
+@PUBLIC
+
+@var String fontName = <String> "Source Code Pro-22"
+@var Pixel foreground = XtDefaultForeground
+@var Pixel cursorColor = XtDefaultForeground
+@var int lineWidth = 1
+@var int cornerRoundPercent = 20
+@var <Callback> XtCallbackList callback  = NULL
+@var String label = NULL
+
+@PRIVATE
+@def BG = 0
+@def FG = 1
+@def CRSR = 2
+
+@type pix_info = struct { Pixmap data; XRectangle r; }
+
+@var XftFont* xftFont
+@var pix_info pix
+@var int str_m
+@var int label_m
+@var int glyph_m
+@var int glyph_xoff_m
+
+
+@var XftDraw *draw
+@var GC gc[3]
+@var XftColor xcol[3]
+@var XRectangle crsr_rect
+@var XRectangle txt
+@var char crsr_on
+@var int crsr_pos
+@var int crsr_width
+@var int left_char_offset
+@var int left_pixel_offset
+@var int dirty
+@var int dirty_str
+
+@CLASSVARS
+@var Atom XA_UTF8_STRING = 0
+
+@METHODS
+
+@proc initialize
+{
+  Display *dpy = XtDisplay($);
+ /*
+     $xftFont = 0;
+  */
+ $draw = 0;
+ // $xftFont = XftFontOpenName( dpy, DefaultScreen(dpy), $fontName );
+  $xftFont = font_load(dpy, DefaultScreen(dpy), $fontName );
+  int w,h;
+  alloc_colors($);
+  if(! $label ) $label = $name;
+  $glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );
+  $glyph_xoff_m = m_create( 50, sizeof(int) );
+  $str_m  = m_create( 50, 1 );
+  $label_m = m_create( 50, 1 );
+  char *s = $label; if( is_empty(s) ) s=$name;
+  copy_str( $, s );
+
+  calculate_prefered_size($,&w,&h);
+  if( $width < w ) $width = w;
+  if( $height < h) $height = h;
+  if(! $XA_UTF8_STRING )
+      $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+}
+
+@proc destroy
+{
+        free_colors($);
+        XftDrawDestroy( $draw );
+        m_free($glyph_m);
+        m_free($str_m);
+        m_free($glyph_xoff_m);
+        m_free($label_m);
+}
+
+@proc set_values
+{
+    int i;
+    for(i=0;i<*num_args;i++) {
+        if( strcmp(args[i].name, "label" ) ==0 )
+            {
+                copy_str($, $label );
+            }
+    }
+    reinit($);
+    return True; /* call expose() to update widget */
+}
+
+@proc get_values_hook
+{
+    int i;
+    for(i=0;i<*num_args;i++) {
+        if( strcmp(args[i].name, "label" ) ==0 )
+            {
+                int l = m_len($str_m);
+                m_write($label_m, 0, m_buf($str_m), l );
+                CHAR($label_m, l-1)=0;
+                *((char**)args[i].value) = m_buf($label_m);
+                return;
+            }
+    }
+}
+
+
+@proc expose
+{
+  Display *dpy = XtDisplay($);
+  XClearWindow( dpy, XtWindow($) );
+  $crsr_on = 0; /* cursor not visible */
+  paint($);
+}
+
+@proc realize
+ {
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	resize_widget($);
+}
+
+@proc resize
+{
+    if (XtIsRealized($)) resize_widget($);
+}
+
+@UTILITIES
+
+@proc resize_widget($)
+{
+        /*
+        int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+        */
+
+    if( $pix.data ) { XFreePixmap( XtDisplay($), $pix.data ); }
+    $pix.data = XtCreatePixmap($,$width,$txt.height);
+    $pix.r.width = $width; $pix.r.height = $txt.height;
+
+    $pix.r.x = 0;  $pix.r.y = ($height - $txt.height) / 2;
+    if( ! $draw ) {
+        $draw = XtXftDrawCreate($,$pix.data);
+    }
+    else {
+        XftDrawChange($draw,$pix.data);
+    }
+
+    $left_char_offset = 0;
+    $crsr_pos = 0;
+}
+
+@proc clear_pixmap($)
+{
+   XFillRectangle(XtDisplay($),$pix.data,
+                       $gc[BG], 0,0, $pix.r.width, $pix.r.height );
+}
+
+@proc draw_text_on_pixmap($)
+{
+    /* str_to_glyphlist($); */
+    draw_glyphs($);
+}
+
+@proc draw_pixmap_on_window($)
+{
+        XtCopyArea($, $pix.data, XtWindow($),
+                   0,0, $pix.r.width, $pix.r.height, /* src */
+                   $pix.r.x, $pix.r.y );             /* dest */
+}
+
+@proc XftGlyphFontSpec *get_glyph_spec($, int p)
+{
+        return mls($glyph_m, p);
+}
+
+@ calculate cursor rectangle and draw cursor on window
+@proc draw_cursor($)
+{
+        XRectangle r;
+        if( $crsr_pos >= m_len($glyph_m) )
+            $crsr_pos=m_len($glyph_m)-1;
+
+        r.width = INT($glyph_xoff_m,$crsr_pos);
+        r.x = screen_px($, $crsr_pos) + $pix.r.x;
+        r.y = $pix.r.y;
+        r.height = $xftFont->height;
+        cursor_xdraw( $, &r );
+}
+
+
+@proc dump($)
+{
+    int i; for(i=0;i< m_len($str_m)-1; i++)
+               printf("%x ", (unsigned char) CHAR($str_m, i) );
+    putc(10,stdout);
+    fwrite( m_buf($str_m), m_len($str_m), 1, stdout );
+    printf("Left:%d Crsr:%d\n", $left_char_offset, $crsr_pos );
+}
+
+@ clear the pixmap, draw text on pixmap, draw pixmap on window
+@proc paint($)
+{
+        clear_pixmap($);
+        draw_text_on_pixmap($);
+        draw_pixmap_on_window($); $crsr_on = 0;
+        draw_cursor($);
+        $dirty = 0;
+}
+
+
+@ XOR draw cursor at current |$crsr_rect|
+@proc cursor_toggle($)
+{
+        $crsr_on ^= 1;
+        XtFillRectangle($, $gc[CRSR], & $crsr_rect );
+}
+
+@proc cursor_undraw($)
+{
+    if( $crsr_on ) cursor_toggle($);
+}
+
+@ remove old cursor and draw new cursor on window
+@proc cursor_xdraw($, XRectangle *r)
+{
+    cursor_undraw($);
+    $crsr_rect = *r;
+    cursor_toggle($);
+}
+
+
+
+@proc calculate_prefered_size($,int *w, int *h)
+{
+  calculate_size($,w,h);
+  (*w) += 20;
+  (*h) += 20;
+}
+
+
+@proc calculate_size($,int *w, int *h)
+{
+    *w = $txt.width;
+    *h = $txt.height;
+    /*    xft_calc_string_size($, $xftFont, $label, w, h ); */
+}
+
+@proc copy_str($, char *s)
+{
+        m_clear( $str_m );
+        m_write( $str_m, 0, s, strlen(s) );
+        m_putc( $str_m, '.' );
+        str_to_glyphlist($);
+        $dirty = 1;
+}
+
+
+@proc reinit($)
+{
+        free_colors($);
+        alloc_colors($);
+
+        int w,h;
+        calculate_prefered_size($,&w,&h);
+        make_resize_request($,w,h);
+}
+
+@proc make_resize_request($,int w, int h)
+{
+        Dimension w_out, h_out;
+        if( $width == w && $height == h ) return;
+        if( XtMakeResizeRequest($,w,h, &w_out, &h_out ) ==
+            XtGeometryAlmost ) XtMakeResizeRequest($,w_out,h_out,NULL,NULL );
+}
+
+@proc alloc_colors($)
+{
+
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc[BG] = XtGetGC($, mask, &values);
+  values.foreground = $foreground;
+  $gc[FG] = XtGetGC($,mask,&values);
+
+  mask = GCForeground | GCBackground | GCFunction;
+  values.foreground = $cursorColor ^ $background_pixel;
+  values.background = $background_pixel;
+  values.function = GXxor;
+  $gc[CRSR] = XtGetGC($, mask, &values);
+
+  xft_color_alloc( $, $background_pixel, $xcol+BG );
+  xft_color_alloc( $, $foreground,       $xcol+FG );
+  xft_color_alloc( $, $cursorColor,      $xcol+CRSR );
+}
+
+@proc free_colors($)
+{
+        int i;
+        Display *dpy = XtDisplay($);
+        for(i=0;i<2;i++) {
+                XtReleaseGC($,$gc[i]);
+                XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+		 None, $xcol+i);
+        }
+}
+
+
+@ draw glyphs from index |start| to index |stop|
+@proc draw_glyphs_spec($, int start, int stop)
+{
+    int i, xa = 0;
+    if( start < 0 ) start = 0;
+    if( stop > m_len($glyph_m) ) stop = m_len($glyph_m)-1;
+    if( stop < start ) return;
+
+    for( i=start; i <= stop; i++ ) {
+        get_glyph_spec($,i)->x = xa;
+        xa += INT($glyph_xoff_m,i);
+    }
+
+    XftDrawGlyphFontSpec( $draw, $xcol + FG,
+                          mls($glyph_m, start), stop-start +1 );
+}
+
+@ draw glyphs from $left_char_offset until width exceeded or end of string
+@proc draw_glyphs($)
+{
+    if( $dirty_str ) str_to_glyphlist($);
+
+    int nglyphs = m_len($glyph_m) -1;
+
+    int width = $pix.r.width;
+    int p = $left_char_offset;
+    while( p < nglyphs ) {
+        width -= INT($glyph_xoff_m,p);
+        if( width < 0 ) break;
+        p++;
+    }
+
+    draw_glyphs_spec($, $left_char_offset, p-1 );
+}
+
+
+
+@proc unicode_to_glyphspec($, uint unicode, XftGlyphFontSpec *specs,
+                            int *xp, int *yp, int *xOff )
+{
+    Display *dpy = XtDisplay($);
+    static FT_UInt glyph_fallback = 0;
+    FT_UInt glyphindex;
+    XGlyphInfo extents;
+    XftFont *fnt = $xftFont;
+
+    if( !glyph_fallback )
+        glyph_fallback = XftCharIndex(dpy,fnt, '#' );
+
+    fnt = font_unicode_find($fontName, unicode,(int*) &glyphindex );
+    if(!glyphindex) {
+             fnt=$xftFont;
+             glyphindex = glyph_fallback;
+    }
+    XftGlyphExtents( dpy, fnt, &glyphindex, 1, &extents );
+    specs->font = fnt;
+    specs->glyph = glyphindex;
+    specs->x = *xp;
+    specs->y = *yp;
+    *xp += extents.xOff;
+    *yp += extents.yOff;
+    *xOff = extents.xOff;
+}
+
+@ text aus str_m holen und die listen XftGlyphFontSpec |glyph_m|
+  und int |glyph_xoff_m| aufbauen
+
+@proc str_to_glyphlist($)
+{
+    int unicode;
+    int p;
+    int xp,yp;
+    yp = $xftFont->ascent;
+    xp = 0;
+
+    m_clear( $glyph_m );
+    m_clear( $glyph_xoff_m );
+    p=0;
+    while( (unicode = m_utf8char($str_m, &p)) != -1 )
+        {
+            unicode_to_glyphspec( $, unicode, m_add($glyph_m), &xp, &yp,
+                                  m_add($glyph_xoff_m) );
+        }
+
+    $txt.x = 0;
+    $txt.y = 0;
+    $txt.width  = xp;
+    $txt.height = $xftFont->ascent + $xftFont->descent+2;
+
+    $dirty = 1;         /* ggf. update der bildschirmausgabe */
+    $dirty_str = 0;     /* glyphlist ist aktualisiert */
+}
+
+@proc int char_offset($, int index)
+{
+    int i,p1=0;
+    for(i=0;i<index;i++)
+        m_utf8char( $str_m, &p1 );
+    return p1;
+}
+
+
+@ einfügen des übergebenen zeichencodes in den String
+  und neuberechnung der glyphs
+@proc insert_char_at_cursor($, char *buf, int len )
+{
+    int p = char_offset($,$crsr_pos);
+    m_ins( $str_m, p, len );
+    m_write( $str_m, p, buf, len );
+    str_to_glyphlist($);
+    $dirty = 1;
+}
+
+@proc remove_char_at_cursor($)
+{
+    int p1=0, p2=0;
+    if( $crsr_pos >= m_len($glyph_m)-1 ) return;
+    m_del( $glyph_m, $crsr_pos );
+    m_del( $glyph_xoff_m, $crsr_pos );
+    p1 = char_offset($,$crsr_pos);
+    p2=p1; m_utf8char( $str_m, &p2 );
+    m_remove( $str_m, p1, p2-p1 );
+    $dirty     = 1;
+}
+
+@proc char scroll_left($)
+{
+    if( $left_char_offset < m_len($glyph_m)-1 ) {
+        $left_char_offset++;
+        $dirty = 1;
+        return 0;
+    }
+    return -1;
+}
+
+@proc char scroll_right($)
+{
+    if( $left_char_offset <= 0 ) return -1;
+    $left_char_offset--;
+    $dirty = 1;
+    return 0;
+}
+
+@ coordinate transformation functions
+  there are three coordinate systems:
+  Character Index inside Text
+  Character Pixel Position inside visible area
+  Character Pixel Position inside text
+  This function returns the Position of the left offset inside the whole text area
+
+@proc int px_left_offset($)
+{
+    return px_char($,$left_char_offset);
+}
+
+@ this function returns the poosition of the character at |index| inside the whole text area
+  if you subtract the px_left_offset() you get the Position inside the visibile area
+
+@proc int px_char($, int index)
+{
+    int x=0,i;
+    for(i=0;i<index;i++)
+        x+= INT($glyph_xoff_m, i);
+    return x;
+}
+
+@ this function returns the pixel postion relative to the visible area
+
+@proc int screen_px($, int index)
+{
+    return px_char($,index) - px_left_offset($);
+}
+
+
+
+
+@  if cursor is not visible after moving,
+   scroll display to the left
+   to scroll set |left_char_offset|
+
+@proc cursor_right($)
+{
+    int xa = 0;
+    if( $crsr_pos >= m_len( $glyph_m ) -1 ) return;
+
+    $crsr_pos++;
+    /* das zeichen unter dem cursor sollte komplett sichtbar sein */
+    while(1) {
+        xa = screen_px($, $crsr_pos );
+        xa += INT($glyph_xoff_m,$crsr_pos);
+        if( xa <= $pix.r.width ) break;
+        if( scroll_left($) ) break;
+    }
+}
+
+@  if cursor is not visible after moving,
+   scroll display to the right
+
+@proc cursor_left($)
+{
+    int xa;
+    if( $crsr_pos <= 0 ) return;
+
+    $crsr_pos--;
+    while(1) {
+      xa = screen_px($, $crsr_pos );
+      if( xa >= 0 ) break;
+      if( scroll_right($) ) break;
+    }
+}
+
+
+@ callback function, called by XtGetSelectionValue()
+@proc RequestSelection($, XtPointer client, Atom * selection, Atom * type,
+                       XtPointer value, unsigned long *length, int *format)
+{
+    char *s = value;
+    int len = *length;
+    if( is_empty(s) || len <= 0 ) return;
+    insert_char_at_cursor($,s,len);
+    while( utf8char(&s) != -1 ) cursor_right($);
+    paint($);
+}
+
+@ACTIONS
+
+@proc info
+{
+    dump($);
+}
+
+@proc backward_char
+{
+    cursor_left($);
+    if( $dirty ) paint($); else draw_cursor($);
+}
+
+@proc forward_char
+{
+    cursor_right($);
+    if( $dirty ) paint($); else draw_cursor($);
+}
+
+@proc insert_char
+{
+    int len;
+    unsigned char buf[32];
+    KeySym key_sim;
+
+    len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
+    if (len <= 0) return;
+
+    insert_char_at_cursor($, (char*)buf, len );
+    cursor_right($);
+    paint($);
+}
+
+@proc remove_char
+{
+    remove_char_at_cursor($);
+    paint($);
+}
+
+@proc set_cursor
+{
+    int x = event->xbutton.x;
+    int y = event->xbutton.y;
+    x -= $pix.r.x;
+    y -= $pix.r.y;
+    int p = $left_char_offset;
+    int pix = 0;
+    do {
+        pix += INT($glyph_xoff_m, p);
+        if( x < pix ) break;
+        p++;
+    } while( p < (m_len($glyph_xoff_m)-1) );
+    $crsr_pos = p;
+    draw_cursor($);
+}
+
+@ insert_selection(Widget aw, XEvent * event, String * params, Cardinal * num_params)
+
+@proc insert_selection
+{
+    XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+                        RequestSelection,
+                        NULL, 0 );
+}
+
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xaw/XawImP.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "font.h"

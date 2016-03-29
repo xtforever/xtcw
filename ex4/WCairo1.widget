@@ -1,0 +1,131 @@
+@class Woptc (Core)
+
+@PUBLIC
+@ diese variable gibt den status des gezeichneten kreises an
+  bei |True| wird der Kreis gefüllt. 
+
+@var Boolean status = False
+@var Pixel foreground = XtDefaultForeground
+@var int lineWidth = 1
+
+@PRIVATE
+@var Pixmap pix1
+@var Pixmap pix2
+@var GC gc_copy
+@var GC gc_background
+@var int resize
+
+@METHODS 
+@proc initialize
+{    
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False };
+  uint          mask = GCForeground | GCGraphicsExposures;
+  $gc_background = XtGetGC($, mask, &values);
+  $gc_copy = XtGetGC($,0,0);
+  if( $width == 0 ) $width=10;
+  if( $height == 0 ) $height=10;
+  $resize = 1; $pix1=0; $pix2=0;
+}
+
+@proc resize
+{
+        $resize = 1;
+}
+
+@proc destroy
+{
+  if( $gc_copy ) XtReleaseGC($,$gc_copy);
+  if( $gc_background ) XtReleaseGC($,$gc_background);
+}
+
+@ ARGS: old, request, $, args, num_args_ptr 
+@proc set_values
+{
+  if( !XtIsRealized($)) return False;
+  return True; /* call expose */
+}
+
+@proc expose
+{ 
+  if( !XtIsRealized($)) return;
+  if( $resize ) create_pixmaps_with_cairo($);
+  update($);
+}
+
+@UTILITIES
+
+@proc create_pixmaps_with_cairo($)
+{    
+        int filled = 0;
+        int width = $width /2;
+        int height = $height;
+        Display *dpy = XtDisplay($);
+
+        /* Erzeuge Pixmap mit der Größe des Widgets
+           und fülle es mit der Hintergrundfarbe
+        */ 
+        Pixmap pixmap;
+        pixmap = XCreatePixmap(dpy, XtWindow($), 
+                width, height, 
+                DefaultDepth(dpy, DefaultScreen(dpy)));
+        XFillRectangle( dpy, pixmap, $gc_background,
+	    		    0, 0, width, height );
+
+        cairo_surface_t *cs;        
+        cs=cairo_xlib_surface_create(dpy,pixmap,
+                DefaultVisual(dpy, DefaultScreen(dpy)), 
+                width, height );
+
+        double r,g,b, radius;              
+        int h = width < height ? width : height;
+        radius = (h/2) - ($lineWidth);        
+        cairo_t *c = cairo_create(cs);
+        cairo_arc (c, h/2, h/2, 
+            radius, 0.0  * (M_PI/180.0), 360.0  * (M_PI/180.0) );
+        cairo_set_line_width (c, $lineWidth);
+        r=10 / 255.0;
+        g=250  / 255.0;
+        b=10 / 255.0;
+        cairo_set_source_rgb(c,r,g,b);
+	if( filled ) cairo_fill(c); else cairo_stroke (c); 
+        cairo_show_page(c);
+        cairo_destroy(c);
+        cairo_surface_destroy(cs);                         
+
+        if( $pix1 ) XFreePixmap( dpy, $pix1 );
+        $pix1 = pixmap;
+        puts("pix1 created");
+}
+
+@proc update($)
+{
+    // XClearWindow( XtDisplay($), XtWindow($) );
+    
+    XCopyArea(XtDisplay($),$pix1, XtWindow($), $gc_copy, 
+            0, 0, /* from pixmap: x,y */
+            $width, $height,  /* pixmap: width, height */
+            0, 0 ); /* target position inside window: x,y */  
+
+
+
+     
+}
+
+@TRANSLATIONS
+@trans <BtnDown>: switch_state()
+
+@ACTIONS
+@proc switch_state
+{
+  $status = ! $status;
+  update($);
+}
+
+@IMPORTS
+@incl <math.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib-xrender.h>
+@incl <cairo/cairo-xlib.h>
+

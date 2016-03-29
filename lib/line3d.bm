@@ -1,0 +1,4 @@
+#define line3d_width 1
+#define line3d_height 2
+static char line3d_bits[] = {
+   0x01, 0x01};

@@ -1,0 +1,60 @@
+ex3.wcChildren: gb
+
+*xftFont: Sans-12
+*foreground: #008080
+*bg_norm: #808080
+*background: #333333
+
+*gb.wcClass: gridbox
+*gb.wcChildren: gb1 txt EXIT
+*gb.borderWidth: 0
+
+
+*gb1.wcClass: Frame
+*gb1.frameType: sunken
+*gb1.wcChildren: pic
+*gb1.frameWidth: 6
+*gb1.gridy: 1
+*gb1.gridx: 0
+*gb1.weightx:	1
+*gb1.weighty:	1
+
+
+*pic.wcClass: Wim2
+*pic.picName: demo.jpg
+*pic.width: 200
+
+
+*txt.gridy: 2
+*txt.gridx: 0
+*txt.weightx:		0
+*txt.weighty:		0
+*txt.wcClass: Wlabel
+*txt.label: ZOOM: right button  MOVE: left button
+*txt.borderWidth: 0
+*txt.bg_norm: #333333
+
+
+
+
+
+!
+! Immer unten
+!
+*EXIT.wcClass:		Wbutton
+*EXIT.label:		EXIT
+*EXIT.callback:		quit_gui()
+*EXIT.cornerRoundPercent: 20
+*EXIT.xftFont: Sans-8
+*EXIT.borderWidth: 0
+<<<<<<< HEAD
+*EXIT.gridy: 0
+*EXIT.gridx: 0
+*EXIT.weightx:		1
+*EXIT.weighty:		0
+*EXIT.fill: 		None
+*EXIT.gravity:		East
+
+
+=======
+>>>>>>> 5ac529e361f53cdb89b0de33d3e4135ea9c8323b

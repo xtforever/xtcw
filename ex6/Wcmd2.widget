@@ -1,0 +1,212 @@
+@class Wcmd2 (Core)
+@ button Rectangle
+
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Sans-22"
+@var Pixel foreground = XtDefaultForeground
+@var Pixel bg_norm    = <String> "red"
+@var Pixel bg_hi      = <String> "red"
+@var Pixel lineColor  = <String> "red"
+@var Distance lineWidth = 1
+@var <Callback> XtCallbackList callback   = NULL
+@var String label = <String> NULL
+@var int leftOffsetPercent = 0
+@var int state = 0
+
+@PRIVATE
+@var GC gc_bg
+@var GC gc_fg
+@var GC gc_hi
+@var int resize
+@var int slh
+@var int sly
+@var XftDraw *draw
+@var XftColor xft_col[3]
+@var XPoint xpath[10]
+
+
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+
+@var visible_interest = False
+
+@METHODS
+@proc initialize
+{
+  XGCValues     values = {
+  		foreground: $bg_norm,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc_bg = XtGetGC($, mask, &values);
+  values.foreground = $lineColor;
+  $gc_fg = XtGetGC($,mask,&values);
+  values.foreground = $bg_hi;
+  $gc_hi = XtGetGC($,mask,&values);
+
+
+  xft_color_alloc( $, $foreground, $xft_col );
+  xft_color_alloc( $, $background_pixel, $xft_col+1 );
+  xft_color_alloc( $, $bg_norm, $xft_col+2 );
+
+  char *s = $label;
+  if( ! s || ! *s )
+    s=$name;
+  $label = XtNewString(s);
+
+  XGlyphInfo extents;
+  XftTextExtentsUtf8(XtDisplay($), $xftFont, (FcChar8*)  s,
+                       strlen( s ), &extents);
+
+  $width = increase_by_percent( extents.xOff, $leftOffsetPercent );
+  $height = $xftFont->ascent + $xftFont->descent + $lineWidth*2+4;
+
+
+  /* breite * 15% + textsize == benötigter platz */
+  /* b = a - 15% ==>  b = a - a * 15/100 ==> b = a * 85/100 ==> b * 100 / 85 = a */
+  $width = ($width + 2 + 2*$lineWidth) * 100.0 / 85 + 14;
+  printf("%s %dx%d\n", $name, $width, $height );
+}
+
+@proc set_values
+{
+  return False;
+}
+
+
+@proc destroy
+{
+  if( $gc_bg ) XtReleaseGC($,$gc_bg);
+  if( $gc_fg ) XtReleaseGC($,$gc_fg);
+  if( $gc_hi ) XtReleaseGC($,$gc_hi);
+}
+
+@proc expose
+{
+  int i;
+
+  if( !XtIsRealized($)) return;
+
+  Display *dpy = XtDisplay($);
+  if( ! $draw ) {
+    $draw = XftDrawCreate(dpy, XtWindow($),
+                          DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    if( ! $draw ) ERR("%s: cannot create xftdraw", $name );
+  }
+
+  /* fill with background_pixel */
+  // XClearWindow( XtDisplay($), XtWindow($) );
+
+  /* size of widget:
+  w = textsize + w * 15% + 2 + 2*linewidth
+
+  w = t + w*15/100 + 2 + 2*lw
+  w - w * 15 / 100 = t + 2 + 2*lw
+  w * ( 85 / 100 ) = t + 2 + 2*lw
+  w = (t + 2 + 2 *lw ) * 100 / 85
+
+  */
+
+
+  int b = ($lineWidth+1) / 2;
+  int x = ( $width*15 ) / 100 + 1;
+  int y = ( $height*40) / 100 + 1;
+
+  XPoint *p = $xpath;
+  p[0].x = x + b;
+  p[0].y = 0 + b;
+  p[1].x = $width-1 - b;
+  p[1].y = 0 + b;
+  p[2].x = $width-1 - b;
+  p[2].y = $height-1 -b;
+  p[3].x = 0 + b;
+  p[3].y = $height-1 - b;
+  p[4].x = 0 + b;
+  p[4].y = y + b;
+  p[5].x = x + b;
+  p[5].y = 0 + b;
+
+  /* triangle at top left */
+  p[6].x=0; p[6].y = 0;
+  p[7].x=x; p[7].y = 0;
+  p[8].x=0; p[8].y = y;
+  p[9].x=0; p[9].y = 0;
+
+  cairo_surface_t *cs;
+  cs=cairo_xlib_surface_create(dpy, XtWindow($),
+                DefaultVisual(dpy, DefaultScreen(dpy)),
+                $width, $height );
+  cairo_t *c = cairo_create(cs);
+
+  /* first draw little triangle, it overlaps the button frame */
+  cairo_set_source_rgb_from_pixel($, c,  $state ? $bg_hi : $background_pixel );
+  cairo_move_to( c, p[6].x, p[6].y );
+  for(i=7;i<10;i++)  cairo_line_to( c, p[i].x, p[i].y );
+  cairo_fill( c );
+
+  /* next draw the button frame partially over triangle */
+  /* fill with bg_norm */
+      cairo_set_source_rgb_from_pixel($, c,$bg_norm);        /* drawing color */
+      cairo_move_to( c, p[0].x, p[0].y );
+      for(i=1;i<6;i++)  cairo_line_to( c, p[i].x, p[i].y );
+      cairo_fill_preserve( c );                              /* fill path, keep path */
+      cairo_set_source_rgb_from_pixel($, c,$lineColor);
+      cairo_set_line_width(c,  $lineWidth );
+      cairo_stroke(c);                                       /* stroke and remove path */
+
+
+
+  cairo_show_page(c);
+  cairo_destroy(c);
+  cairo_surface_destroy(cs);
+
+
+  /*
+   XFillPolygon( XtDisplay($), XtWindow($), $gc_hi, p+6, 4, Convex, CoordModeOrigin );
+   XFillPolygon( XtDisplay($), XtWindow($), $gc_bg, p, 6, Convex, CoordModeOrigin );
+   XDrawLines( XtDisplay($), XtWindow($), $gc_fg, p, 6, CoordModeOrigin );
+   if( $state )
+    XFillPolygon( XtDisplay($), XtWindow($), $gc_hi, p+6, 4, Convex, CoordModeOrigin );
+  */
+
+  char *s = $label;
+  x += 1 + 2*$lineWidth;
+  y = $lineWidth +1;
+  XftDrawStringUtf8($draw, $xft_col, $xftFont,
+                             x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+
+
+  int w = xft_textwidth( XtDisplay($), $xftFont, s );
+  printf("%s offs:%d textw:%d wsize:%dx%d\n", $name, x, w, $width, $height );
+}
+
+@UTILITIES
+
+@proc draw($)
+{
+
+}
+
+
+@translations
+@trans <Btn1Up>: toggle()
+
+@actions
+@proc toggle
+{
+        $state = ! $state;
+        XtCallCallbackList( $, $callback, $state );
+        expose($,NULL,NULL);
+}
+
+@IMPORTS
+
+@incl <X11/Xft/Xft.h>
+@incl "converters.h"
+@incl "mls.h"
+@incl "xutil.h"
+@incl "xt_cairo.h"

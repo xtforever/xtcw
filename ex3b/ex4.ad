@@ -1,0 +1,22 @@
+ex3.wcChildren: gb
+
+*gb.wcClass: gridbox 
+*gb.wcChildren: ls3 EXIT
+*gb.borderWidth: 1
+
+*ls3.height: 300
+*ls3.gridx: 0
+*ls3.gridy: 0
+*ls3.weighty: 1
+*ls3.weightx: 1
+*ls3.fill: Both
+*ls3.wcClass: Wbutton
+
+*EXIT.gridy: 1
+*EXIT.gridx: 0
+*EXIT.weightx:		1
+*EXIT.weighty:		0
+*EXIT.fill: 		Both
+*EXIT.gravity:		East
+
+

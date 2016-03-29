@@ -1,0 +1,36 @@
+ex10.wcChildren: gb
+
+*foreground: #008080
+*bg_norm: #808080
+*background: #333333
+*borderWidth: 0
+
+
+*gb.wcClass: gridbox
+*gb.wcChildren: EXIT t1
+
+*t1.wcClass: Woptc
+*t1.height: 150
+*t1.width: 150
+*t1.gridy: 1
+*t1.gridx: 0
+*t1.weightx:		1
+*t1.weighty:		1
+*t1.fill: 		Both
+*t1.background: #335533
+
+*EXIT.gridy: 0
+*EXIT.gridx: 0
+*EXIT.weightx:		1
+*EXIT.weighty:		0
+*EXIT.fill: 		None
+*EXIT.gravity:		East
+!
+! Immer unten
+!
+*EXIT.wcClass:		Wbutton
+*EXIT.label:		EXIT
+*EXIT.callback:		quit_gui()
+*EXIT.cornerRoundPercent: 20
+*EXIT.xftFont: Sans-8
+*EXIT.borderWidth: 0

@@ -1,0 +1,50 @@
+CC=gcc
+INSTALL=install
+SRC=.
+INSTALL_DIR=/home/jens
+INSTALL_INCLUDE=$(INSTALL_DIR)/include/Wcl
+INSTALL_LIB=$(INSTALL_DIR)/lib
+INSTALL_DOC=$(INSTALL_DIR)/doc
+
+CFLAGS=-g -O2 -fno-strict-aliasing 
+CFLAGS+=-DWC_HAS_dlopen_AND_dlsym -DWCL_ERRORDB=\"/usr/lib/X11/WclErrorDB\" -DXAPPDIR=\"/etc/X11/app-defaults\"
+CPPFLAGS=-I.. -I../include -I.. -I/usr/local/include/X11/Xaw3d -I/usr/include/freetype2 
+
+SL_BASE_NAME=Xwcl
+SL_NAME=lib$(SL_BASE_NAME).so
+SL_VERSION=2.7.0
+
+# Zu behandelnde Dateien
+.SUFFIXES: .o .c .lo .so
+
+# for shared libes
+# do not forget to link with
+# -Wl,-rpath,/home/kpc/DB/mysql/LIB
+#
+%.lo: %.c
+	$(CC) -c -fPIC $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+%.so% : %.lo
+	$(LINK.c) $^ $(LOADLIBES) -Wl,-soname,$@.$(SL_VERSION) -o $@.$(SL_VERSION)
+
+
+ALL_C:=${notdir $(wildcard $(SRC)/*.c)}
+ALL_O=${ALL_C:.c=.o}
+ALL_LO=${ALL_C:.c=.lo}
+
+all: $(SL_NAME)
+
+#
+# Anweisung zur Erzeugung der Library
+libXwcl.a: ${ALL_O}
+	${AR} ${ARFLAGS} $@ ${ALL_O}
+
+libXwcl.so.$(SL_VERSION): ${ALL_LO}
+	$(LINK.c) $^ -shared $(LOADLIBES) -Wl,-soname,$@.$(SL_VERSION) -o $@.$(SL_VERSION)
+
+clean:
+	$(RM) *.o *.a *.so.* *.lo
+
+install:
+	$(INSTALL) *.so*   $(INSTALL_LIB)
+	$(INSTALL) *.h     $(INSTALL_INCLUDE)

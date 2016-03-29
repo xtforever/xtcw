@@ -1,0 +1,86 @@
+ex13.wcChildren: gb
+
+!*xftFont: Source Code Pro-14
+*Wlist4.line_distance: 20
+
+*bg_norm: #202020
+*bg_sel:  #aaaaaa
+*bg_hi:   #ffffff
+
+*fg_norm: #ffffff
+*fg_sel:  #202020
+*fg_hi:   #000000
+
+*foreground: #008080
+*background: #202020
+*borderWidth: 0
+
+*weightx: 1
+*weighty: 1
+*fill: Both
+
+!------------------------------
+*gb.wcClass: gridbox
+*gb.wcChildren: p1 p2 hb
+!-------------------------------
+
+*hb.wcClass: hbox
+*hb.wcChildren: pa pe
+*hb.gridy: 1
+
+*pa.wcClass: Wbutton
+*pa.callback: pin_start_test
+*pa.label: start
+
+*pe.wcClass: Wbutton
+*pe.callback: pin_stop_test
+*pe.label: stop
+
+
+*p1.wcClass: gridbox
+*p1.wcChildren: p1top pics
+*p1.wcManaged: True
+
+*p1top.wcClass: Wlabel
+*p1top.fill: None
+*p1top.label: Playlist
+*p1top.weighty: 0
+
+*pics.wcClass: WpixBtn
+*pics.gridy: 1
+*pics.pixmapNames: cham.xpm froggy.xpm penguin.xpm
+*pics.translations: #override  <EnterWindow>: \n <LeaveWindow>: \n
+*pics.callback: pic_cb
+!-------------------------------
+
+*p2.wcClass: gridbox
+*p2.wcChildren: p2top playsong playpos
+*p2.wcManaged: false
+
+*p2top.wcClass: gridbox
+*p2top.wcChildren: p2a player_headline
+*p2top.weighty: 0
+
+*p2a.wcClass: Wbutton
+*p2a.label: <-
+*p2a.gridx: 0
+*p2a.weightx: 0
+*p2a.callback: WcManage(*p1) WcUnmanage(*p2) playlist_show
+
+*player_headline.wcClass: Wlabel
+*player_headline.label: songs
+*player_headline.gridx: 1
+
+
+*playsong.wcClass: Wlist4
+*playsong.gridy: 1
+*playsong.tabs: 2
+!*playsong.unit: 1mm
+*playsong.multiline: 1
+*playsong.notify: song_toggle
+
+*playpos.gridy: 2
+*playpos.weighty: 0
+*playpos.wcClass: Whslider
+*playpos.callback: set_play_pos
+*playpos.handleSize: 10mm

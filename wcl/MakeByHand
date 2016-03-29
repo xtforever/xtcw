@@ -1,0 +1,84 @@
+WCTOPDIR = ..
+
+include ../WcMake1.tmpl
+
+##########################################################################
+# SCCS_data: @(#) MakeByHand	1.7 92/06/10 06:11:05
+#
+# Widget Creation Library - Wc/MakeByHand
+#
+
+LIBRARY_NAME = Wc
+
+       ACTCB_DEFS = $(DYN_LINK_FLAGS)
+      CREATE_DEFS = -DWCL_ERRORDB=\"$(LIBDIR)/WclErrorDB\" $(DYN_LINK_FLAGS)
+   LATE_BIND_DEFS = $(DYN_LINK_FLAGS)
+        LOAD_DEFS = -DXAPPDIR=\"$(XAPPLOADDIR)\"
+        NAME_DEFS = $(BROKEN_XT) $(WONDER_PRINTF)
+
+HEADERS = \
+        COPY.h \
+        COPY_X.h \
+        MapAg.h \
+        MapAgP.h \
+        PortableC.h \
+        WcCreate.h \
+        WcCreateP.h \
+        done.h
+
+SRCS = \
+	MapAg.c \
+	WcActCB.c \
+	WcConvert.c \
+	WcCreate.c \
+	WcInvoke.c \
+	WcLateBind.c \
+	WcLoadRes.c \
+	WcName.c \
+	WcReg.c \
+	WcRegXt.c \
+	WcSetValue.c \
+	WcTemplate.c \
+	WcWarn.c $(OLD_XT_SRCS)
+
+OBJS = \
+	MapAg.o \
+	WcActCB.o \
+	WcConvert.o \
+	WcCreate.o \
+	WcInvoke.o \
+	WcLateBind.o \
+	WcLoadRes.o \
+	WcName.o \
+	WcReg.o \
+	WcRegXt.o \
+	WcSetValue.o \
+	WcTemplate.o \
+	WcWarn.o $(OLD_XT_OBJS)
+
+
+MAN_PAGES = Wcl MapAg
+
+include ../WcMake2.tmpl
+include ../WcMakeL.tmpl
+
+WcActCB.o: WcActCB.c
+	rm -f $@
+	$(CC) -c $(CFLAGS_LIBS) $(ACTCB_DEFS) $*.c
+
+WcCreate.o: WcCreate.c
+	rm -f $@
+	$(CC) -c $(CFLAGS_LIBS) $(CREATE_DEFS) $*.c
+
+WcLateBind.o: WcLateBind.c
+	rm -f $@
+	$(CC) -c $(CFLAGS_LIBS) $(LATE_BIND_DEFS) $*.c
+
+WcLoad.o: WcLoad.c
+	rm -f $@
+	$(CC) -c $(CFLAGS_LIBS) $(LOAD_DEFS) $*.c
+
+WcName.o: WcName.c
+	rm -f $@
+	$(CC) -c $(CFLAGS_LIBS) $(NAME_DEFS) $*.c
+

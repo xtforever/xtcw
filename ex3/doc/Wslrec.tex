@@ -1,0 +1,237 @@
+\input wbuildmac.tex
+\Class{Wslrec}Rectangle Slider
+
+
+
+\Publicvars
+\Table{Wslrec}
+XtNforeground&XtCForeground&Pixel &XtDefaultForeground \cr
+XtNlineWidth&XtCLineWidth&int &1 \cr
+XtNfilled&XtCFilled&Boolean &False \cr
+\endTable
+\Section
+\Publicvar{XtNforeground}
+Pixel  foreground = XtDefaultForeground 
+
+\Section
+\Publicvar{XtNlineWidth}
+int  lineWidth = 1 
+
+\Section
+\Publicvar{XtNfilled}
+Boolean  filled = False 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}math.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}cairo/cairo.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}cairo/cairo-xlib-xrender.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}cairo/cairo-xlib.h{\rangle}\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+Pixmap  pix1\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}copy\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}background\endCode
+
+
+\Section
+\Code
+int  resize\endCode
+
+
+\Section
+\Code
+int  slh\endCode
+
+
+\Section
+\Code
+int  slw\endCode
+
+
+\Section
+\Code
+int  slx\endCode
+
+
+\Section
+\Code
+int  sly\endCode
+
+
+\End\Classvars
+\Section
+The Core variable {\tt compress{\underline}exposure} is OR'ed with
+{\tt XtExposeGraphicsExpose}, in order to get graphics expose events delivered
+to the {\tt expose} method.
+
+
+
+\Code
+compress{\underline}exposure = XtExposeCompressMultiple {\bar}XtExposeGraphicsExpose \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  XGCValues     values = {\lbrace}
+                foreground: {\dollar}background{\underline}pixel,
+                graphics{\underline}exposures: False {\rbrace};
+  uint          mask = GCForeground {\bar} GCGraphicsExposures;
+  {\dollar}gc{\underline}background = XtGetGC({\dollar}, mask, {\ampersand}values);
+  {\dollar}gc{\underline}copy = XtGetGC({\dollar},0,0);
+  if( {\dollar}width == 0 ) {\dollar}width=10;
+  if( {\dollar}height == 0 ) {\dollar}height=10;
+  {\dollar}resize = 1;
+  {\dollar}pix1=0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+        {\dollar}resize = 1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  if( {\dollar}gc{\underline}copy ) XtReleaseGC({\dollar},{\dollar}gc{\underline}copy);
+  if( {\dollar}gc{\underline}background ) XtReleaseGC({\dollar},{\dollar}gc{\underline}background);
+{\rbrace}\endCode
+
+
+\Section
+ARGS: old, request, $, args, num_args_ptr
+
+
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  if( !XtIsRealized({\dollar})) return False;
+  return True; /* call expose */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+  if( !XtIsRealized({\dollar})) return;
+  if( {\dollar}resize ) create{\underline}pixmaps({\dollar});
+  update({\dollar});
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+create{\underline}pixmaps({\dollar})
+{\lbrace}
+        int filled = 0;
+        int width = {\dollar}width /2;
+        int height = {\dollar}height;
+        Display *dpy = XtDisplay({\dollar});
+
+        /* Erzeuge Pixmap mit der Größe des Widgets
+           und fülle es mit der Hintergrundfarbe
+        */
+        Pixmap pixmap;
+        pixmap = XCreatePixmap(dpy, XtWindow({\dollar}),
+                width, height,
+                DefaultDepth(dpy, DefaultScreen(dpy)));
+        XFillRectangle( dpy, pixmap, {\dollar}gc{\underline}background,
+                            0, 0, width, height );
+
+        cairo{\underline}surface{\underline}t *cs;
+        cs=cairo{\underline}xlib{\underline}surface{\underline}create(dpy,pixmap,
+                DefaultVisual(dpy, DefaultScreen(dpy)),
+                width, height );
+
+        double r,g,b, radius;
+        int h = width {\langle} height ? width : height;
+        radius = (h/2) - ({\dollar}lineWidth);
+        cairo{\underline}t *c = cairo{\underline}create(cs);
+        cairo{\underline}arc (c, h/2, h/2,
+            radius, 0.0  * (M{\underline}PI/180.0), 360.0  * (M{\underline}PI/180.0) );
+        cairo{\underline}set{\underline}line{\underline}width (c, {\dollar}lineWidth);
+        r=10 / 255.0;
+        g=250  / 255.0;
+        b=10 / 255.0;
+        cairo{\underline}set{\underline}source{\underline}rgb(c,r,g,b);
+        if( filled ) cairo{\underline}fill(c); else cairo{\underline}stroke (c);
+        cairo{\underline}show{\underline}page(c);
+        cairo{\underline}destroy(c);
+        cairo{\underline}surface{\underline}destroy(cs);
+
+        if( {\dollar}pix1 ) XFreePixmap( dpy, {\dollar}pix1 );
+        {\dollar}pix1 = pixmap;
+        puts("pix1 created");
+{\rbrace}\endCode
+
+
+\Section
+\Code
+update({\dollar})
+{\lbrace}
+
+     XClearWindow( XtDisplay({\dollar}), XtWindow({\dollar}) );
+
+     XCopyArea(XtDisplay({\dollar}),{\dollar}pix1, XtWindow({\dollar}), {\dollar}gc{\underline}copy,
+            0, 0, /* from pixmap: x,y */
+            {\dollar}width, {\dollar}height,  /* pixmap: width, height */
+            0, 0 ); /* target position inside window: x,y */
+
+{\rbrace}\endCode
+
+
+\End\bye

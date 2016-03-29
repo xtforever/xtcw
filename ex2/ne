@@ -1,0 +1,16 @@
+
+
+              wurzel
+
+          elem1    elem2
+
+                        elem3
+
+gui
+gui.fenster
+
+gui.fenster.menu
+gui.fenster.statusleiste
+gui.fenster.nfenster
+
+*menu.wcClass: MenuButtons

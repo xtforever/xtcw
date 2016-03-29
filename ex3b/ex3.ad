@@ -1,0 +1,33 @@
+ex3.wcChildren: gb
+
+*borderWidth: 0
+*xftFont: Sans-28
+*background: White
+*bg_norm: #79bee8
+*fg_norm: Black
+
+
+*gb.wcClass: gridbox 
+*gb.wcChildren: ls3 EXIT
+
+*ls3.height: 300
+*ls3.gridx: 0
+*ls3.gridy: 0
+*ls3.weighty: 1
+*ls3.weightx: 1
+*ls3.fill: Both
+*ls3.cornerRoundPercent: 20
+%% *ls3.wcClass: Frame
+%% *ls3.wcChildren: ls3a
+%% *ls3.frameWidth: 4
+
+*ls3.wcClass: Wlabel
+*EXIT.wcClass: Wbutton
+*EXIT.gridy: 1
+*EXIT.gridx: 0
+*EXIT.weightx:		1
+*EXIT.weighty:		0
+*EXIT.fill: 		None
+*EXIT.gravity:		East
+*EXIT.cornerRoundPercent: 20
+*EXIT.label: exit

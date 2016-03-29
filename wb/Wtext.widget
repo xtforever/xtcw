@@ -1,0 +1,307 @@
+@class Wtext(Wlabel)
+@  Text Anzeige
+
+@EXPORTS
+@incl "util.h"
+
+@PUBLIC
+@var String text = NULL
+@var String family = <String> "Sans"
+@var int sizeSmall  = 8 
+@var int sizeMedium = 14
+@var int sizeLarge  = 20
+@var int sizeHuge   = 38
+
+       			     
+@PRIVATE 
+@var Boolean relayout
+@var int update
+@var tseg_text_t tseg
+@var int total_height
+@var int seg_w
+@var int seg_h
+
+@METHODS
+@proc initialize
+{
+    $draw_override = sensor_draw;	
+    $relayout = True;      
+    $update = -1; 
+    if( $text == NULL ) $text = $name;
+    init_text($);
+    set_text($, $text);
+    /* measure_segments */
+    $width = $seg_w; $height = $seg_h; 
+    TRACE(2,"Wtext: %s Height: %d", $name, $height );
+}
+
+@proc destroy
+{
+    text_attribute_t *a; int i;
+    m_foreach( $tseg.m_attr, i, a )
+	XftFontClose( XtDisplay($), a->font );
+    tseg_free( & $tseg );
+}
+
+@proc resize
+{
+    
+    $relayout = True; 
+}
+
+@proc set_values
+{  
+    return True;
+}
+
+
+@UTILITIES
+@ erzeuge eine liste von text segmenten, kein segment ist größer als 
+@ als das angegebene rectangle breit ist. die höhe kann variieren.
+@proc int word_wrap( int seg_list, int txt, XRectangle *r )
+{
+    return 0;
+}
+ 
+
+@proc int get_height( $, int attribute)
+{
+    text_attribute_t *attr = mls( $tseg.m_attr, attribute ); 
+    return attr->font->height;
+}
+
+@proc int get_width( $, int attribute, int ms, int start, int end )
+{
+    char *s = mls(ms,start);
+    char *p = mls(ms,end);
+    XGlyphInfo	    extents;
+    text_attribute_t *attr = mls( $tseg.m_attr, attribute ); 
+    
+    XftTextExtentsUtf8(XtDisplay($), attr->font,  (FcChar8*)  s,
+		       (int)(p-s)+1, &extents );
+    return extents.xOff;
+}
+
+@proc measure_segments($)
+{
+    text_segment_t *seg;
+    int i;
+    int w=0, h=0;
+    m_foreach($tseg.m_seg,i,seg) {
+	w+=seg->r.width = get_width($, seg->attribute, 
+				 $tseg.text, seg->start, seg->end );
+	h+=seg->r.height = get_height($, seg->attribute );
+    }
+    $seg_w = w; $seg_h = h;
+}
+
+
+@proc void write_int(int m, int p, int val)
+{
+    int c = val, i=0;
+    
+    while( c > 9 ) {
+	c /= 10;
+	i++;
+    }
+    
+    m_setlen( m, p + i + 2 );
+    CHAR(m, p+i+1 ) = 0;
+    while( i>=0 ) {
+	CHAR( m, p+i ) = '0' + (val % 10);
+	val /=  10;
+	i--;
+    }
+}
+
+
+@proc init_text($)
+{
+    tseg_init(& $tseg );
+
+    int len, m = m_create(50,1);
+    m_write( m,0, $family, strlen($family));
+    m_putc(  m, '-' ); len = m_len(m);
+
+    write_int( m, len, $sizeSmall );
+    add_attrib($, 's', mls(m,0) );
+
+    write_int( m, len, $sizeMedium );
+    add_attrib($, 'm', mls(m,0) );
+
+    write_int( m, len, $sizeLarge );
+    add_attrib($, 'l', mls(m,0) );
+
+    write_int( m, len, $sizeHuge );
+    add_attrib($, 'h', mls(m,0) );
+
+    m_free(m);
+}
+
+@proc add_attrib($, char name, char *fnt  )
+{
+    Display *dpy = XtDisplay($);
+    XGlyphInfo extents;
+    text_attribute_t attr;
+    memset( &attr,0,sizeof(attr));
+    attr.font = xft_fontopen(dpy, DefaultScreen(dpy), fnt, False, 0 );
+    memcpy( & attr.color, $xft_col, sizeof( attr.color ));
+    XftTextExtentsUtf8(dpy, attr.font, (FcChar8*)" ",1, &extents);
+    attr.space_width = extents.xOff;
+    attr.name = name;
+    m_put( $tseg.m_attr, &attr );
+}
+
+@proc set_text($, char *s)
+{
+    tseg_set_text(& $tseg,s );
+    measure_segments($);
+}
+
+
+@proc layout_segments($)
+{
+    int m_seg = $tseg.m_seg;
+    text_segment_t *seg;
+    int i;
+    int x,y;
+    int max_h;
+    int line_break = 0;
+    $total_height = 0;
+
+    x=0; y=0; max_h=0;
+    m_foreach(m_seg,i,seg) {
+	if( x+seg->r.width > $width || line_break ) {
+	    y+=max_h; x=0; max_h=0; line_break = 0;
+	}
+	max_h = Max(seg->r.height, max_h );
+	seg->r.x = x;
+	seg->r.y = y; $total_height = y + max_h;
+	x += seg->r.width + attribute_space( $, seg->attribute );
+	if( seg->format & T_HARD_BREAK) line_break=1;
+    }       
+}
+
+@proc int attribute_space($, int attr_id )
+{
+    text_attribute_t *attr = mls($tseg.m_attr, attr_id);
+    return attr->space_width;
+}
+
+@proc relayout($)
+{
+	layout_segments($);
+}
+
+
+@proc print_str_west($, XftFont *fnt, XRectangle *r, char *s )
+{
+    int x,y;
+    if( !s ) return; /* disabled */
+    XFillRectangle( XtDisplay($), XtWindow($), $gc[0], 
+		    r->x, r->y, r->width, r->height );
+    /* XftDrawSetClipRectangles( $draw,0,0,r, 1); */
+    /*XftTextExtentsUtf8(XtDisplay($), $fnt, (FcChar8*)s,
+		       strlen(s), &extents);
+    w = extents.xOff;
+    */
+
+    x = 1;
+    y = (r->height - fnt->height) / 2 + fnt->ascent;
+    XftDrawStringUtf8($draw, $xft_col, fnt, 
+		      x+r->x,y+r->y, (FcChar8*)s, strlen(s) );
+}
+
+@proc print_str_center($, XftFont *fnt, XRectangle *r, char *s )
+{
+    XGlyphInfo extents;
+    int w,x,y;
+
+    if( !s ) return; /* disabled */
+
+    XFillRectangle( XtDisplay($), XtWindow($), $gc[0], 
+		    r->x, r->y, r->width, r->height );
+   /* XftDrawSetClipRectangles( $draw,0,0,r, 1); */
+   XftTextExtentsUtf8(XtDisplay($), fnt, (FcChar8*)s,
+		       strlen(s), &extents);
+    w = extents.xOff;
+   
+    x = (r->width - w) / 2;
+    y = (r->height - fnt->height) / 2 + fnt->ascent;
+    XftDrawStringUtf8($draw, $xft_col, fnt, 
+		      x+r->x,y+r->y, (FcChar8*)s, strlen(s) );
+}
+
+
+@proc print_int($, XftFont *fnt, XRectangle *r, int val )
+{
+    char buf[100];
+    snprintf( buf,100,"%d", val );
+    int x,y;
+    char *s;
+
+    if( val < 0 ) return; /* disabled */
+
+    XFillRectangle( XtDisplay($), XtWindow($), $gc[0], 
+		    r->x, r->y, r->width, r->height );
+    /* XftDrawSetClipRectangles( $draw,0,0,r, 1); */
+    x = 1;
+    y = (r->height - fnt->height) / 2 + fnt->ascent;
+    s = buf;
+    XftDrawStringUtf8($draw, $xft_col, fnt, 
+		      x+r->x,y+r->y, (FcChar8*)s, strlen(s) );
+}
+
+@proc sensor_draw($,void *a, void *b)
+{
+	
+    	XFillRectangle( XtDisplay($), XtWindow($), $gc[ $state ], 
+		    0,0, $width, $height );
+
+	if( $relayout ) {
+	    relayout($);
+	    $relayout = False;
+	}    	
+
+	$update = -1;
+	redraw($);
+}
+
+@proc print_segment($,text_segment_t *s)
+{
+    FcChar8* str;
+    int len;
+    int x,y;
+    text_attribute_t *attr = mls($tseg.m_attr, s->attribute);
+
+    x = s->r.x;
+    y = s->r.y + attr->font->ascent;
+
+    str = mls( $tseg.text, s->start);
+    len = s->end - s->start + 1;
+    
+    XftDrawStringUtf8($draw, & attr->color, attr->font, 
+		      x,y,str,len );
+    
+}
+
+@proc redraw($)
+{
+    text_segment_t *seg;
+    int i;
+
+    m_foreach( $tseg.m_seg, i, seg )
+	{
+	    print_segment( $, seg );
+	}
+
+    $update = 0;
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "util.h"
+@incl "xutil.h"

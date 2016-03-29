@@ -1,0 +1,12 @@
+ex16.wcChildren: gb1
+
+*gb1.wcClass: gridbox
+*gb1.wcChildren: l1 l2
+
+*l1.wcClass: Wlabel
+*l1.label: Hello World
+
+
+*l2.wcClass: Wlabel
+*l2.label: Hello Computer
+*l2.gridy: 1

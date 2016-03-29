@@ -1,0 +1,96 @@
+ex3.wcChildren: gb1
+
+*xftFont: Sans-12
+*foreground: #008080
+*bg_norm: #333333
+*background: #000000
+
+*gb1.wcClass: Frame
+*gb1.frameType: sunken
+*gb1.wcChildren: gb
+*gb1.frameWidth: 6
+
+*gb.wcClass: gridbox
+*gb.wcChildren: t1 ls1 EXIT hboxtest
+*gb.borderWidth: 8
+
+*t1.gridx: 1
+*t1.weighty: 1
+*t1.fill: Both
+*t1.wcClass: Woptc
+*t1.foreground: Red
+*t1.lineWidth: 6
+*t1.width: 15
+*t1.frac: 1
+*t1.callback: scroll_cb
+
+*ls1.wcClass: Frame
+*ls1.frameWidth: 6
+*ls1.frameType: raised
+*ls1.wcChildren: ls
+*ls1.weighty: 1
+*ls1.weightx: 1
+*ls1.fill: Both
+*ls1.gridy: 0
+*ls1.gridx: 0
+
+
+*EXIT.gridy: 2
+*EXIT.gridx: 0
+*EXIT.weightx:		1
+*EXIT.weighty:		0
+*EXIT.fill: 		None
+%% *EXIT.gravity:		East
+
+
+
+
+!
+! Liste mit Daten !?
+!
+*ls.wcClass: Wlist4
+*ls.tabs: 10 20 30 40
+*ls.titleBar: time~tclient~tmsg~t~t
+*ls.fg: Black
+*ls.titleBarCol: #d0d0d0
+*ls.xftFont: Sans-8
+*ls.bg_norm: #ddccaa
+*ls.height: 300
+
+
+!
+! Immer unten
+!
+
+*EXIT.wcClass:		Wbutton
+*EXIT.label:		- EXIT -
+*EXIT.callback:		quit_gui()
+*EXIT.cornerRoundPercent: 20
+*EXIT.xftFont: Sans-12
+
+*hboxtest.gridy: 3
+*hboxtest.weightx: 1
+*hboxtest.fill: Width
+*hboxtest.wcClass: HBox
+*hboxtest.wcChildren: h1 h2 h3 h4
+*hboxtest.borderWidth: 0
+*hboxtest.*.borderWidth: 0
+*hboxtest.*.cornerRoundPercent: 20
+!! *hboxtest.*.bg_norm: lightgray
+*hboxtest.*.bg_sel:  cyan
+*hboxtest.*.fg_sel:  black
+*hboxtest.hgap: 2mm
+
+*h1.wcClass: Wcmd2
+*h1.foreground: White
+*h1.background: Black
+*h1.lineWidth: 2pt
+*h1.xftFont: Comic Sans MS:size=12:style=Fett
+*h1.bg_norm: #202020
+*h1.lineColor: #555555
+*h1.label: Hello
+
+
+*h2.wcClass: Wbutton
+*h3.wcClass: Wbutton
+*h4.wcClass: Wbutton

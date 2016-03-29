@@ -1,0 +1,2 @@
+LOADLIBES+=-lasound -ljack
+all: simple-client

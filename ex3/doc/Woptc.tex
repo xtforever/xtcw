@@ -1,0 +1,208 @@
+\input wbuildmac.tex
+\Class{Woptc}Rectangle Slider
+
+
+
+\Publicvars
+\Table{Woptc}
+XtNforeground&XtCForeground&Pixel &XtDefaultForeground \cr
+XtNlineWidth&XtCLineWidth&int &1 \cr
+XtNfilled&XtCFilled&Boolean &False \cr
+XtNfrac&XtCFrac&float &"0.1"\cr
+XtNpos&XtCPos&float &"0.1"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+\endTable
+\Section
+\Publicvar{XtNforeground}
+Pixel  foreground = XtDefaultForeground 
+
+\Section
+\Publicvar{XtNlineWidth}
+int  lineWidth = 1 
+
+\Section
+\Publicvar{XtNfilled}
+Boolean  filled = False 
+
+\Section
+\Publicvar{XtNfrac}
+float  frac = {\langle}String{\rangle}"0.1"
+
+\Section
+\Publicvar{XtNpos}
+float  pos = {\langle}String{\rangle}"0.1"
+
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Translations
+\Section
+\Code
+{\langle}Btn1Motion{\rangle}: sl{\underline}motion() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Up{\rangle}: sl{\underline}motion() \endCode
+
+
+\End\Actions
+\Section
+\Action{sl{\underline}motion}\Code
+void sl{\underline}motion({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+        static float p;
+        int y = event-{\rangle}xbutton.y;
+        draw{\underline}slider({\dollar},y);
+        p = {\dollar}sly * 1.0 / {\dollar}height;
+        if( p + {\dollar}frac {\rangle} 1.0 ) p = 1.0 - {\dollar}frac;
+        if( p {\langle} 0 ) p = 0;
+        {\dollar}pos = p;
+        XtCallCallbackList( {\dollar}, {\dollar}callback, (XtPointer) {\ampersand} ({\dollar}pos) );
+{\rbrace}\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+GC  gc{\underline}background\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}fg\endCode
+
+
+\Section
+\Code
+int  resize\endCode
+
+
+\Section
+\Code
+int  slh\endCode
+
+
+\Section
+\Code
+int  sly\endCode
+
+
+\End\Classvars
+\Section
+The Core variable {\tt compress{\underline}exposure} is OR'ed with
+{\tt XtExposeGraphicsExpose}, in order to get graphics expose events delivered
+to the {\tt expose} method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+
+
+
+\Code
+visible{\underline}interest = False \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  XGCValues     values = {\lbrace}
+                foreground: {\dollar}background{\underline}pixel,
+                graphics{\underline}exposures: False,
+                line{\underline}width: {\dollar}lineWidth {\rbrace};
+  uint          mask = GCForeground {\bar} GCGraphicsExposures {\bar}  GCLineWidth;
+  {\dollar}gc{\underline}background = XtGetGC({\dollar}, mask, {\ampersand}values);
+  values.foreground = {\dollar}foreground;
+  {\dollar}gc{\underline}fg = XtGetGC({\dollar},mask,{\ampersand}values);
+  if( {\dollar}width == 0 ) {\dollar}width=10;
+  if( {\dollar}height == 0 ) {\dollar}height=10;
+  {\dollar}resize = 1;
+  {\dollar}sly = 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  int y;
+  if( {\dollar}old{\dollar}pos != {\dollar}pos ) {\lbrace}
+      if( {\dollar}pos {\langle} 0 ) {\dollar}pos = 0;
+      if( {\dollar}pos {\rangle} 1.0 ) {\dollar}pos = 1.0;
+      y = {\dollar}height * {\dollar}pos;
+      draw{\underline}slider({\dollar},y);
+  {\rbrace}
+
+  if( {\dollar}old{\dollar}frac != {\dollar}frac ) return True;
+
+  return False;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  if( {\dollar}gc{\underline}background ) XtReleaseGC({\dollar},{\dollar}gc{\underline}background);
+  if( {\dollar}gc{\underline}fg ) XtReleaseGC({\dollar},{\dollar}gc{\underline}fg);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+  XClearWindow( XtDisplay({\dollar}), XtWindow({\dollar}) );
+  int y = {\dollar}sly; {\dollar}sly=-1;
+  draw{\underline}slider({\dollar}, y );
+
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+draw{\underline}slider({\dollar}, int  y)
+{\lbrace}
+        int h;
+        if( {\dollar}frac {\langle}= 0 {\bar}{\bar} {\dollar}frac {\rangle} 1 ) {\dollar}frac = 1;
+        h = {\dollar}height * {\dollar}frac;
+        if( y {\langle} 0 ) y = 0;
+        if( h {\rangle} {\dollar}height ) h = {\dollar}height;
+        if( y+h {\rangle} {\dollar}height ) y = {\dollar}height-h;
+        if( {\dollar}sly {\rangle}= 0) {\lbrace}
+            if( {\dollar}sly == y {\ampersand}{\ampersand} {\dollar}slh == h ) return;
+            XDrawRectangle(XtDisplay({\dollar}), XtWindow({\dollar}),{\dollar}gc{\underline}background,
+                             0,{\dollar}sly,{\dollar}width, {\dollar}slh );
+        {\rbrace}
+
+        {\dollar}sly = y; {\dollar}slh = h;
+        XDrawRectangle(XtDisplay({\dollar}), XtWindow({\dollar}),{\dollar}gc{\underline}fg,
+                             0,{\dollar}sly,{\dollar}width, {\dollar}slh );
+
+{\rbrace}\endCode
+
+
+\End\bye

@@ -1,0 +1,152 @@
+@class Wheel (Core)
+
+@ simple Wheel Input widget
+
+@PUBLIC
+
+@var <XftFont> XftFont* xftFont = <String> "Sans-22"
+@var <Callback> XtCallbackList callback   = NULL
+@var <Pixel> Pixel bg_norm = <String>  "lightblue"
+@var <Pixel> Pixel bg_sel   = <String>  "yellow"
+@var <Pixel> Pixel bg_hi    = <String>  "red"
+@var <Pixel> Pixel fg_norm = <String>  "black"
+@var <Pixel> Pixel fg_sel   = <String>  "green"
+@var <Pixel> Pixel fg_hi    = <String>  "white"
+@var int user_data = 0
+@var String focus_group = <String> ""
+@var int state = 0
+@var Boolean register_focus_group = True
+
+@EXPORTS
+
+@type wheel_state = enum {
+  STATE_NORMAL = 0,
+  STATE_SELECTED = 1,
+  STATE_ARMED = 2,
+  STATE_MAX = 3
+}
+
+@type wheel_cmd = enum {
+      WHEEL_NOCOMMAND,
+      WHEEL_LEFT,
+      WHEEL_RIGHT,
+      WHEEL_FIRE,
+      WHEEL_KEYPAD
+}
+
+@type wheel_colors = enum {
+ COLOR_FG_NORM, COLOR_FG_SEL, COLOR_FG_HI, COLOR_BG_NORM, COLOR_BG_SEL, COLOR_BG_HI
+}
+@def COLOR_FG_MAX = 3
+
+
+@type wheel_gcs = enum {
+ GC_BG_NORM, GC_BG_SEL, GC_BG_HI
+}
+
+
+@proc int wheel_exec_command($, int cmd, int val)
+{
+  if( XtIsSubclass( $, wheelWidgetClass) && $exec_command )
+    {
+      return $exec_command($,cmd,val);
+    }
+
+  XtWarning( "Widget is not subclass of wheel" );
+  return 0;
+}
+
+@proc int wheel_sig_recv($, Widget from, int type, void *class, void *data )
+{
+  if( XtIsSubclass( $, wheelWidgetClass) && $sig_recv )
+    {
+      return $sig_recv($,from,type,class,data);
+    }
+
+  XtWarning( "Widget is not subclass of wheel" );
+  return 0;
+}
+
+@PRIVATE
+
+@ vorderung und hintergrund farben
+@var Pixel pixel[6]
+
+@ vorderung und hintergrund farben
+@var XftColor xft_col[6]
+
+@ zum löschen des hintergrundes
+@var GC gc[3]
+
+@METHODS
+
+@proc class_initialize { converters_xft_init(); }
+
+@proc int exec_command($, int cmd, int val)
+{
+      XtWarning( "Wheel Widget needs exec_command to be redefined" );
+      return 0;
+}
+
+@proc int sig_recv ($, Widget from, int type, void *class, void *data )
+{
+  XtWarning( "Wheel Widget needs sig_recv to be redefined" );
+  return 0;
+}
+
+@proc initialize
+{
+  int i;
+  XGCValues     values;
+
+  /* copy colors to array for convenience */
+  $pixel[COLOR_FG_NORM]= $fg_norm;
+  $pixel[COLOR_FG_SEL]= $fg_sel;
+  $pixel[COLOR_FG_HI]= $fg_hi;
+  $pixel[COLOR_BG_NORM]= $bg_norm;
+  $pixel[COLOR_BG_SEL]= $bg_sel;
+  $pixel[COLOR_BG_HI]= $bg_hi;
+
+
+  /* convert 24bit pixel color to XftColor */
+  for(i=0;i<3;i++) {
+    xft_color_alloc( $, $pixel[i], $xft_col+i );
+    values.foreground = $pixel[i+3];
+    $gc[i] = XtGetGC($, GCForeground, &values);
+  }
+  for(i=0;i<3;i++) {
+    xft_color_alloc( $, $pixel[i+3], $xft_col+i+3 );
+  }
+
+  $state = STATE_NORMAL;
+  $background_pixel = $pixel[STATE_NORMAL+3];
+
+  if( ! STR_IS_EMPTY($focus_group) && $register_focus_group ) {
+      focus_add2( $, $focus_group );
+  }
+
+}
+
+@proc destroy
+{
+  Display *dpy = XtDisplay($);
+
+  int i;
+  for(i=0;i<3;i++) {
+    XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+		 None, $xft_col+i);
+    XtReleaseGC($,$gc[i]);
+  }
+}
+
+
+@UTILITIES
+
+
+@IMPORTS
+
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "focus-group.h"
+@incl "apputil.h"
+@incl "xutil.h"

@@ -1,0 +1,10 @@
+#!/bin/bash
+cmd="grep -i \"$1\""
+shift
+for var in $@
+do
+        cmd="$cmd | grep -i \"$var\""
+done
+cmd="cat alle-filme | $cmd"
+echo $cmd
+eval $cmd

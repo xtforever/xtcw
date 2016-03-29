@@ -1,0 +1,34 @@
+!
+! configuration
+!
+xumm.ANALOG_IN:		0 = TEMP, 1=LICHT
+xumm.DIGITAL_OUT:      	14=LED, 9=LED_GREEN, 12=HEATER
+xumm.DIGITAL_IN:        -3=ALARM_DOOR, 4=ALARM_WINDOW
+xumm.TWI_IN:             17=paw1, 49=paw2
+xumm.SERVER:	         localhost:3001
+
+
+*LED_GREEN.xftFont: Sans-40
+*LED_GREEN.label:   Grüne LED
+*LED_GREEN.background: Red
+
+!
+! Layout
+!
+xumm.wcChildren: gb
+*gb.wcClass: gridbox 
+*gb.wcChildren: EXIT
+
+*EXIT.gridy:		99
+*EXIT.wcClass:		Wbutton
+*EXIT.label:		- EXIT - 
+*EXIT.xftFont:		Kaushan Script-64:style=Regular
+*EXIT.callback:		quit_gui()
+*EXIT.weightx:		1
+*EXIT.weighty:		1
+*EXIT.fill: 		None
+*EXIT.gridWidth:	2
+*EXIT.gravity:		South
+
+
+

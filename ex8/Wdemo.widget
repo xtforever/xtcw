@@ -1,0 +1,162 @@
+@class Wdemo (Core)
+@ Demo widget: draw lines and text and use a callback function
+
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Sans-22"
+@var Pixel foreground = XtDefaultForeground
+@var int lineWidth = 1
+@var int cornerRoundPercent = 20
+@var <Callback> XtCallbackList callback  = NULL
+@var String label = NULL
+
+@PRIVATE
+@var XftDraw *draw
+@var GC gc[2]
+@var XftColor xcol[2]
+@def BG = 0
+@def FG = 1
+
+@METHODS
+@proc initialize
+{
+  int w,h;
+  alloc_colors($);
+  if(! $label ) $label = $name;
+  calculate_prefered_size($,&w,&h);
+  $width = w; $height = h;
+}
+
+@proc set_values
+{
+        reinit($);
+        return True; /* call expose() to update widget */
+}
+
+@proc destroy
+{
+        free_colors($);
+        XftDrawDestroy( $draw );
+}
+
+@proc expose
+{
+  Display *dpy = XtDisplay($);
+  if( ! $draw ) {
+    $draw = XftDrawCreate(dpy, XtWindow($),
+			  DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    assert( $draw );
+  }
+
+  XClearWindow( XtDisplay($), XtWindow($) );
+  paint($);
+}
+
+@proc realize
+ {
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	reshape_widget($);
+}
+
+@proc resize
+{
+    if (XtIsRealized($)) reshape_widget($);
+}
+
+@UTILITIES
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
+@proc paint($)
+{
+        char *s = $label;
+        XRectangle r;
+        int x,y,w,h;
+
+        /* center text */
+        calculate_size( $, &w, &h );
+        x = ($width - w) / 2;
+        y = ($height -h) / 2;
+
+        XftDrawStringUtf8($draw, $xcol + FG, $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+
+        /* underline text */
+        r.x = x; r.y = y+h ;
+        r.width = w; r.height = $lineWidth;
+        XtFillRectangle($, $gc[FG], &r );
+}
+
+@proc calculate_prefered_size($,int *w, int *h)
+{
+  calculate_size($,w,h);
+  (*w) += 20;
+  (*h) += 20;
+}
+
+
+@proc calculate_size($,int *w, int *h)
+{
+        xft_calc_string_size($, $xftFont, $label, w, h );
+}
+
+@proc reinit($)
+{
+        free_colors($);
+        alloc_colors($);
+        int w,h;
+        calculate_prefered_size($,&w,&h);
+        make_resize_request($,w,h);
+}
+
+@proc make_resize_request($,int w, int h)
+{
+        Dimension w_out, h_out;
+        if( XtMakeResizeRequest($,w,h, &w_out, &h_out ) ==
+            XtGeometryAlmost ) XtMakeResizeRequest($,w_out,h_out,NULL,NULL );
+}
+
+@proc alloc_colors($)
+{
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc[BG] = XtGetGC($, mask, &values);
+  values.foreground = $foreground;
+  $gc[FG] = XtGetGC($,mask,&values);
+  xft_color_alloc( $, $background_pixel, $xcol+BG );
+  xft_color_alloc( $, $foreground,       $xcol+FG );
+}
+
+@proc free_colors($)
+{
+        int i;
+        Display *dpy = XtDisplay($);
+        for(i=0;i<2;i++) {
+                XtReleaseGC($,$gc[i]);
+                XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+		 None, $xcol+i);
+        }
+}
+
+
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
