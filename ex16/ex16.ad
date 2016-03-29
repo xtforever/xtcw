@@ -1,12 +1,37 @@
 ex16.wcChildren: gb1
 
+ex16.thermal1: /sys/class/thermal/thermal_zone1/temp
+ex16.thermal1div: 1000
+ex16.thermal2: /sys/class/thermal/thermal_zone2/temp
+ex16.thermal2div: 1000
+ex16.update_ms: 2000
+
+*weightx: 1
+*weighty: 1
+*fill: Both
+*Gridbox.background: Darkblue
+*background: Lightblue
+*foreground: black
+*cornerRoundPercent: 25
+*Wlabel.heightIncreasePercent: 50
+*Wlabel.leftOffsetPercent: 20
+*Wlabel.xftFont: Sans-10
+
+*translations: #override <BtnDown>: btndown() \n <BtnMotion>: btnmove()
+
+
 *gb1.wcClass: gridbox
-*gb1.wcChildren: l1 l2
+*gb1.wcChildren: ent1 ent2
 
-*l1.wcClass: Wlabel
-*l1.label: Hello World
+*ent1.wcClass: Wlabel
+*ent1.label: 00000
+*ent1.gridx: 0
+*ent1.weighty: 0
+*ent1.weightx: 0
 
 
-*l2.wcClass: Wlabel
-*l2.label: Hello Computer
-*l2.gridy: 1
+*ent2.wcClass: Wlabel
+*ent2.label: 00000
+*ent2.gridx: 1
+*ent2.weighty: 0
+*ent2.weighty: 0
