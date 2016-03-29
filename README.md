@@ -1,5 +1,6 @@
 # xtcw
-This porject allows you to write Xt based Widget Sets with Modern Fontconfig 
+
+This project allows you to write Xt based Widget Sets with Modern Fontconfig 
 and optional Cairo Drawing and resource file based gui builder. This is not a 
 replacement for QT or GTK. Instead it allows you to write one. 
 
@@ -16,5 +17,3 @@ Wbuild is available from either
 ftp://alpha.gnu.ai.mit.edu/fwf
 ftp://prep.ai.mit.edu/pub/gnu
 
-
-# xtcw
