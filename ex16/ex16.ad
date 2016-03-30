@@ -17,7 +17,8 @@ ex16.update_ms: 2000
 *Wlabel.leftOffsetPercent: 20
 *Wlabel.xftFont: Sans-10
 
-*translations: #override <BtnDown>: btndown() \n <BtnMotion>: btnmove()
+*translations: #override <BtnDown>: btndown() \n <BtnMotion>: btnmove() \n <Key>q: wm_quit()
+
 
 
 *gb1.wcClass: gridbox
