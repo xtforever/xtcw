@@ -6,8 +6,8 @@ LOADLIBES+=
 CPPFLAGS+=-I$(M)/lib -I$(M) -I$(M)/wcl -I$(OUTPUT)/include
 VPATH=$(M)/lib
 
-LOADLIBES+=$(shell pkg-config taglib_c --libs) -lcairo
-CFLAGS+=$(shell pkg-config taglib_c --cflags)
+LOADLIBES+= -lcairo
+CFLAGS+=
 
 all: $(TARGET)
 
