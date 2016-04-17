@@ -16,9 +16,14 @@
 #include <Xp.h>
 #include "wcreg2.h"
 
+/*
+  widget library
+*/
+#include <xtcw/Wlist4.h>
+
 /* test the new widgets */
-#include "Woptc.h"
-#include "Wcmd2.h"
+#include "vexmo/Woptc.h"
+#include "vexmo/Wcmd2.h"
 
 
 #define MAX_MSG_SIZE 10000

@@ -1,4 +1,11 @@
+@ Wlabel renders and updates the Window on set_values and on expose
+  the update function caches the current state
+  on set_value the dirty flag is set - redraw only on cache miss
+  on expose the dirty flag is clear - force redraw even on cache hit
 @class Wlabel (Wheel)
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
 
 @PUBLIC
 @var String label = <String> NULL
@@ -9,6 +16,10 @@
 
 @PRIVATE
 @var XftDraw *draw
+@var Bool dirty
+@var String label_cache
+@var Pixmap pixmap
+@var GC gc_copy
 
 @METHODS
 
@@ -33,8 +44,11 @@
   if( $height == 0 )
     $height = increase_by_percent( $xftFont->height, $heightIncreasePercent);
 
-  if( $draw_override == 0 )
-    $draw_override = default_label_draw;
+  $dirty=0;
+  $label_cache = 0;
+  $pixmap = 0;
+  $draw = 0;
+  $gc_copy =  XtGetGC($, 0,0 );
 
 }
 
@@ -49,6 +63,7 @@
 {
     TRACE(3, "%s: resize: %dx%d", $name, $width, $height );
     if (XtIsRealized($)) reshape_widget($);
+    invalidate_cache($);
 }
 
 
@@ -56,18 +71,24 @@
 {
   if( $draw) XftDrawDestroy( $draw );
   XtFree($label);
+  XtFree($label_cache);
+  XtReleaseGC($,$gc_copy);
+  XFreePixmap(XtDisplay($),$pixmap);
 }
 
 
 @ ARGS: old, request, $, args, num_args_ptr
 @proc set_values
 {
-	int do_expose = 0;
+  int do_expose = 0;
 
   if ($label != $old$label) {
-    XtFree($old$label);
-    $label = XtNewString($label);
-    do_expose = 1;
+      XtFree($old$label);
+      if( $label == 0) $label="";
+      $label = XtNewString($label);
+      do_expose = 0;
+      $dirty=1;
+      redraw($); /* redraw only if neccessary */
   }
 
   if( $state != $old$state) do_expose=1;
@@ -78,18 +99,8 @@
 
 @proc expose
 {
-  if( !XtIsRealized($)) return;
-  Display *dpy = XtDisplay($);
-  if( ! $draw ) {
-    $draw = XftDrawCreate(dpy, XtWindow($),
-			  DefaultVisual(dpy, DefaultScreen(dpy)), None);
-    if( ! $draw ) ERR("%s: cannot create xftdraw", $name );
-  }
-
-  if( $draw_override ) {
-      $draw_override( $, NULL, $draw );
-      return;
-  }
+  TRACE(1,"%s", $name );
+  redraw($);
 }
 
 @ parameter list ($, int cmd, int val)
@@ -110,12 +121,92 @@
 	}
 }
 
+@ called by update cache if pixmap==0
+@proc alloc_pixmap($)
+{
+  TRACE(1,"%s", $name );
+    Display *dpy = XtDisplay($);
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    if( $draw ) {
+        XftDrawChange($draw, $pixmap );
+    }
+    else {
+        $draw = XftDrawCreate(dpy, $pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    }
+}
+
+@proc invalidate_cache($)
+{
+    if( $label_cache ) {
+        free($label_cache);
+        $label_cache=0;
+    }
+
+    if( $pixmap ) {
+        XFreePixmap( XtDisplay($), $pixmap );
+        $pixmap=0;
+    }
+}
+
+
+@ redraws everything on pixmap cache
+@proc update_cache($)
+{
+    if( $pixmap == 0 ) alloc_pixmap($);
+    char *s = $label;
+    if( $label_cache ) free($label_cache);
+    $label_cache = strdup($label);
+
+    /* clear background */
+    XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
+
+    /* draw string centered */
+    TRACE(1,"draw string");
+    int w,h;
+    xft_calc_string_size($,$xftFont, s, &w, &h );
+    int x,y;
+    x = ($width - w) / 2;
+    if( x < 0 ) x=0;
+    y = ($height - h) / 2;
+    if( y < 0 ) y=0;
+    TRACE(1,"%s draw string: %s (%dx%d)",$name, s,x,y );
+    XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+}
+
+@ force redraw of window if dirty == 0
+    else redraw only if neccessary
+    $label_cache != 0 ==> $pixmap != 0
+@proc redraw($)
+{
+    if( !XtIsRealized($)) return;
+    if( $draw_override ) {
+        $draw_override( $, NULL, $draw );
+        return;
+    }
+    TRACE(1,"%s dirty=%d", $name, $dirty );
+    int called_by_set_values = $dirty;
+    $dirty = 0;
+    Bool eq = $label && $label_cache && strcmp( $label_cache, $label ) == 0;
+    if( eq && called_by_set_values ) return;
+    TRACE(1,"%s force update", $name );
+    if( !eq ) update_cache($);
+    if( !$pixmap ) return; /* should never happen */
+    TRACE(1,"%s draw pixmap: cache=%s", $name, $label_cache );
+    XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
+              0,0, $width, $height, /* source pixmap */
+              0,0 ); /* target window x,y */
+}
+
 @proc default_label_draw($,void *a, void *b)
 {
   int x,y;
   XRectangle rect;
   char *s = $label;
   Display *dpy = XtDisplay($);
+  TRACE(1,"%s", $name );
   XFillRectangle(dpy,XtWindow($) , $gc[$state], 0,0,$width,$height );
   if( s && *s ) {
     y = ($height - $xftFont->height)/2;

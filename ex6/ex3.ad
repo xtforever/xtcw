@@ -1,7 +1,7 @@
 ex3.wcChildren: gb1
 
 
-!! *xftFont: Sans-12
+*xftFont: Ume Mincho
 *foreground: #008080
 *bg_norm: #333333
 *background: #000000
@@ -16,12 +16,12 @@ ex3.wcChildren: gb1
 *gb.borderWidth: 0
 
 *t1.gridx: 1
-*t1.weighty: 1
+*t1.weighty: 10
+*t1.weightx: 1
 *t1.fill: Both
 *t1.wcClass: Woptc
 *t1.foreground: Red
 *t1.lineWidth: 6
-*t1.width: 15
 *t1.frac: 1
 *t1.callback: scroll_cb
 
@@ -29,8 +29,8 @@ ex3.wcChildren: gb1
 *ls1.frameWidth: 6
 *ls1.frameType: raised
 *ls1.wcChildren: ls
-*ls1.weighty: 1
-*ls1.weightx: 1
+*ls1.weighty: 10
+*ls1.weightx: 10
 *ls1.fill: Both
 *ls1.gridy: 0
 *ls1.gridx: 0

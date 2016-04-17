@@ -21,7 +21,7 @@
 #include <WcCreate.h>
 #include <Xp.h>
 #include "wcreg2.h"
-#include <vexmo/register_wb.h>
+// #include <vexmo/register_wb.h>
 
 /* the new widgets */
 #include "vexmo/Wedit.h"

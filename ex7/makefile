@@ -1,7 +1,7 @@
 include ../rules.mk
 
 M=$(CURDIR)/..
-LOADLIBES+=-lrt -lImlib2
+LOADLIBES+=-lrt -lImlib2 -lcairo
 CPPFLAGS+=-I$(M)/lib -I$(M) -I$(M)/wcl -DMLS_DEBUG -I$(M)/wb
 VPATH=$(M)/lib
 CFLAGS+=-g -Wall
@@ -18,7 +18,9 @@ UPDATE_WIDGETS:
 UPDATE_WCL: UPDATE_WIDGETS
 	make -C ../wcl
 
-ex3: src/Wim2.o $(M)/wcl/libxtcw.a
+ex3: src/Wim2.o $(M)/wcl/libxtcw.a xt_cairo.o
+
+src/Wim2.o: Wim2.widget
 
 clean:
 	${RM} ex3 *.o src/*
