@@ -13,14 +13,15 @@
 @var XtCallbackProc draw_override = NULL
 @var int heightIncreasePercent = 0
 @var int leftOffsetPercent = 5
+@var int update = 0
 
 @PRIVATE
 @var XftDraw *draw
-@var Bool dirty
 @var String label_cache
 @var Pixmap pixmap
 @var GC gc_copy
-
+@var int state_cache
+@var Bool dirty
 @METHODS
 
 @proc initialize
@@ -91,7 +92,18 @@
       redraw($); /* redraw only if neccessary */
   }
 
-  if( $state != $old$state) do_expose=1;
+  if( $state != $old$state) {
+      do_expose=0;
+      $dirty=1;
+      redraw($); /* redraw only if neccessary */
+  }
+
+  if( $old$update != $update )
+  {
+      do_expose=0;
+      $dirty=1;
+      redraw($); /* redraw only if neccessary */
+  }
 
   return do_expose;
 }
@@ -108,6 +120,14 @@
 {
   return 0;
 }
+
+@proc Bool cache_hit($)
+{
+    Bool eq = $label && $label_cache && strcmp( $label_cache, $label ) == 0
+         && $state == $state_cache ;
+    return eq;
+}
+
 
 @UTILITIES
 
@@ -158,9 +178,16 @@
     char *s = $label;
     if( $label_cache ) free($label_cache);
     $label_cache = strdup($label);
+    $state_cache = $state;
 
     /* clear background */
     XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
+
+
+    if( $draw_override ) {
+        $draw_override( $, $pixmap, $draw );
+        return;
+    }
 
     /* draw string centered */
     TRACE(1,"draw string");
@@ -182,14 +209,11 @@
 @proc redraw($)
 {
     if( !XtIsRealized($)) return;
-    if( $draw_override ) {
-        $draw_override( $, NULL, $draw );
-        return;
-    }
     TRACE(1,"%s dirty=%d", $name, $dirty );
     int called_by_set_values = $dirty;
     $dirty = 0;
-    Bool eq = $label && $label_cache && strcmp( $label_cache, $label ) == 0;
+    Bool eq = $cache_hit($);
+
     if( eq && called_by_set_values ) return;
     TRACE(1,"%s force update", $name );
     if( !eq ) update_cache($);

@@ -9,6 +9,8 @@
 #include "ini_read2.h"
 #include "pipeshell.h"
 #include "mrb.h"
+#include "micro_vars.h"
+
 
 #include <signal.h>
 #include <stdlib.h>
@@ -196,9 +198,13 @@ void update_filter(void)
 
 void reset_filter( Widget w, void *u, void *c )
 {
+    static int var = 0;
+    if(!var ) var = XrmStringToQuark("rst");
     v_clr(SETTINGS.vset, "filter");
     update_filter();
     printf("cb\n");
+    int val = *mv_var(var);
+    mv_write( var, val+1 );
 }
 
 void append_filter(char *s)
@@ -311,6 +317,7 @@ int main ( int argc, char **argv )
     XtAppContext app;
     signal(SIGPIPE, SIG_IGN); /* ignore broken pipe on write */
     m_init();
+    mv_init();
 
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();

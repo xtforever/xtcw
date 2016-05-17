@@ -1,7 +1,7 @@
 include ../rules.mk
 
 M=$(CURDIR)/..
-LOADLIBES+=-lrt
+LOADLIBES+=-lrt -lcairo
 CPPFLAGS+=-I$(M)/lib -I$(M) -I$(M)/wcl -I$(M)/wb
 VPATH=$(M)/lib
 WFLAGS= -d doc -c src -i vexmo --include-prefix=vexmo $(wb_install)/tex.w $(wb_install)/nroff.w
@@ -11,7 +11,7 @@ src/%.c vexmo/%.h: %.widget
 
 all: ex9
 
-ex9: src/Wedit.o $(M)/wcl/libxtcw.a font.c
+ex9: src/Wedit.o $(M)/wcl/libxtcw.a xt_cairo.o
 
 src/Wedit.o: Wedit.widget
 

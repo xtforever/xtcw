@@ -15,7 +15,7 @@ ex15.wcChildren: gb1
 
 *ent.wcClass: gridbox
 *ent.weighty: 0
-*ent.wcChildren: entry b1 b2
+*ent.wcChildren: entry b1 b2 b3
 *ent.borderWidth: 0
 
 
@@ -36,6 +36,14 @@ ex15.wcChildren: gb1
 *b2.weightx: 0
 *b2.gridx: 2
 *b2.callback: remove_last_filter
+
+*b3.wcClass: WviewVar
+*b3.label: Hello:
+*b3.varname: rst
+*b3.weightx: 0
+*b3.gridx: 3
+
+
 
 
 *filter.wcClass: Wlabel

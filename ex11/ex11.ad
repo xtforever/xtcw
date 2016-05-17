@@ -28,11 +28,18 @@ ex11.wcChildren: gb
 *p1.wcChildren: p1top playlist
 *p1.wcManaged: True
 
+
 *p1top.wcClass: Wlabel
-*p1top.fill: None
+*p1top.fill: Width
 *p1top.label: Playlist
 *p1top.weighty: 0
+*p1top.bg_norm: #252525
+*p1top.borderWidth: 1
+*p1top.borderColor: #880088
+*p1top.heightIncreasePercent: 25
 
+*playlist.height: 400
+*playlist.width: 400
 *playlist.wcClass: Wlist4
 *playlist.gridy: 1
 *playlist.tabs: 2
@@ -71,4 +78,4 @@ ex11.wcChildren: gb
 *playpos.weighty: 0
 *playpos.wcClass: Whslider
 *playpos.callback: set_play_pos
-*playpos.handleSize: 10mm
+*playpos.handleSize: 4mm
