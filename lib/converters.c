@@ -266,6 +266,29 @@ _CvtStringToArrayInt(dpy, args, num_args, fromVal, toVal, data)
     done( int, m_array );
 }
 
+/* ARGSUSED */
+static  Boolean
+_CvtStringToQVar(dpy, args, num_args, fromVal, toVal, data)
+    Display     *dpy ;
+    XrmValuePtr args;           /* unused */
+    Cardinal    *num_args;      /* unused */
+    XrmValuePtr fromVal;
+    XrmValuePtr toVal;
+    XtPointer   *data ;
+{
+    String      str = (String)fromVal->addr ;
+
+    if( str == 0 || strlen(str) == 0 ) {
+    error:
+	XtStringConversionWarning(fromVal->addr, XtRArrayInt);
+	return False ;
+    }
+
+    int qvar = XrmStringToQuark( str );
+
+    done( int, qvar );
+}
+
 
 
 #define string_done(value)			\
@@ -384,6 +407,8 @@ void converters_init(void)
     XawInitializeWidgetSet();
 
     XtSetTypeConverter(XtRString, XtRDistance, _CvtStringToDistance,
+		       NULL, 0, XtCacheNone, NULL);
+    XtSetTypeConverter(XtRString, XtRQVar, _CvtStringToQVar,
 		       NULL, 0, XtCacheNone, NULL);
     XtSetTypeConverter(XtRDistance,XtRString, _CvtDistanceToString,
 		       NULL, 0, XtCacheNone, NULL);

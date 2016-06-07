@@ -37,4 +37,4 @@ CPPFLAGS  += -I/usr/include/freetype2 -I../lib -I.
 	$(CC) -c -fPIC $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 %.c %.h: %.widget
-	$(wb_install)/wb.sh $^ $(WBUILD) $(WFLAGS)
+	wb_search=../wb $(wb_install)/wb.sh $^ $(WBUILD) $(WFLAGS)

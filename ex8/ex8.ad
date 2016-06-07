@@ -12,6 +12,7 @@ ex8.wcChildren: gb
 
 *t1.wcClass: Wdemo
 *t1.label: Hello World
+*t1.value: Test
 *t1.gridy: 1
 *t1.gridx: 0
 *t1.weightx:		1

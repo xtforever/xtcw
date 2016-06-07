@@ -1,5 +1,8 @@
 #!/bin/bash
-## set -x
+## set +x
+
+
+wb_search=${wb_search:-./}
 
 get-superclass()
 {
@@ -24,7 +27,11 @@ do
   file=$p.widget
   if ! [ -e $file ]
   then
-    break;
+      file=$wb_search/$p.widget
+      if ! [ -e $file ]
+      then
+          break
+      fi
   fi
 
   superclass_list="$file $superclass_list"

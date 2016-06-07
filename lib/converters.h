@@ -3,8 +3,12 @@
 
 #include <X11/IntrinsicP.h>
 
-#ifndef  XtRDistance 
+#ifndef  XtRDistance
 #define  XtRDistance "Distance"
+#endif
+
+#ifndef  XtRQVar
+#define  XtRQVar "QVar"
 #endif
 
 #ifndef  XtRArrayChar
@@ -23,6 +27,7 @@ typedef String Anesthetic;
 typedef int Distance;
 typedef int ArrayChar;
 typedef int ArrayInt;
+typedef int QVar;
 
 void converters_init(void);
 

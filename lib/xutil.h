@@ -9,6 +9,7 @@
 #define WBUILD_HAS_CHANGED(x) ($##x!=$old$##x)
 #define XT()  if( method_trace ) fprintf( stderr, "%s: %s\n", XtName(self), __func__ )
 
+#define XTFUNC() fprintf( stderr, "%s: %s\n", XtName(self), __func__ )
 int xft_textwidth( Display *dpy, XftFont *font, char *s );
 Boolean xft_color_alloc(Widget w, Pixel fg, XftColor *xftColor );
 XftFont* xft_fontopen(Display *dpy, int screen, char* name, Boolean core, int angle);

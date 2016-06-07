@@ -22,6 +22,7 @@
 @var GC gc_copy
 @var int state_cache
 @var Bool dirty
+
 @METHODS
 
 @proc initialize
