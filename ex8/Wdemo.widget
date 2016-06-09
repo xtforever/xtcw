@@ -249,6 +249,9 @@
         XftDrawStringUtf8($draw, $xcol + FG, $xftFont,
     			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
 
+        y = $height / 2 - $lineWidth / 2;
+        XDrawLine(XtDisplay($), $pm, $gc[FG], 0, y, $width, y );
+
 }
 
 @proc calculate_prefered_size($,int *w, int *h)
@@ -265,13 +268,6 @@
         (*h) *= 2.5;
 }
 
-@proc reinit($)
-{
-        realloc_colors($);
-        int w,h;
-        calculate_prefered_size($,&w,&h);
-        make_resize_request($,w,h);
-}
 
 @proc make_resize_request($,int w, int h)
 {

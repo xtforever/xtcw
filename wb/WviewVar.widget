@@ -1,0 +1,64 @@
+@class WviewVar ( Wlabel )
+
+@public
+@var String varname  = <String> ""
+
+@private
+@var XrmQuark qvar
+@var int drawn
+
+@methods
+@proc initialize
+{
+        $qvar = XrmStringToQuark( $varname );
+        $draw_override = show_data;
+        mv_onwrite( $qvar, do_update, $, 0 );
+        $height = ($xftFont->height) * 2.5;
+}
+
+@proc Bool cache_hit
+{
+        int val = *mv_var( $qvar );
+        Bool hit = ($drawn == val);
+        hit = hit && #cache_hit($);
+        return hit;
+}
+
+
+
+@utilities
+
+@proc do_update($)
+{
+        XtVaSetValues( $, "update", $update+1, NULL );
+}
+
+
+@proc show_data($,void *a, void *b)
+{
+
+        int wh,val,h,x,y;
+        char *s, str[30];
+        val = *mv_var( $qvar );
+        sprintf(str,"%d", val );
+        h = $xftFont->height;
+        wh = $height / 2;
+        x = 0;
+        y = (wh-h) / 2 + $xftFont->ascent;
+        s = $label;
+        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+
+
+        y += wh;
+        s = str;
+        x = $width - 2 - xft_textwidth(XtDisplay($),$xftFont, s );
+        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+        $drawn = val;
+
+}
+
+@imports
+@incl "xutil.h"
+@incl "micro_vars.h"

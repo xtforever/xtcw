@@ -10,7 +10,7 @@ void mv_init(void)
   static int first_time = 1;
   if( first_time ) {
     MV.map       = MapAg_New();
-    MV.data      = m_create(100,sizeof(struct mv_data));    
+    MV.data      = m_create(100,sizeof(struct mv_data));
     m_new(MV.data,1); /* first element is reserved */
     first_time=0;
   }
@@ -54,7 +54,7 @@ int mv_zerovar( char *s )
 
 void mv_onwrite( int q, void (*fn) (void*), void *d, int remove )
 {
-  struct mv_signal *sig; 
+  struct mv_signal *sig;
   int p = mv_var_lookup(q);
   struct mv_data* ent = mls(MV.data, p);
   if(!ent->signal) ent->signal = m_create( 2, sizeof(struct mv_signal));
@@ -62,20 +62,20 @@ void mv_onwrite( int q, void (*fn) (void*), void *d, int remove )
   /* finde signal und falls remove==TRUE entfernen */
   m_foreach( ent->signal, p, sig )
     {
-      if( sig->fn == fn ) { 
-        if( remove ) m_del(ent->signal,p); 
-        return; 
-      }
+        if( sig->fn == fn && sig->d == d ) {
+            if( remove ) m_del(ent->signal,p);
+            return;
+        }
     }
   if( remove ) return;
-  
-  /* signal noch nicht vorhanden, remove==FALSE, jetzt hinzufügen */ 
+
+  /* signal noch nicht vorhanden, remove==FALSE, jetzt hinzufügen */
   sig = mls( ent->signal, m_new(ent->signal,1));
   sig->d = d;
   sig->fn = fn;
 }
 
-/** write to var q and call signal handler 
+/** write to var q and call signal handler
  **/
 void mv_write( int q, int data )
 {
@@ -109,7 +109,7 @@ void mv_parse( int buf, int *p, char *group )
     if( parser_skip( buf,p, '=' )) goto parse_end;;
     if( parser_int( buf, p, &d )) goto parse_end;
     m_write( varname, len, m_buf(id), m_len(id) );
-    
+
     q_var = XrmStringToQuark( m_buf(varname) );
     mv_write( q_var, d );
   }
@@ -151,16 +151,12 @@ int mv_read_rsrc( Widget w, char *res, int Q )
 {
   struct mv_data *ent;
   int p = mv_var_lookup( Q );
-  ent = mls(MV.data, p);  
-  if( strcmp( ent->type, XtRInt ) == 0 ) 
-      XtVaGetValues(w, XtVaTypedArg, res, ent->type, 
+  ent = mls(MV.data, p);
+  if( strcmp( ent->type, XtRInt ) == 0 )
+      XtVaGetValues(w, XtVaTypedArg, res, ent->type,
                     & ent->data, sizeof (int), NULL );
   else
-      XtVaGetValues(w, XtVaTypedArg, res, ent->type, 
+      XtVaGetValues(w, XtVaTypedArg, res, ent->type,
                     m_buf( ent->data ), m_len(ent->data), NULL );
   return 0;
 }
-
-
-
-
