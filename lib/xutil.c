@@ -238,3 +238,9 @@ void ManageWidget( Widget w, int managed )
 {
   if( managed ) XtManageChild(w); else XtUnmanageChild(w);
 }
+
+Bool rect_is_inside( XRectangle *r, int x, int y )
+{
+    return (x >= r->x) && x < (r->x+r->width)
+        && (y >= r->y) && y < (r->y+r->height);
+}

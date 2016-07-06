@@ -11,6 +11,7 @@
 #include <X11/Xaw/ToggleP.h>
 #include <X11/Xaw/XawInit.h>
 #include "converters-xft.h"
+#include "strarray.h"
 #include "mls.h"
 
 
@@ -397,6 +398,66 @@ _CvtDistanceToString(dpy, args, num_args, fromVal, toVal, data)
     string_done( buf );
 }
 
+
+/* ARGSUSED */
+static  Boolean
+_CvtStringToStringMArray(dpy, args, num_args, fromVal, toVal, data)
+    Display     *dpy ;
+    XrmValuePtr args;           /* unused */
+    Cardinal    *num_args;      /* unused */
+    XrmValuePtr fromVal;
+    XrmValuePtr toVal;
+    XtPointer   *data ;
+{
+    String      str = (String)fromVal->addr ;
+
+    if( str == 0 || strlen(str) == 0 ) {
+    error:
+	XtStringConversionWarning(fromVal->addr, XtRString);
+	return False ;
+    }
+
+    int m_array = m_split(0,str, ',', 1 );
+    done( int, m_array );
+}
+
+/* ARGSUSED */
+static  Boolean
+_CvtStringMArrayToString(dpy, args, num_args, fromVal, toVal, data)
+    Display     *dpy ;
+    XrmValuePtr args;           /* unused */
+    Cardinal    *num_args;      /* unused */
+    XrmValuePtr fromVal;
+    XrmValuePtr toVal;
+    XtPointer   *data ;
+{
+    static int buf_m = 0;
+    if( buf_m == 0 ) buf_m = m_create(100,1);
+    int strlist_m = *(int*)fromVal->addr ;
+    int i;
+
+    if( strlist_m == 0 ) {
+    error:
+	XtStringConversionWarning(fromVal->addr, XtRStringMArray);
+	return False ;
+    }
+
+    m_clear(buf_m);
+    if( m_len(strlist_m) == 0 ) m_putc(buf_m, 0);
+    else {
+        s_app1(buf_m, STR(strlist_m, 0));
+        for(i=1;i<m_len(strlist_m);i++) {
+            s_app( buf_m, ",", STR(strlist_m,i) );
+        }
+    }
+
+    Cardinal size;
+    size = m_len(buf_m);
+    string_done(m_buf(buf_m));
+}
+
+
+
 void converters_init(void)
 {
     static Boolean first_time = True;
@@ -422,6 +483,12 @@ void converters_init(void)
 		       NULL, 0, XtCacheNone, NULL);
     XtSetTypeConverter(XtRInt, XtRAnesthetic, _CvtIntToAnesthetic,
 		       NULL, 0, XtCacheNone, NULL);
+    XtSetTypeConverter(XtRString, "StringArray", cvtStringToStringArray,
+                       NULL, 0, XtCacheNone, NULL);
+    XtSetTypeConverter(XtRString, "StringMArray", _CvtStringToStringMArray,
+                       NULL, 0, XtCacheNone, NULL);
+    XtSetTypeConverter("StringMArray",XtRString, _CvtStringMArrayToString,
+                       NULL, 0, XtCacheNone, NULL);
 
     converters_xft_init();
 }

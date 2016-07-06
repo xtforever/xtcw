@@ -1,5 +1,8 @@
 ex19.wcChildren: gb1
 
+
+
+
 *weightx: 1
 *weighty: 1
 *fill: Both
@@ -10,7 +13,7 @@ ex19.wcChildren: gb1
 *Wedit.cursorColor: Black
 
 *gb1.wcClass: gridbox
-*gb1.wcChildren: ent filter fileList tr
+*gb1.wcChildren: ent filter ke tr
 
 
 *ent.wcClass: gridbox
@@ -43,19 +46,44 @@ ex19.wcChildren: gb1
 *b3.weightx: 0
 *b3.gridx: 3
 
-
-*filter.wcClass: Wlabel
-*filter.label: No filter
+*filter.wcClass: DigTab
 *filter.gridWidth: 1
 *filter.gridy: 1
 *filter.weighty: 0
-*filter.xftFont: Sans-10
+*filter.fill: None
+*filter.pin_config: 0010010203
+
+*xfilter.wcClass: Hbox
+*xfilter.wcChildren: t1 t2 t3
+*xfilter.gridWidth: 1
+*xfilter.gridy: 1
+*xfilter.weighty: 0
+
+*t1.wcClass: Wlab
+*t1.label: No filter
+*t1.xftFont: Sans-10
+
+*t2.wcClass: Wsel
+*t2.xftFont: Sans-10
+*t2.names: IN,OUT,Hi-Z
+
+*t3.wcClass: Wsel
+*t3.xftFont: Sans-10
+*t3.names: [-],[X]
 
 *fileList.wcClass: Wlist4
 *fileList.label: Hello Computer
 *fileList.gridy: 2
 *fileList.gridWidth: 1
 *fileList.list_max: 20
+
+*ke.wcClass: KaroEd
+*ke.gridy: 2
+*ke.gridWidth: 1
+*ke.min_lines: 5
+*ke.label: Hello
+*ke.lines: Hello World, 1test,2test,3test,4test
+*ke.xftFont: Source Code Pro-33
 
 *tr.*.borderWidth:   0
 *tr.wcClass:         VBox

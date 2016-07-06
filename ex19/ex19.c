@@ -39,6 +39,11 @@
 #include <xtcw/register_wb.h>
 
 #include "xtcw/WviewQV.h"
+#include "xtcw/Wlab.h"
+#include "xtcw/Wsel.h"
+#include "xtcw/DigTab.h"
+#include "xtcw/KaroEd.h"
+
 
 Widget TopLevel;
 int DB;
@@ -144,6 +149,10 @@ static void RegisterApplication ( Widget top )
 {
     /* -- Register widget classes and constructors */
     RCP( top, wviewQV );
+    RCP( top, wlab );
+    RCP( top, wsel );
+    RCP( top, digTab );
+    RCP( top, karoEd );
 
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
@@ -282,7 +291,6 @@ int main ( int argc, char **argv )
 				XtNumber(basicSettingRes),
 				(ArgList)0, 0 );
 
-    printf("%d\n", SETTINGS.traceLevel );
     InitializeApplication(appShell);
 
 

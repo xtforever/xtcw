@@ -1,6 +1,6 @@
 ex11.wcChildren: gb
 
-!*xftFont: Source Code Pro-14
+!*xftFont: Source Code Pro-10
 *Wlist4.line_distance: 20
 
 *bg_norm: #202020
@@ -57,7 +57,7 @@ ex11.wcChildren: gb
 *p2top.weighty: 0
 
 *p2a.wcClass: Wbutton
-*p2a.label: <-
+*p2a.label: <--
 *p2a.gridx: 0
 *p2a.weightx: 0
 *p2a.callback: WcManage(*p1) WcUnmanage(*p2) playlist_show

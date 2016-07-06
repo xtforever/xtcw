@@ -7,6 +7,14 @@
 #define  XtRDistance "Distance"
 #endif
 
+#ifndef  XtRStringArray
+#define  XtRStringArray "StringArray"
+#endif
+
+#ifndef  XtRStringMArray
+#define  XtRStringMArray "StringMArray"
+#endif
+
 #ifndef  XtRQVar
 #define  XtRQVar "QVar"
 #endif
@@ -23,6 +31,7 @@
 #define XtRAnesthetic "Anesthetic"
 #endif
 
+typedef int StringMArray;
 typedef String Anesthetic;
 typedef int Distance;
 typedef int ArrayChar;

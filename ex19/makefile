@@ -17,8 +17,13 @@ xtcw/%.h src/%.c: %.widget
 all: $(TARGET)
 
 xtcw/WviewQV.h src/WviewQV.c: WviewQV.widget
+xtcw/Wlab.h src/Wlab.c: Wlab.widget
+xtcw/Wsel.h src/Wsel.c: Wsel.widget
+xtcw/Wsel2.h src/Wsel2.c: Wsel2.widget
+xtcw/KaroEd.h src/KaroEd.c: KaroEd.widget
 
-$(TARGET): src/WviewQV.o $(M)/wcl/libxtcw.a xt_cairo.o
+
+$(TARGET):  src/KaroEd.o src/Wsel2.o src/Wsel.o src/Wmvar.o src/WviewQV.o src/Wlab.o src/DigTab.o $(M)/wcl/libxtcw.a xt_cairo.o
 
 
 clean:

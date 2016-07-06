@@ -29,5 +29,6 @@ void XtCopyArea(Widget w, Drawable src, Drawable dst, int src_x, int src_y,
                 int dst_x, int dst_y );
 
 void ManageWidget( Widget w, int managed );
+Bool rect_is_inside( XRectangle *r, int x, int y );
 
 #endif

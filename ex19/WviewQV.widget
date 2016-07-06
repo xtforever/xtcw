@@ -60,6 +60,8 @@
         int remove_watcher =  ! *mv_var($enable);
         TRACE(1, "%s: remove=%d", $name, remove_watcher );
         mv_onwrite($var, (voidfn_t)do_update, $,  remove_watcher );
+
+        if( !remove_watcher ) do_update($);
 }
 
 @proc do_update($)

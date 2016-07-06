@@ -160,3 +160,35 @@ int mv_read_rsrc( Widget w, char *res, int Q )
                     m_buf( ent->data ), m_len(ent->data), NULL );
   return 0;
 }
+
+
+
+#if 0
+/*
+  _sname=adc0  : string == _s
+  val=100      : int    ==  val
+  _aname=100   : type=a (mask and multiplier for output defined
+                         in application)
+
+  define a %0.2f -213 1 10 mBar
+               : create type a with val_to_str mask %0.2f and
+                 val+(-213) / 1 * 10 prepare value before convert
+
+
+  instrument:
+
+
+mv_get_str( int Q )
+    struct mv_data *ent;
+    int p = mv_var_lookup( Q );
+    ent = mls(MV.data, p);
+
+    /* type, data : ent */
+    /* daten in string convertieren mit dem xttypeconverter */
+    /*
+           void XtConvert(Widget w, String from_type, XrmValuePtr from,
+                          String to_type, XrmValuePtr to_return);
+      */
+
+*/
+#endif

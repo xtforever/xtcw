@@ -98,15 +98,36 @@
     /* window erst neu zeichnen wenn es sichtbar geworden ist */
     if( !$visible ) { $do_init = 1; return 0; }
 
-    /* falls das widget noch nicht initialisiert ist
+  /* falls das widget noch nicht initialisiert ist
        oder ein resize stattgefunden hat wird bei
        expose alles neu gezeichnet. daher keine
-       aktion notwendig */
+       aktion notwendig
+  */
   if( $do_init ) return 1; /* call expose */
 
+  if( $border_width != $old$border_width )
+  {
+        reshape_widget($);
+  }
 
 
-  if( ($label != $old$label) || !strcmp($label,$old$label) ) {
+  /* bei einem state change wird alles neu gezeichnet,
+     also gibt es keinen grund noch die anderen änderungen
+     zu überprüfen
+  */
+  if( ($state != $old$state) ||  ($old$update != $update)  ) {
+      clear_pixmap($);
+      draw_text($);
+      copy_pixmap_to_window($);
+      return 0;
+  }
+
+  /* das label hat sich geändert, dann muss das alte
+     label gelöscht werden und das neue gezeichnet.
+     da keine weiteren attribute vorgesehen sind
+     kann hier beendet werden
+  */
+  if( ($label != $old$label) || strcmp($label,$old$label) ) {
       if( $label == 0) $label="";
       clear_old_text($);
       draw_text($);
@@ -114,20 +135,8 @@
       return 0;
   }
 
-  if( ($state != $old$state) ) {
-      clear_pixmap($);
-      draw_text($);
-      copy_pixmap_to_window($);
-      return 0;
-  }
-
-  if( $old$update != $update )
-  {
-      copy_pixmap_to_window($);
-      return 0;
-  }
-
   return 0;
+
 }
 
 @ parameter list ($, int cmd, int val)
@@ -165,6 +174,7 @@
 
 @proc clear_pixmap($)
 {
+        TRACE(debug, "%s", $name );
   XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height);
 }
 
