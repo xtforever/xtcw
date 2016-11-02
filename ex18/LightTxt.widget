@@ -1,0 +1,55 @@
+@class LightTxt( Wheel )
+
+@public
+@var String family = <String> "GFS Neohellenic-22"
+@var String label  = <String> "empty"
+
+@private
+@var int lf
+
+@methods
+
+@proc initialize
+{
+        Display *dpy = XtDisplay($);
+        $lf = lfont_init( dpy, $family );
+        lfont_set_color( $lf, $xft_col+COLOR_FG_NORM );
+        $width=100;
+
+
+        $height = 10;
+        int i;
+        for(i=0;i<LFONT_MAX;i++)
+                $height += lfont_height($lf,i);
+
+}
+
+@proc realize
+{
+        #realize($,mask,attributes);
+        lfont_set_drawable($lf, XtWindow($));
+}
+
+@proc expose
+{
+        XClearWindow(XtDisplay($),XtWindow($));
+        int x,y;
+        lfont_draw_text($lf,regular,0,0,
+                $label, strlen($label),
+                &x, &y );
+        y += lfont_height($lf,regular);
+        lfont_draw_text($lf,bold,x,y,
+                $label, strlen($label),
+                &x, &y );
+        y += lfont_height($lf,bold);
+        lfont_draw_text($lf,italic,x,y,
+                $label, strlen($label),
+                &x, &y );
+}
+
+@imports
+@incl "lfont.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"

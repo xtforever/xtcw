@@ -1,0 +1,866 @@
+@ Das Widget |KaroEd| kann zur Anzeige und zum Editieren von Texten
+  verwendet werden
+
+
+@class KaroEd (Wheel)
+
+@PUBLIC
+@var Bool locked = 0
+@var StringMArray lines = 0
+@var int min_lines = 1
+
+@PRIVATE
+@var int drag_last_y
+@var int drag_last_x
+@var int drag_update
+@var int grid_width
+@var int grid_height
+@var int top_x
+@var int top_y
+@var int grid_pix_width
+@var int grid_pix_height
+@var int value
+@var Bool do_init
+@var XftDraw *draw
+@var Bool selection
+@var Bool selection_visible
+@var int selectionText
+
+@var XRectangle rsel
+@var XRectangle rsel_old
+@def debug = 5
+
+@CLASSVARS
+@var Atom XA_UTF8_STRING = 0
+
+@METHODS
+@proc initialize
+{
+    if(! $XA_UTF8_STRING )
+        $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+
+    if( $lines == 0 ) $lines = m_create(10,sizeof(char*));
+    $selectionText = m_create(100,1);
+
+    $do_init = 1;
+    $top_x = $top_y = 0;
+    $rsel.x = 0;
+    $rsel.y = 0;
+    $rsel.width = 1;
+    $rsel.height = 1;
+    $rsel_old = $rsel;
+    $selection = True;
+    $selection_visible = True;
+
+    int w = $xftFont->ascent + $xftFont->descent;
+    $grid_pix_height  = w;
+    $grid_pix_width = xft_textwidth(XtDisplay($), $xftFont, "w" );
+
+    if( $height == 0 ) $height = $grid_pix_height * $min_lines;
+    if( $width == 0  ) $width = 20;
+}
+
+@ marker setzen damit das folgende expose das Window
+  neu zeichnen kann, resize wird beim initialisieren der application
+  vor realize aufgerufen daher die abfrage ob es sicher ist das
+  window zu bearbeiten.
+@proc resize
+{
+    /* if( XtIsRealized($) ) reshape_widget($); */
+    $do_init=1;
+}
+
+@proc realize
+{
+    Display *dpy = XtDisplay($);
+    XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+    $draw = XftDrawCreate(dpy, XtWindow($),
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+}
+
+@proc expose
+{
+        if( $do_init ) {
+            $grid_width = $width / $grid_pix_width;
+            $grid_height = $height / $grid_pix_height;
+            $do_init=0;
+         }
+
+        XClearWindow(  XtDisplay($), XtWindow($) );
+        redraw_full($);
+}
+
+
+
+
+@UTILITIES
+
+
+@proc clip_rect($,XRectangle *r)
+{
+    int x0,y0,x1,y1;
+    x0 = r->x;
+    y0 = r->y;
+    x1 = x0 + r->width;
+    y1 = y0 + r->height;
+
+    /* oben links ausserhalb */
+    if( x0 >= $grid_width || y0 >= $grid_height ) goto empty_rect;
+
+    /* unten rechts ausserhalb */
+    if( y1 < 0 || x1 < 0 ) goto empty_rect;
+
+    /* auf window zurechtschneiden */
+    if( x0 < 0 ) x0=0;
+    if( y0 < 0 ) y0=0;
+    if( x1 > $grid_width ) x1 = $grid_width;
+    if( y1 > $grid_height) y1 = $grid_height;
+
+    r->x = x0; r->y = y0;
+    r->width = x1-x0;
+    r->height = y1-y0;
+    return;
+
+ empty_rect:
+    memset(r, 0, sizeof(*r));
+}
+
+
+@proc draw_sel_rect($)
+{
+    int x,y,x1,y1;
+    XRectangle r1;
+    r1 = $rsel; /* neu */
+    r1.x -= $top_x;
+    r1.y -= $top_y;
+    x1 = r1.x + r1.width;
+    y1 = r1.y + r1.height;
+
+    XRectangle r2;
+    r2 = $rsel_old; /* alt */
+    r2.x -= $top_x;
+    r2.y -= $top_y;
+
+    /* neu */
+    for( x=r1.x; x < x1; x++ )
+        for( y=r1.y; y < y1; y++ ) {
+            if( rect_is_inside( &r2,x,y ) ) continue;
+            draw_glyph($,x,y);
+        }
+
+    /* alt */
+    x1 = r2.x + r2.width;
+    y1 = r2.y + r2.height;
+    for( x=r2.x; x < x1; x++ )
+        for( y=r2.y; y < y1; y++ ) {
+            if( rect_is_inside( &r1,x,y ) ) continue;
+            draw_glyph($,x,y);
+        }
+    return;
+}
+
+
+@proc draw_rect($,XRectangle *r)
+{
+    int x,x1 = r->x + r->width;
+    int y,y1 = r->y + r->height;
+    for( x=r->x; x < x1; x++ )
+        for( y=r->y; y < y1; y++ )
+            draw_glyph($,x,y);
+}
+
+
+
+@proc selection_draw($)
+{
+
+    if( $selection_visible ) {
+        draw_sel_rect($);
+    } else {
+        $selection_visible=True;
+        XRectangle r = $rsel;
+        r.x -= $top_x;
+        r.y -= $top_y;
+        draw_rect($,&r);
+
+    }
+    $rsel_old = $rsel;
+}
+
+@proc selection_clear_a($)
+{
+    if( $selection_visible ) {
+        $selection_visible=False;
+        memset( & $rsel, 0, sizeof( $rsel ));
+        XRectangle r = $rsel_old;
+        r.x -= $top_x;
+        r.y -= $top_y;
+        draw_rect($,&r);
+    }
+}
+
+
+@proc redraw_full($)
+{
+        int x; int y;
+        for( x=0; x < $grid_width; x++ ) {
+            for(y=0; y < $grid_height; y++ ) {
+                draw_glyph($,x,y );
+            }
+        }
+}
+
+@proc uint32_t find_charpos($, int x, int y, int *ret_line, int *ret_charpos )
+{
+    int ln = $top_y + y;
+    int len, p  = $top_x + x;
+    int l;
+    uint8_t *string;
+    uint32_t ucs4;
+
+    *ret_line = -1;
+    *ret_charpos = -1;
+
+    if( ln >= m_len($lines) ) return 0;
+    if(ret_line) *ret_line = ln;
+    string = (uint8_t *)STR($lines,ln);
+    len = strlen( (char*)string);
+    while(1) {
+            l = FcUtf8ToUcs4 (string, &ucs4, len);
+            if( l<= 0 || len <=0 ) return 0;
+            if( p <=0 ) {
+                if( ret_charpos ) *ret_charpos = string - (uint8_t*)STR($lines,ln);
+                return ucs4;
+            }
+
+            string += l;
+            len -= l;
+            p--;
+    }
+
+}
+
+
+@proc uint32_t get_ucs4($, int x, int y )
+{
+
+    int d1,d2;
+    return find_charpos($,x,y,&d1,&d2);
+}
+
+@proc draw_glyph($, int x, int y)
+{
+    if( x < 0 || x >= $grid_width ) return;
+    if( y < 0 || y >= $grid_height ) return;
+
+    int fg = 0;
+    int bg = 3;
+    if( $selection && rect_is_inside( & $rsel, x + $top_x, y + $top_y ) ) {
+        fg = 1;
+        bg = 4;
+    }
+
+    draw_glyph_color($,x,y,fg,bg);
+}
+
+@proc draw_glyph_color($, int x, int y, int fg, int bg )
+{
+    int x0,y0,w,h;
+    uint32_t ucs4, glyph;
+
+    x0 = x * $grid_pix_width;
+    y0 = y * $grid_pix_height;
+    w = $grid_pix_width;
+    h = $grid_pix_height;
+
+    XftDrawRect($draw,$xft_col+bg, x0,y0,w,h );
+    ucs4 = get_ucs4($, x, y );
+    if( ucs4 == 0 || ucs4 == 32 ) return;
+    glyph = XftCharIndex ( XtDisplay($), $xftFont, ucs4 );
+    XftDrawGlyphs ($draw, $xft_col+fg, $xftFont,
+                   x0, y0+$xftFont->ascent,
+                   &glyph, 1);
+}
+
+
+@proc String get_name($)
+{
+          return "";
+}
+
+@proc void normalize_pos($)
+{
+        if( $top_x < 0 ) $top_x = 0;
+        if( $top_y < 0 ) $top_y = 0;
+}
+
+@proc Bool coordinate_to_text($, int *x, int *y)
+{
+    Bool ret = (*x >= 0) && (*x < $width) && (*y > 0) && (*y < $height);
+
+    *x /= $grid_pix_width;
+    *x += $top_x;
+    *y /= $grid_pix_height;
+    *y += $top_y;
+
+    return ret;
+
+}
+
+@proc selection_start($, int x, int y)
+{
+    $selection=True;
+    $rsel.x = x; $rsel.width=1;
+    $rsel.y = y; $rsel.height=1;
+}
+
+@proc Bool selection_resize($, int x, int y)
+{
+    Bool changed = False;
+    int w = $rsel.width;
+    int h = $rsel.height;
+    int x0 = $rsel.x;
+    int y0 = $rsel.y;
+    int x1 = x0 + w -1;
+    int y1 = y0 + h -1;
+
+    if( x > x0 ) x1 = x; else { x1 = x0; x0 = x; }
+    if( y > y0 ) y1 = y; else { y1 = y0; y0 = y; }
+
+    w = x1 - x0 +1;
+    h = y1 - y0 +1;
+    if( $rsel.width != w ) {
+        changed = True;
+        $rsel.width = w;
+    }
+    if( $rsel.height != h ) {
+        changed = True;
+        $rsel.height = h;
+    }
+    if( $rsel.x != x0 ) {
+        changed = True;
+        $rsel.x = x0;
+    }
+    if( $rsel.y != y0 ) {
+        changed = True;
+        $rsel.y = y0;
+    }
+
+
+    return changed;
+}
+
+
+@proc draw_line_from($, int x, int y )
+{
+
+    x -= $top_x;
+    y -= $top_y;
+    while( x < $grid_width ) {
+        draw_glyph($,x,y);
+        x++;
+    }
+}
+
+
+@proc int utf8_strlen( char *s )
+{
+    int n,w;
+    FcUtf8Len((uint8_t*)s,strlen(s), &n, &w );
+    return n;
+}
+
+
+@proc remove_char_at_cursor($)
+{
+    uint32_t ucs4;
+    int x,y,p,byte_len,byte_pos,w;
+    x=$rsel.x;
+    y=$rsel.y;
+    if( y >= m_len($lines) ) return;
+    char *s = STR($lines,y);
+    if( x >= utf8_strlen(s) ) return;
+
+    p=0;
+    byte_len = strlen(s) +1;
+    byte_pos = 0;
+    while(1) {
+        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos);
+        if( w <=0 ) return;
+        if( p >= x ) break;
+        byte_pos+=w; p++;
+    }
+
+    memcpy( s+byte_pos, s+byte_pos + w, byte_len - byte_pos - w );
+    STR($lines,y) = realloc(s, byte_len - w);
+}
+
+
+@proc insert_char_at_cursor($, char *buf, int len )
+{
+    uint32_t ucs4;
+    int p;
+    int x,y,w;
+    char *s;
+    int byte_len;
+    int utf8_len;
+    int byte_pos;
+
+    x=$rsel.x;
+    y=$rsel.y;
+
+    while( y >= m_len($lines) ) {
+        s=strdup("");
+        m_put( $lines, &s );
+    }
+
+
+    s=STR($lines,y);
+    byte_len = strlen(s);
+    utf8_len = utf8_strlen(s);
+
+    /* append data */
+    if( x >= utf8_len ) {
+        /* fill byte_len .. x */
+        int n = x - utf8_len; /* append space */
+        s = realloc(s,byte_len+n+len+1);
+        while( n-- ) s[byte_len++] = 32;
+        memcpy( s+byte_len, buf, len );
+        s[byte_len+len] = 0;
+        STR($lines,y) = s;
+        return;
+    }
+
+    /* insert data */
+    p=0;
+    byte_len = strlen(s) +1;
+    byte_pos = 0;
+    while( p < x ) {
+        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos);
+        if( w <=0 ) break;
+        byte_pos+=w; p++;
+    }
+    s = realloc(s, byte_len+len);
+    STR($lines,y) = s;
+    memcpy( s + byte_pos + len, s+byte_pos, byte_len - byte_pos );
+    memcpy( s + byte_pos, buf, len );
+}
+
+@proc cursor_right($)
+{
+    $rsel.x++;
+    if( $rsel.x >= $grid_width ) {
+        $top_x = $rsel.x - $grid_width + 1;
+        redraw_full($);
+    }
+    selection_draw($);
+}
+
+
+@proc Bool cursor_pos1($)
+{
+    Bool redraw;
+    redraw = ( $top_x != 0 );
+    $top_x = 0;
+    $rsel.x=0;
+    return redraw;
+}
+
+@proc Bool cursor_down($)
+{
+    Bool redraw;
+    $rsel.y++;
+    if( (redraw=$rsel.y >= $grid_height) ) {
+        $top_y = $rsel.y - $grid_height + 1;
+    }
+    return redraw;
+}
+
+@proc Bool current_line_empty($)
+{
+    int ln = $rsel.y;
+    if( ln >= m_len($lines) ) return True;
+    char *s = STR($lines,ln);
+    return *s == 0;
+}
+
+@proc Bool remove_current_line($)
+{
+    int ln = $rsel.y;
+    if( ln >= m_len($lines) ) return False;
+    free( STR($lines, ln) );
+    m_del($lines,ln);
+    return True;
+}
+
+@proc Bool insert_line($)
+{
+    char *s;
+    int y = $rsel.y;
+    if( y < m_len($lines) ) {
+        m_ins($lines,y,1);
+        STR($lines,y) = strdup("");
+    } else {
+        while( y >= m_len($lines) ) {
+            s=strdup("");
+            m_put( $lines, &s );
+        }
+    }
+    return True;
+
+}
+
+
+@proc char* utf8_skip(char *str, int cnt)
+{
+    uint8_t *s = (uint8_t *) str;
+    while( cnt && *s ) {
+        cnt--;
+        s++;
+        while( (*s & 0b11000000) == 0b10000000 ) s++; /* utf8 */
+    }
+    return (char*) s;
+}
+
+@proc Bool split_line_at_cursor($)
+{
+    int ln = $rsel.y;
+
+    if( ln >= m_len($lines) ) return False;     /* kein text */
+
+    char *s = STR($lines,ln);
+    int utf8_len = utf8_strlen(s);
+    char *s2, *new_line;
+    int crsr_x = $rsel.x;
+
+    if( $rsel.x < utf8_len ) {     /* innerhalb einer zeile */
+        s2 = utf8_skip(s, crsr_x);
+        new_line = strdup(s2);
+        *s2 = 0;
+        s = realloc(s, s2-s +1 );
+        STR($lines,ln) = s;
+    } else new_line = strdup("");  /* am ende einer zeile */
+
+    ln++;
+    m_ins($lines,ln,1);
+    STR($lines,ln) = new_line;
+    return True;
+}
+
+@ callback function, called by XtGetSelectionValue()
+@proc RequestSelection($, XtPointer client, Atom * selection, Atom * type,
+                       XtPointer value, unsigned long *length, int *format)
+{
+    char *s = value;
+    int len = *length;
+    if( is_empty(s) || len <= 0 ) return;
+    insert_char_at_cursor($,s,len);
+    while( utf8char(&s) != -1 ) cursor_right($);
+    draw_line_from($, $rsel.x, $rsel.y);
+}
+
+@proc utf8_copy_char(int buf, char **strp)
+{
+    char *s = *strp;
+    do {
+        m_putc(buf,*s++);
+    }
+    while( (*s & 0b11000000) == 0b10000000 ); /* utf8 */
+    *strp = s;
+}
+
+@proc Boolean
+ConvertSelection($, Atom * selection, Atom * target, Atom * type,
+  XtPointer * value, unsigned long *length, int *format)
+{
+
+  XSelectionRequestEvent *req = XtGetSelectionRequest($, *selection, NULL);
+
+  /* client ask for possible types */
+  if (*target == XA_TARGETS(XtDisplay($))) {
+      Atom *targetP, *std_targets;
+      unsigned long std_length;
+
+      /* get possible targets */
+      XmuConvertStandardSelection($, req->time, selection,
+                                  target, type, (XPointer *) & std_targets,
+                                  &std_length, format);
+
+      *value = XtMalloc((unsigned) sizeof(Atom) * (std_length + 1));
+      targetP = *(Atom **) value;
+
+      *length = std_length + 1;     /* list of standard types */
+      *targetP++ = $XA_UTF8_STRING;  /* prefered target */
+      /* append standard targets */
+      memmove((char *) targetP, (char *) std_targets, sizeof(Atom) * std_length);
+      XtFree((char *) std_targets); /* remove original list */
+      *type = XA_ATOM;
+      *format = sizeof(Atom) * 8;
+      return True;
+  }
+  else if (*target == $XA_UTF8_STRING) {
+      *length = (long) m_len($selectionText);
+      if( *length ) *value = strdup(m_buf($selectionText));
+      else *value = 0;
+      *type = $XA_UTF8_STRING;
+      *format = 8;
+      return True;
+  }
+  return False;
+}
+
+
+@proc LoseSelection($, Atom * selection)
+{
+  $rsel.width=1;
+  $rsel.height=1;
+  selection_draw($);
+}
+
+@proc own_primary_selection($,ulong time)
+{
+
+    int ln = $rsel.y;
+    if( ln >= m_len($lines) ) return;     /* kein text */
+    char *s = STR($lines,ln);
+    int utf8_len = utf8_strlen(s);
+    if( $rsel.x >= utf8_len ) return;     /* kein text */
+    int char_cnt = $rsel.width;
+
+    /* clear buffer */
+    m_clear( $selectionText );
+    /* ptr to start of selection */
+    s = utf8_skip(s, $rsel.x );
+    /* copy selection */
+    while( char_cnt ) {
+        utf8_copy_char($selectionText, &s);
+        char_cnt--;
+    }
+    m_putc($selectionText,0);
+
+    XtOwnSelection($, XA_PRIMARY, time,
+                   ConvertSelection, LoseSelection, NULL);
+    XChangeProperty(XtDisplay($), DefaultRootWindow(XtDisplay($)),
+                    XA_CUT_BUFFER0, $XA_UTF8_STRING, 8, PropModeReplace,
+                    (unsigned char *) m_buf($selectionText),
+                    m_len($selectionText));
+}
+
+
+ @TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <Btn2Down>:    info()
+@trans   <Btn1Down>:    selection_set()
+@trans   <Btn1Motion>:  motion_start()
+@trans   <Btn1Up>:      selection_end()
+@trans   <Key>Right:    forward_char()
+@trans   <Key>Left:     backward_char()
+@trans   <Key>Up:       prev_line()
+@trans   <Key>Down:     next_line()
+@trans   <Key>Delete:   remove_char()
+@trans   <Key>BackSpace: backward_char() remove_char()
+@trans   <Key>Return:    key_return()
+@trans   <Ctrl>v:        insert_selection()
+@trans   <Key>:          insert_char()
+
+
+@ACTIONS
+@proc copy_selection
+{
+    /*
+    XStoreBuffer(display, bytes, nbytes, buffer)
+      Display *display;
+      char *bytes;
+      int nbytes;
+      int buffer;
+    */
+
+
+}
+
+
+@proc insert_selection
+{
+    XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+                        RequestSelection,
+                        NULL, 0 );
+}
+
+
+@proc key_return
+{
+    Bool d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
+    if( d )  redraw_full($);
+    selection_draw($);
+}
+
+@proc prev_line
+{
+    if( $rsel.y == 0 ) return;
+    $rsel.y--;
+    if( $rsel.y < $top_y ) {
+        $top_y = $rsel.y;
+        redraw_full($);
+    }
+    selection_draw($);
+}
+
+@proc next_line
+{
+    $rsel.y++;
+    if( $rsel.y >= $grid_height ) {
+        $top_y = $rsel.y - $grid_height + 1;
+        redraw_full($);
+    }
+    selection_draw($);
+}
+
+@proc backward_char
+{
+    if( $rsel.x == 0 ) return;
+    $rsel.x--;
+    if( $rsel.x < $top_x )
+    {
+        $top_x = $rsel.x;
+        redraw_full($);
+    }
+    selection_draw($);
+}
+
+@proc forward_char
+{
+    cursor_right($);
+}
+
+
+@proc info
+{
+    int i;
+    for(i=0;i<m_len($lines);i++) {
+
+        printf("'%s'\n", STR($lines,i));
+    }
+    printf("\n");
+}
+
+
+@proc remove_char
+{
+    /* could be expanded to remove region */
+    if( current_line_empty($) ) {
+        remove_current_line($);
+        redraw_full($);
+    }
+    else {
+        remove_char_at_cursor($);
+        draw_line_from($, $rsel.x, $rsel.y );
+    }
+}
+
+
+@proc insert_char
+{
+    int len;
+    unsigned char buf[32];
+    KeySym key_sim;
+
+    len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
+    if (len <= 0) return;
+
+    insert_char_at_cursor($, (char*)buf, len );
+    draw_line_from($, $rsel.x, $rsel.y );
+    cursor_right($);
+}
+
+
+
+
+@proc selection_clear
+{
+    selection_clear_a($);
+}
+
+@proc selection_set
+{
+    int y = event->xbutton.y;
+    int x = event->xbutton.x;
+    coordinate_to_text($,&x,&y);
+    $rsel.x=x; $rsel.width=1;
+    $rsel.y=y; $rsel.height=1;
+    selection_draw($);
+}
+
+
+@proc highlight
+{
+  if( $locked ) return;
+}
+
+@proc reset
+{
+}
+
+@proc notify
+{
+  if( $locked ) return;
+  $value = $value +1;
+  XtVaSetValues($,"label", get_name($), NULL );
+  XtCallCallbackList( $, $callback, (XtPointer) $value );
+}
+
+@proc selection_end
+{
+    ulong t = (ulong ) event->xbutton.time;
+    if( $rsel.width>1 ) own_primary_selection($,t);
+}
+
+
+
+@proc motion_start
+{
+  if( $locked ) return;
+
+  int y = event->xbutton.y;
+  int x = event->xbutton.x;
+  ulong t = (ulong ) event->xbutton.time;
+
+
+  int tx = x;
+  int ty = y;
+  coordinate_to_text($,&tx,&ty);
+
+  /* drag startete vor über einer sekunde, seitdem keine änderung */
+  /* darum: vergessen und neu starten */
+  if( $drag_update + 1000 < t ) goto restart_drag;
+  $drag_update = t;
+
+  if( selection_resize($,tx,ty) ) {
+      $drag_last_x = x;
+      $drag_last_y = y;
+      normalize_pos($);
+      selection_draw($);
+  }
+  return; /* drag in progress */
+
+  restart_drag:
+  $drag_last_y = event->xbutton.y;
+  $drag_last_x = event->xbutton.x;
+  $drag_update = t;
+  selection_start($,tx,ty);
+  selection_draw($);
+}
+
+
+
+@IMPORTS
+
+@incl <stdint.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Xmu.h>
+@incl "xutil.h"
+@incl "converters.h"
+@incl "mls.h"

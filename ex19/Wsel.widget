@@ -1,0 +1,105 @@
+@ Das Widget |Wsel| kann zur auswahl eines Wertes aus einer Stringlist
+  verwendet werden
+
+@class Wsel (Wlab)
+
+@PUBLIC
+@var int value = 0
+@var Bool locked = 0
+@var StringMArray names = 0
+
+@PRIVATE
+@var int max_value
+@var int drag_last_y
+@var int drag_last_x
+
+@var int drag_update
+
+@METHODS
+@proc initialize
+{
+        if( $names == 0 ) $max_value=0;
+        else $max_value = m_len($names);
+        $label = get_name($);
+}
+
+@proc set_values
+{
+        if( $old$value != $value ) {
+            XtVaSetValues($,"label", get_name($), NULL );
+        }
+        return 0;
+}
+
+
+@UTILITIES
+@proc String get_name($)
+{
+  if( $max_value == 0 ) return "";
+  if( $value < 0 ) $value = $max_value -1;
+  else if( $value >= $max_value ) $value = 0;
+  return STR($names,$value);
+}
+
+
+@TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <BtnDown>:     notify()
+@trans   <Btn1Motion>:  motion_start()
+
+@ACTIONS
+@proc highlight
+{
+  if( $locked ) return;
+  XtVaSetValues($,"state", STATE_SELECTED, NULL );
+}
+
+@proc reset
+{
+    XtVaSetValues($,"state", STATE_NORMAL, NULL );
+}
+
+@proc notify
+{
+  if( $locked ) return;
+  $value = $value +1;
+  XtVaSetValues($,"label", get_name($), NULL );
+  XtCallCallbackList( $, $callback, (XtPointer) $value );
+}
+
+@proc motion_start
+{
+  if( $locked ) return;
+
+	int y = event->xbutton.y;
+        int x = event->xbutton.x;
+	ulong t = (ulong ) event->xbutton.time;
+
+	/* drag startete vor über einer sekunde, seitdem keine änderung */
+	/* darum: vergessen und neu starten */
+	if( $drag_update + 1000 < t ) goto restart_drag;
+	$drag_update = t;
+
+        int move = ($drag_last_y - y) / 30;
+        if(!move) move = ($drag_last_x - x) / 30;
+        if( move ) {
+            $drag_last_x = x;
+	    $drag_last_y = y;
+            printf("Move %d\n", move );
+            $value = $value +move;
+            XtVaSetValues($,"label", get_name($), NULL );
+        }
+	return; /* drag in progress */
+
+  restart_drag:
+	$drag_last_y = event->xbutton.y;
+        $drag_last_x = event->xbutton.x;
+	$drag_update = t;
+}
+
+
+@IMPORTS
+@incl "mls.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters.h"

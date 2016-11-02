@@ -1,0 +1,348 @@
+@ |Wsel2| renders and updates the Window on |set_values| and on |expose|
+  this code is optimized to minimize window updates
+
+
+@class Wsel2 (Wheel)
+
+@CLASSVARS
+
+@var compress_exposure = XtExposeCompressSeries
+@var visible_interest = True
+
+@PUBLIC
+
+@var int value = 0
+@var Bool locked = 0
+@var StringMArray names = 0
+@var int cornerRoundPercent = 0
+@var int innerBorder = 0
+@var int update = 0
+@var Distance hgap = 0
+
+@PRIVATE
+
+    @var int last_value
+    @var int total_width
+    @var int max_value
+    @var int pm_w;
+    @var int pm_h;
+    @var Pixmap pixmap
+    @var XftDraw *draw
+    @var GC gc_copy
+    @var XRectangle r_label
+    @var Bool do_init
+    @var int rects
+    @def debug = 5
+
+
+@METHODS
+
+@proc initialize
+{
+        $do_init = 1;
+        $pixmap = 0;
+        $draw = 0;
+        $gc_copy =  XtGetGC($, 0,0 );
+        $rects = m_create(2,sizeof(XRectangle));
+
+        if( $names == 0 ) $max_value=0;
+        else $max_value = m_len($names);
+
+        int w, h;
+        prefered_size( $, &w, &h );
+        if( $width == 0 ) $width = w;
+        if( $height == 0 ) $height = h;
+}
+
+
+@ falls noch keine initialisierung stattgefunden hat,
+  alles initialisieren und neu zeichnen.
+  sonst nur den angegebenen ausschnitt neu zeichnen,
+  falls uns der XServer keinen bereich angiebt
+  wird das ganze fenster neu gezeichnet
+
+@proc expose
+{
+  TRACE(debug,"%s", $name );
+
+  if( $do_init ) {
+      alloc_pixmap($);
+      clear_pixmap($);
+      draw_text($);
+      copy_pixmap_to_window($);
+      $do_init = 0;
+      return;
+  }
+
+  copy_region_to_window($,region);
+}
+
+@proc realize
+ {
+     TRACE(debug, "%s: %dx%d", $name, $width, $height );
+     XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+     reshape_widget($);
+}
+
+@ marker setzen damit das folgende expose das Window
+  neu zeichnen kann, resize wird beim initialisieren der application
+  vor realize aufgerufen daher die abfrage ob es sicher ist das
+  window zu bearbeiten.
+@proc resize
+{
+    if( XtIsRealized($) ) reshape_widget($);
+    $do_init=1;
+}
+
+@proc destroy
+{
+  if( $draw) XftDrawDestroy( $draw );
+  XtReleaseGC($,$gc_copy);
+  free_pixmap($);
+}
+
+
+@ ARGS: old, request, $, args, num_args_ptr
+@proc set_values
+{
+    /* window erst neu zeichnen wenn es sichtbar geworden ist */
+    if( !$visible ) { $do_init = 1; return 0; }
+
+  /* falls das widget noch nicht initialisiert ist
+       oder ein resize stattgefunden hat wird bei
+       expose alles neu gezeichnet. daher keine
+       aktion notwendig
+  */
+  if( $do_init ) return 1; /* call expose */
+
+  if( $border_width != $old$border_width )
+  {
+        reshape_widget($);
+  }
+
+
+  /* bei einem state change wird alles neu gezeichnet,
+     also gibt es keinen grund noch die anderen änderungen
+     zu überprüfen
+  */
+  if( ($state != $old$state) ||  ($old$update != $update)  ) {
+      clear_pixmap($);
+      draw_text($);
+      copy_pixmap_to_window($);
+      return 0;
+  }
+
+  /* das aktive label hat sich geändert, dann muss das alte
+     label gelöscht werden und das neue gezeichnet.
+     da keine weiteren attribute vorgesehen sind
+     kann hier beendet werden
+  */
+  if( ($value != $old$value) ) {
+      clear_old_text($);
+      draw_text($);
+      copy_pixmap_to_window($);
+      return 0;
+  }
+
+  return 0;
+}
+
+@ parameter list ($, int cmd, int val)
+@proc int exec_command
+{
+  return 0;
+}
+
+@proc Bool cache_hit($)
+{
+    return 0;
+}
+
+
+@proc void minimal_size(  $, int *w0, int *h0 )
+{
+        XGlyphInfo extents;
+        Display *dpy = XtDisplay($);
+        int i,w = 0, h;
+        h = $xftFont->ascent + $xftFont->descent;
+        char *s;
+
+        int len = m_len($names);
+        m_clear( $rects );
+        XRectangle *r;
+
+        for(i=0; i < len;i++) {
+                 s = get_name($,i);
+                 XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
+		       strlen(s), &extents);
+                 w += extents.xOff;
+                 r = m_add($rects);
+                 r->width = extents.xOff;
+                 r->height = h;
+        }
+        $total_width = w;
+        if( len ) w += (len-1) * $hgap;
+        if( w0 ) *w0 = w;
+        if( h0 ) *h0 = h;
+}
+
+@proc void prefered_size( $, int *w0, int *h0 )
+{
+    minimal_size($,w0,h0);
+    if( w0 ) *w0 +=2 * $innerBorder;
+    if( h0 ) *h0 +=2 * $innerBorder;
+}
+
+
+@UTILITIES
+
+@proc clear_pixmap($)
+{
+        TRACE(debug, "%s", $name );
+  XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height);
+}
+
+@proc copy_pixmap_to_window($)
+{
+    if( $visible )
+       XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
+            0,0, $width,$height,  /* source pixmap */
+            0,0  ); /* target window x,y */
+
+}
+
+@proc copy_region_to_window($,Region region)
+{
+    TRACE(debug,"%s", $name );
+    int x=0,y=0,w,h;
+    if( region ) {
+          Box *b = & region->extents;
+
+          w = b->x2 - b->x1 +1;
+          h = b->y2 - b->y1 +1;
+          x = b->x1;
+          y = b->y1;
+  } else {
+          w = $width;
+          h = $height;
+  }
+
+  TRACE(debug, "%s: copy extents %dx%d,%dx%d",
+        $name, x,y,w,h );
+
+  XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
+            x,y, w,h,  /* source pixmap */
+            x,y  ); /* target window x,y */
+}
+
+@proc draw_text($)
+{
+    TRACE(debug,"%s", $name );
+    if( $max_value == 0 ) return;
+
+    int w,h;
+    minimal_size( $, &w, &h );
+    if( w > $width ) w=$width;
+    if( h > $height ) h=$height;
+
+    int x = ($width - w) / 2;
+    int y = ($height -h) / 2 ;
+    char *s;
+    XRectangle *r;
+    XftColor *fg,*bg;
+
+    int p;
+    m_foreach( $rects, p, r ) {
+
+        if( p == $value ) {
+            fg = $xft_col + COLOR_FG_SEL;
+            bg = $xft_col + COLOR_BG_SEL;
+        }
+        else {
+            fg = $xft_col + COLOR_FG_NORM;
+            bg = $xft_col + COLOR_BG_NORM;
+        }
+
+        s = get_name($,p);
+        r->x = x; r->y = y;
+
+        XftDrawRect($draw,bg, r->x, r->y, r->width, r->height );
+        XftDrawStringUtf8($draw, fg, $xftFont,
+    			     x,y+ $xftFont->ascent, (FcChar8*)s, strlen(s) );
+
+        x+= $hgap + r->width;
+    }
+
+    $last_value = $value;
+
+}
+
+@proc clear_old_text($)
+{
+    clear_pixmap($);
+}
+
+
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
+@ create a pixmap and update or create
+  Xft $draw Context.
+@proc alloc_pixmap($)
+{
+    Display *dpy = XtDisplay($);
+
+    /* falls eine pixmap mit ausreichender größe vorhanden ist,
+       keine neue pixmap erzeugen, sondern alte weiterverwenden */
+    if( $pixmap &&  ($pm_w >= $width) && ($pm_h >= $height) )
+        return;
+
+    TRACE(debug,"%s", $name );
+
+    if( $pixmap ) XFreePixmap(dpy,$pixmap);
+
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    $pm_w = $width; $pm_h = $height;
+
+    if( $draw ) {
+        XftDrawChange($draw, $pixmap );
+    }
+    else {
+        $draw = XftDrawCreate(dpy, $pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    }
+}
+
+@proc free_pixmap($)
+    {
+        if( !$pixmap ) return;
+        Display *dpy = XtDisplay($);
+        XFreePixmap(dpy,$pixmap);
+        $pixmap = 0;
+    }
+
+@proc String get_name($, int p)
+{
+  if( $max_value == 0 ) return "";
+  if( p < 0 ) p = $max_value -1;
+  else if( p >= $max_value ) p = 0;
+  return STR($names,p);
+}
+
+
+@IMPORTS
+@incl <X11/Xregion.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"

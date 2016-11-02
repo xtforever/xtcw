@@ -1,0 +1,180 @@
+@class DigTab(Composite)
+
+@public
+@var String pin_config = <String> ""
+
+
+@private
+@var int config
+@var int num_pins
+@var int wids
+
+@METHODS
+@proc initialize
+{
+        $width=10; $height=10;
+        $config=0;
+
+        int i; char s[10] = "0.";
+        char w[] = "Awidget";
+        Widget b,c;
+        Widget vbox = XtVaCreateManagedWidget(
+        "VBox", vBoxWidgetClass, $,
+        "borderWidth", 0, NULL );
+
+
+        parse_config($);
+        $num_pins = m_len($config) / 2;
+        $wids = m_create($num_pins*2, sizeof(Widget));
+
+        for(i=0;i< $num_pins; i++) {
+          s[0]++;
+          b = XtVaCreateManagedWidget( w, hBoxWidgetClass, vbox,
+                                "hgap", 10,
+                                "borderWidth", 0, NULL ); (*w)++;
+
+
+
+          XtVaCreateManagedWidget( w, wlabWidgetClass, b,
+                            "label", strdup(s),
+                            "borderWidth", 0, NULL ); (*w)++;
+
+
+          c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
+                             XtVaTypedArg, "names", XtRString, "[X],[-]",8,
+                            "borderWidth", 0,
+                            "user_data", i,
+                            NULL );
+          XtAddCallback( c, "callback", (XtPointer)dig_cb, $ );
+          m_put($wids,&c);
+          (*w)++;
+          c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
+                            XtVaTypedArg, "names",  XtRString, "IN,OUT,Hi-Z",12,
+                            "borderWidth", 0,
+                            "user_data", i,
+                             NULL );
+          XtAddCallback( c, "callback", (XtPointer)conf_cb, $ );
+          m_put($wids,&c);
+          (*w)++;
+        }
+
+        apply_config($);
+}
+
+@ When our parent asks for this widget's preferred geometry
+simply return the geometry as indicated by our childs.
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+@proc query_geometry
+{
+    /* every proposed geometry is fine */
+    if ($num_children == 0) return XtGeometryYes;
+
+    XtWidgetGeometry creply;
+    (void) XtQueryGeometry($children[0], NULL, &creply);
+    int w = creply.width + creply.border_width * 2;
+    int h = creply.height+ creply.border_width * 2;
+    printf("Height: %d\n", h );
+
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  w;
+    reply->height = h;
+
+    return XtGeometryAlmost;
+}
+
+@proc set_values
+{
+        if( ($old$pin_config != $pin_config)
+            || strcmp($old$pin_config,$pin_config) )
+            {
+                parse_config($);
+                apply_config($);
+            }
+         return 0;
+}
+
+
+
+@UTILITIES
+
+@ einlesen einer konfiguration
+@proc parse_config($)
+{
+        if( is_empty($pin_config) ) {
+            $pin_config="00";
+        }
+        int len = strlen($pin_config);
+        len++;
+
+        if( $config == 0 )
+            $config = m_create(len,1);
+        else
+            m_setlen($config,len);
+
+        m_write($config,0,$pin_config,len);
+
+}
+
+@proc dig_cb(Widget w, $, void *c)
+{
+        int key;
+        XtVaGetValues( w, XtNuser_data, &key, NULL );
+        printf("dig %d=%d\n", key, (int)c );
+        set_digital_pin($,key,(int)c);
+}
+
+@proc conf_cb(Widget w, $, void *c)
+{
+        int key;
+        XtVaGetValues( w, XtNuser_data, &key, NULL );
+        printf("conf %d=%d\n", key, (int)c );
+        config_pin($,key,(int)c);
+}
+
+
+@proc set_digital_pin($,int pin, int val)
+{
+        if( pin >= $num_pins ) return;
+        pin *= 2; pin++;
+        CHAR($config,pin) = val ? '1' : '0';
+}
+
+@proc config_pin($, int pin, int mode)
+{
+        if( pin >= $num_pins ) return;
+        pin *= 2; pin+=2;
+        CHAR($config,pin) = '0' + mode;
+}
+
+@proc apply_config($)
+{
+
+        Widget w;
+        int i,p,v;
+
+        for(i=0;i<$num_pins;i++) {
+           p = i*2;
+           w = *(Widget*)mls($wids,p);
+           v = CHAR($config,p) == '1';
+           XtVaSetValues(w, "value", v, NULL );
+           p = i*2+1;
+           w = *(Widget*)mls($wids,p);
+           v = CHAR($config,p) - '0';
+           XtVaSetValues(w, "value", v, NULL );
+        }
+}
+
+
+
+@IMPORTS
+@incl "xtcw/Wlab.h"
+@incl "xtcw/Wsel.h"
+@incl "xtcw/register_wb.h"
+@incl "converters.h"
+@incl "mls.h"

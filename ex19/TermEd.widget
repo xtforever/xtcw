@@ -1,0 +1,414 @@
+@CLASS TermEd ( Core )
+
+@PUBLIC
+@var int gridWidth = 80
+@var int gridHeight = 25
+@var int size = 12
+@var int selTime = 400
+@var String text = <String> "Hello World\nHow are you?"
+@var <XftColor> XftColor fg = <String> "White"
+@var <XftColor> XftColor bg = <String> "Darkgreen"
+@var <XftColor> XftColor cbg = <String> "Red"
+@var <XftColor> XftColor cfg = <String> "Green"
+
+@PRIVATE
+@var XtIntervalId timerid
+@var Boolean blink
+@var XftFont *xftFont
+@var XftDraw *draw
+@var XftColor* col[4]
+@var uint32_t *scr
+@var int grid_pix_width
+@var int grid_pix_height
+@var Bool selection_visible
+@var XRectangle rsel
+@var XRectangle rsel_old
+@var GC gc_copy
+
+@methods
+@proc class_initialize { converters_xft_init(); }
+
+@proc initialize
+{
+    FcChar32 bat = 0x42;
+    XGlyphInfo extents;
+    Display *dpy = XtDisplay($);
+    font_load($,$size);
+    XftTextExtents32(dpy, $xftFont, &bat, 1, &extents);
+    $height = ($grid_pix_height = $xftFont->ascent + $xftFont->descent) * $gridHeight;
+    $width  = ($grid_pix_width = extents.width) * $gridWidth;
+    $draw=0;
+    $scr=0;
+    $col[0] = & $fg;
+    $col[1] = & $bg;
+    $col[2] = & $cfg;
+    $col[3] = & $cbg;
+    $selection_visible = False;
+    $timerid = 0;
+    $gc_copy =  XtGetGC($, 0,0 );
+
+}
+
+@proc destroy
+{
+    if( $draw) XftDrawDestroy( $draw );
+    $draw=0;
+    font_free($);
+    if( $scr ) { free($scr); $scr=0; }
+}
+
+@proc set_values
+{
+    if( $old$size != $size ) {
+        font_free($);
+        font_load($,$size);
+        $resize( $ );
+    }
+    return True; /* call expose */
+}
+
+@proc resize
+{
+    $gridWidth  = $width / $grid_pix_width;
+    $gridHeight = $height / $grid_pix_height;
+    $scr=realloc($scr, $gridWidth * $gridHeight * 4 );
+    memset($scr,0,$gridWidth * $gridHeight * 4 );
+
+    printf("WxH=%dx%d\n",$gridWidth, $gridHeight );
+    printf("pix WxH=%dx%d\n",$grid_pix_width, $grid_pix_height );
+    printf("w WxH=%dx%d\n",$width, $height );
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    if(!$draw )
+        $draw = XftDrawCreate(dpy, XtWindow($),
+                              DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    test_convert($);
+    full_draw($);
+    selection_draw($);
+    /*   FcChar32 bat = 0xf240 + $status;
+        XftDrawString32($draw, $col[$status],$xftFont,0,$xftFont->ascent,&bat,1);
+    */
+    printf("w WxH=%dx%d\n",$width, $height );
+}
+
+
+@UTILITIES
+@proc font_free($)
+{
+    Display *dpy = XtDisplay($);
+    if( $xftFont ) XftFontClose(dpy, $xftFont );
+    $xftFont=0;
+}
+
+@proc font_load($,int size)
+{
+    Display *dpy = XtDisplay($);
+    int screen = DefaultScreen(dpy);
+    char fontname[30];
+    sprintf(fontname, "Source Code Pro-%d", $size );
+    font_free($);
+    $xftFont = XftFontOpenName(dpy,screen, fontname );
+}
+
+@proc draw_glyph_color($, int x, int y, int fg, int bg, uint32_t ucs4 )
+{
+    int x0,y0,w,h;
+    uint32_t glyph;
+
+    x0 = x * $grid_pix_width;
+    y0 = y * $grid_pix_height;
+    w = $grid_pix_width;
+    h = $grid_pix_height;
+
+    if( bg >= 0 ) XftDrawRect($draw,$col[bg], x0,y0,w,h );
+    if( ucs4 == 0 || ucs4 == 32 ) return;
+
+    glyph = XftCharIndex ( XtDisplay($), $xftFont, ucs4 );
+    XftDrawGlyphs ($draw, $col[fg], $xftFont,
+                   x0, y0+$xftFont->ascent,
+                   &glyph, 1);
+}
+
+@proc full_draw($)
+{
+    int x,y;
+    XftDrawRect($draw,$col[1], 0,0, $width, $height );
+    for(x=0;x<$gridWidth;x++) {
+        for(y=0;y<$gridHeight;y++) {
+            draw_glyph_color($,x,y,0,-1,$scr[x + y * $gridWidth ] );
+        }
+    }
+}
+
+@proc putcharat($, int x, int y, uint32_t ucs4 )
+{
+    if( x < $gridWidth && x >= 0 && y < $gridHeight && y >= 0 )
+        {
+            $scr[x + y * $gridWidth ] = ucs4;
+        }
+}
+
+@proc uint32_t getcharat($, int x, int y )
+{
+    if( x < $gridWidth && x >= 0 && y < $gridHeight && y >= 0 )
+        {
+            return $scr[x + y * $gridWidth ];
+        }
+
+    return 0;
+}
+
+@proc  drawcharat($, int x, int y, int fg, int bg )
+{
+    if( x < $gridWidth && x >= 0 && y < $gridHeight && y >= 0 )
+        {
+            draw_glyph_color($,x,y,fg,bg,$scr[x + y * $gridWidth ] );
+        }
+}
+
+@proc draw_string($,int x, int y, char *str)
+{
+    int len,l;
+    unsigned char *string = (void*) str;
+    uint32_t ucs4;
+    len = strlen( (char*)string);
+    x=0; y=0;
+    while(1) {
+        l = FcUtf8ToUcs4 (string, &ucs4, len);
+        if( l<= 0 || len <=0 ) return;
+        if( ucs4 == '\n' ) { x=0; y++; }
+        if( x >= $gridWidth ) { x=0; y++; }
+        if( y >= $gridHeight ) { y=0; }
+        if( ucs4 >=' ' ) {
+            putcharat($,x,y,ucs4);
+            x++;
+        }
+        string += l;
+        len -= l;
+    }
+}
+
+@proc test_convert($)
+{
+    draw_string($, 0, $gridHeight / 2, $text );
+}
+
+@proc selection_timer( $, XtIntervalId *id)
+{
+    int nr = $blink ? 2 : 0;
+    if( $selection_visible ) {
+        drawcharat($, $rsel_old.x, $rsel_old.y, nr, nr+1 );
+        $blink = ! $blink;
+        if( id==NULL && $timerid ) XtRemoveTimeOut($timerid);
+        $timerid = XtAppAddTimeOut(XtWidgetToApplicationContext($), $selTime,
+                        (void*)selection_timer, $ );
+    }
+    else $timerid=0;
+}
+
+@proc undraw_selection($)
+{
+    if( $selection_visible ) {
+        drawcharat($, $rsel_old.x, $rsel_old.y, 0,1 );
+        $selection_visible = False;
+    }
+}
+
+@proc selection_draw($)
+{
+    if( $rsel.x >= $gridWidth ) $rsel.x = $gridWidth-1;
+    if( $rsel.y >= $gridHeight ) $rsel.y = $gridHeight-1;
+    undraw_selection($);
+    $selection_visible = True;
+    $rsel_old = $rsel;
+    $blink = True; selection_timer($,0);
+}
+
+@proc scr_scroll_up($)
+{
+        memcpy( $scr, $scr + $gridWidth,
+                ($gridWidth*($gridHeight-1))*4 );
+        memset( $scr + $gridWidth*($gridHeight-1), 0, $gridWidth*4 );
+}
+
+@proc pix_scroll_up($)
+{
+/*
+      XCopyArea(display, src, dest, gc, src_x, src_y, width, height,  dest_x, dest_y)
+      Display *display;
+      Drawable src, dest;
+      GC gc;
+      int src_x, src_y;
+      unsigned int width, height;
+      int dest_x, dest_y;
+*/
+    XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
+              0, $grid_pix_height,
+              $grid_pix_width * ($gridWidth),
+              $grid_pix_height * ($gridHeight-1),
+              0,0 );
+
+    /* clear background */
+    XftDrawRect($draw,$col[1],
+    0,      $grid_pix_height * ($gridHeight-1),
+    $width, $grid_pix_height );
+
+}
+
+
+@proc te_pos1($)
+{
+    $rsel.x = 0;
+}
+
+@proc te_tab($)
+{
+    int x = $rsel.x;
+    x /= 8;
+    x ++;
+    x *= 8;
+    if( x < $gridWidth ) $rsel.x = x;
+}
+
+@proc te_down($)
+{
+    if( $rsel.y < ($gridHeight-1) ) {
+        $rsel.y++;
+        return;
+    }
+
+    pix_scroll_up($);
+    scr_scroll_up($);
+}
+
+
+@proc Bool te_parse($,uint32_t ucs4)
+{
+    switch( ucs4 ) {
+    default: break;
+    case 10: te_pos1($); te_down($); return True;
+    case '\t': te_tab($); return True;
+    case 13: te_pos1($); return True;
+    }
+    return False;
+}
+
+@proc te_right($)
+{
+    if( $rsel.x < ($gridWidth-1) ) {
+        $rsel.x++;
+        return;
+    }
+    te_pos1($);
+    te_down($);
+}
+
+@proc te_putc($, uint32_t ucs4)
+{
+    if( $rsel.x >= $gridWidth ) $rsel.x = $gridWidth-1;
+    if( $rsel.y >= $gridHeight ) $rsel.y = $gridHeight-1;
+    if( te_parse($,ucs4) ) return;
+    putcharat($, $rsel.x, $rsel.y,ucs4);
+    drawcharat($, $rsel.x, $rsel.y, 0,1 );
+    $selection_visible = False;
+    te_right($);
+}
+
+@proc exec_line($)
+{
+    int i,len;
+    unsigned char *dest;
+    char *string = malloc( $gridWidth * 6 + 2 );
+    uint32_t *s = $scr + $rsel.y * $gridWidth;
+    dest = (void*)string;
+    for( i=0; i< $gridWidth; i++ )
+        {
+            len = FcUcs4ToUtf8( *s++, dest );
+            dest+=len;
+        }
+    *dest = 0;
+    printf("str: %s\n", string );
+    free(string);
+}
+
+
+
+@TRANSLATIONS
+@trans   <Key>Right:    forward_char()
+@trans   <Key>Left:     backward_char()
+@trans   <Key>Up:       prev_line()
+@trans   <Key>Down:     next_line()
+@trans   <Key>Return:   key_return()
+@trans   <Key>:         insert_char()
+
+@ACTIONS
+@proc key_return
+{
+    undraw_selection($);
+    exec_line($);
+    te_pos1($);
+    te_down($);
+    selection_draw($);
+}
+
+
+@proc insert_char
+{
+    int len;
+    unsigned char buf[32];
+    KeySym key_sim;
+    uint32_t ucs4;
+
+    len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
+    if (len <= 0) return;
+    FcUtf8ToUcs4 (buf, &ucs4, len);
+    undraw_selection($);
+    te_putc($,ucs4);
+    selection_draw($);
+}
+
+
+
+@proc prev_line
+{
+    if( $rsel.y == 0 ) return;
+    $rsel.y--;
+    selection_draw($);
+}
+
+@proc next_line
+{
+    undraw_selection($);
+    te_down($);
+    // if( $rsel.y < ($gridHeight-1) )
+    // $rsel.y++;
+    selection_draw($);
+}
+
+@proc backward_char
+{
+    if( $rsel.x == 0 ) return;
+    $rsel.x--;
+    selection_draw($);
+}
+
+@proc forward_char
+{
+    if( $rsel.x < ($gridWidth-1) )
+        $rsel.x ++;
+    selection_draw($);
+}
+
+
+
+@IMPORTS
+
+@incl <stdint.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"
+@incl "converters-xft.h"
+@incl <X11/Xaw/XawImP.h>
