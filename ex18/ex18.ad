@@ -10,7 +10,7 @@ ex18.wcChildren: gb1
 *Wedit.cursorColor: Black
 
 *gb1.wcClass: gridbox
-*gb1.wcChildren: ent filter fileList
+*gb1.wcChildren: ent filter fileList ft
 
 
 *ent.wcClass: gridbox
@@ -55,3 +55,17 @@ ex18.wcChildren: gb1
 *fileList.gridy: 2
 *fileList.gridWidth: 1
 *fileList.list_max: 20
+
+*ft.wcClass: Vbox
+*ft.gridy: 3
+*ft.wcChildren: ft1 ft2 ft3 ft4
+*ft.Wlabel.label: Hello World
+*ft.Wlabel.borderWidth: 0
+*ft.LightTxt.borderWidth: 0
+
+*ft1.wcClass: Calib
+*ft2.wcClass: Wlabel
+*ft3.wcClass: WviewQV
+*ft4.wcClass: LightTxt
+
+!*LightTxt.family: GFS Neohellenic

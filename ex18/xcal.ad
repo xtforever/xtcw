@@ -1,0 +1,8 @@
+xcal.wcChildren: g1
+
+*g1.wcClass: Calib
+*g1.callback: process_cal_data
+*g1.foreground: White
+*g1.highlight:  Red
+*g1.lineWidth: 10
+*g1.background: Lightblue

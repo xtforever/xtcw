@@ -1,4 +1,4 @@
-@class WviewVar ( Wlabel )
+@class WviewQV ( Wlabel )
 
 @public
 @var String varname  = <String> ""
@@ -6,14 +6,41 @@
 @private
 @var XrmQuark qvar
 @var int drawn
+@var GC gc_fill
+@var Pixmap stip
 
 @methods
 @proc initialize
 {
-        $qvar = XrmStringToQuark( $varname );
-        $draw_override = show_data;
-        mv_onwrite( $qvar, do_update, $, 0 );
-        $height = ($xftFont->height) * 2.5;
+    Display *disp = XtDisplay($);
+    $qvar = XrmStringToQuark( $varname );
+    $draw_override = show_data;
+    mv_onwrite( $qvar, do_update, $, 0 );
+    $height = ($xftFont->height) * 2.5;
+
+    char icon_bitmap_bits[] = { 00, 0xff,
+                                00, 0xff,
+                                0xff, 00,
+                                0xff, 00 };
+    int icon_bitmap_width  = 16;
+    int icon_bitmap_height = 4;
+
+    $stip = XCreateBitmapFromData(disp,
+                                  DefaultRootWindow(disp),
+                                  icon_bitmap_bits,
+                                  icon_bitmap_width,
+                                  icon_bitmap_height);
+
+    XtGCMask mask;
+    XGCValues values;
+    mask = GCFillStyle | GCStipple | GCForeground | GCBackground;
+    values.stipple = $stip;
+    values.fill_style = FillStippled;
+
+    values.foreground = $fg_norm;
+    values.background = $bg_norm;
+    $gc_fill = XtGetGC($,mask,&values);
+
 }
 
 @proc Bool cache_hit
@@ -34,28 +61,18 @@
 }
 
 
-@proc show_data($,void *a, void *b)
+@proc show_data($, Drawable d, XftDraw *draw)
 {
 
-        int wh,val,h,x,y;
-        char *s, str[30];
-        val = *mv_var( $qvar );
-        sprintf(str,"%d", val );
-        h = $xftFont->height;
-        wh = $height / 2;
-        x = 0;
-        y = (wh-h) / 2 + $xftFont->ascent;
-        s = $label;
-        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
-                                         x,y,(FcChar8*)s, strlen(s) );
+    int wh,val,h,x,y;
+    char *s = "Hello";
+    x=10; y=($height + $xftFont->ascent) / 2;
 
+    XftDrawStringUtf8(draw, $xft_col, $xftFont,
+                      x,y,(FcChar8*)s, strlen(s) );
+    XFillRectangle( XtDisplay($), d, $gc_fill,
+                    0,0, $width, $height );
 
-        y += wh;
-        s = str;
-        x = $width - 2 - xft_textwidth(XtDisplay($),$xftFont, s );
-        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
-                                         x,y,(FcChar8*)s, strlen(s) );
-        $drawn = val;
 
 }
 

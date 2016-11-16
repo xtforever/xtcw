@@ -1,0 +1,34 @@
+
+
+
+Analog                  Digital
+----------------------------------
+ADC1  [ 1000 ]          1. [x]  IN
+ADC1  [ 1000 ]          1. [x]  IN
+ADC1  [ 1000 ]          1. [x]  IN
+ADC1  [ 1000 ]          1. [x]  IN
+ADC1  [ 1000 ]          1. [x]  IN
+----------------------  1. [x]  IN
+TWI                     1. [x]  IN
+2                       1. [x]  IN
+22                      1. [x]  IN
+28                      1. [x]  IN
+32
+65
+
++++++++++++++++++++++++++++++++++++
+
+[ 16 Bit Read ]    Value
+Register [ 3 ]     [ 69 ]
+Addr [ 22 ]        [ OK ]
+
+++++++++++++++++++++++++++++++++++++
+
+set:   copy cur to backup
+unset:
+
+toggle: start edit(copy cur to backup) / or commit(copy cur to backup) reset
+inc:    if edit, inc value
+dec     if edit, dec value
+reset:  restore state to normal / copy backup to cur
+select: highlight widget

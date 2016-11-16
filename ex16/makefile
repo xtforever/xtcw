@@ -1,4 +1,4 @@
-include ../rules.mk
+Xawinclude ../rules.mk
 TARGET=ex16
 
 M=$(CURDIR)/..

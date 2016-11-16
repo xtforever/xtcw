@@ -5,9 +5,9 @@
 static struct micro_vars MV;
 
 
+static int first_time = 1;
 void mv_init(void)
 {
-  static int first_time = 1;
   if( first_time ) {
     MV.map       = MapAg_New();
     MV.data      = m_create(100,sizeof(struct mv_data));
@@ -15,6 +15,16 @@ void mv_init(void)
     first_time=0;
   }
 }
+
+void mv_destroy(void)
+{
+    MapAg_Free( MV.map );
+    m_free(MV.data);
+    first_time=1;
+}
+
+
+
 
 int mv_var_lookup( int q )
 {
@@ -164,7 +174,7 @@ int mv_read_rsrc( Widget w, char *res, int Q )
 
 
 #if 0
-/*
+
   _sname=adc0  : string == _s
   val=100      : int    ==  val
   _aname=100   : type=a (mask and multiplier for output defined

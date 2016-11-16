@@ -43,6 +43,7 @@
 #include "xtcw/Wsel.h"
 #include "xtcw/DigTab.h"
 #include "xtcw/KaroEd.h"
+#include "xtcw/TermEd.h"
 
 
 Widget TopLevel;
@@ -153,6 +154,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, wsel );
     RCP( top, digTab );
     RCP( top, karoEd );
+    RCP( top, termEd );
 
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */

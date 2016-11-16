@@ -41,9 +41,12 @@
 
 
           c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
-                             XtVaTypedArg, "names", XtRString, "[X],[-]",8,
+
+          XtVaTypedArg, "names", XtRString, ",",6,
+          /* XtVaTypedArg, "names", XtRString, "[X],[-]",8, */
                             "borderWidth", 0,
                             "user_data", i,
+          XtVaTypedArg, "xftFont", XtRString, "FontAwesome-20", 11,
                             NULL );
           XtAddCallback( c, "callback", (XtPointer)dig_cb, $ );
           m_put($wids,&c);

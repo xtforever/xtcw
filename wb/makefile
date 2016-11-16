@@ -11,4 +11,4 @@ register-widgets: all-widgets
 all-widgets: $(WIDGET_C)
 
 clean:
-	-$(RM) -rf $(OUTPUT)/doc $(OUTPUT)/src $(OUTPUT)/include/$(WBPREFIX)
+	-$(RM) -rf $(OUTPUT)/doc $(OUTPUT)/src $(OUTPUT)/include/$(WBPREFIX) *~

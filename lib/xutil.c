@@ -168,20 +168,60 @@ void cairo_set_source_rgb_from_pixel(Widget self, cairo_t *c, Pixel px)
     cairo_set_source_rgb(c, r / 255.0 ,g / 255.0, b / 255.0 );
 }
 #endif
+
+
+static short
+maskbase (unsigned long m)
+{
+    short        i;
+
+    if (!m)
+        return 0;
+    i = 0;
+    while (!(m&1))
+    {
+        m>>=1;
+        i++;
+    }
+    return i;
+}
+static short
+masklen (unsigned long m)
+{
+    unsigned long y;
+
+    y = (m >> 1) &033333333333;
+    y = m - y - ((y >>1) & 033333333333);
+    return (short) (((y + (y >> 3)) & 030707070707) % 077);
+}
+
+
+
 void pixel_to_xftcolor( Widget w, Pixel px, XftColor *result )
 {
     Display *dpy = XtDisplay(w);
-    Visual *v = DefaultVisual(dpy,DefaultScreen(dpy));
+    Visual *visual = DefaultVisual(dpy,DefaultScreen(dpy));
+    int         red_shift, red_len;
+    int         green_shift, green_len;
+    int         blue_shift, blue_len;
+
+    red_shift = maskbase (visual->red_mask);
+    red_len = masklen (visual->red_mask);
+    green_shift = maskbase (visual->green_mask);
+    green_len = masklen (visual->green_mask);
+    blue_shift = maskbase (visual->blue_mask);
+    blue_len = masklen (visual->blue_mask);
+
     int r,g,b,a;
-    r = get_component( px, v->red_mask );
-    g = get_component( px, v->green_mask );
-    b = get_component( px, v->blue_mask );
+    r = get_component( px, visual->red_mask );
+    g = get_component( px, visual->green_mask );
+    b = get_component( px, visual->blue_mask );
     a = 0xffff;
 
     result->pixel = px;
-    result->color.red = r << 8;
-    result->color.green = g << 8;
-    result->color.blue = b << 8;
+    result->color.red = r << (16-red_len);
+    result->color.green = g << (16-green_len);
+    result->color.blue = b << (16-blue_len);
     result->color.alpha = a;
 }
 

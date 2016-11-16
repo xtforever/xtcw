@@ -24,6 +24,12 @@
 @var XRectangle rsel
 @var XRectangle rsel_old
 @var GC gc_copy
+@var uint8_t *cmd
+@var uint cmd_len
+@var int progm
+@var struct fork2_info *child
+@var XtInputId cid
+@var XtInputId eid
 
 @methods
 @proc class_initialize { converters_xft_init(); }
@@ -38,7 +44,9 @@
     $height = ($grid_pix_height = $xftFont->ascent + $xftFont->descent) * $gridHeight;
     $width  = ($grid_pix_width = extents.width) * $gridWidth;
     $draw=0;
+    $cmd=0;
     $scr=0;
+    $child=0;
     $col[0] = & $fg;
     $col[1] = & $bg;
     $col[2] = & $cfg;
@@ -46,6 +54,7 @@
     $selection_visible = False;
     $timerid = 0;
     $gc_copy =  XtGetGC($, 0,0 );
+    $progm = m_create(100,sizeof(char*));
 
 }
 
@@ -55,6 +64,10 @@
     $draw=0;
     font_free($);
     if( $scr ) { free($scr); $scr=0; }
+    if( $cmd ) { free($cmd); $cmd=0; }
+    if( $progm ) { m_free_strings( $progm, 0); $progm=0; }
+    if( $child ) prog_kill($);
+
 }
 
 @proc set_values
@@ -73,6 +86,7 @@
     $gridHeight = $height / $grid_pix_height;
     $scr=realloc($scr, $gridWidth * $gridHeight * 4 );
     memset($scr,0,$gridWidth * $gridHeight * 4 );
+    $cmd=realloc($cmd,$cmd_len = ($gridWidth+2) * 6 );
 
     printf("WxH=%dx%d\n",$gridWidth, $gridHeight );
     printf("pix WxH=%dx%d\n",$grid_pix_width, $grid_pix_height );
@@ -214,6 +228,10 @@
     if( $selection_visible ) {
         drawcharat($, $rsel_old.x, $rsel_old.y, 0,1 );
         $selection_visible = False;
+        if($timerid) {
+            XtRemoveTimeOut($timerid);
+            $timerid=0;
+        }
     }
 }
 
@@ -306,6 +324,106 @@
     te_down($);
 }
 
+
+@proc pix_del($)
+{
+   int x0,y0,x1,y1,w,h,x,y;
+   x = $rsel.x; y=$rsel.y;
+   /*-----------------------*/
+   /* destination           */
+   x0 = x;
+   y0 = y;
+   /*-----------------------*/
+   /* width, height         */
+   w = $gridWidth - (x+1);
+   h = 1;
+   /*-----------------------*/
+   /* source                */
+   x1 = x0+1;
+   y1 = y0;
+   /*-----------------------*/
+   /* transformation        */
+   w   *= $grid_pix_width;
+   x0  *= $grid_pix_width;
+   x1  *= $grid_pix_width;
+   h   *= $grid_pix_height;
+   y0  *= $grid_pix_height;
+   y1  *= $grid_pix_height;
+
+   XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
+             x1,y1,w,h, /* source */
+             x0,y0      /* destination */
+             );
+}
+
+@proc pix_ins($)
+{
+   int x0,y0,x1,y1,w,h,x,y;
+   x = $rsel.x; y=$rsel.y;
+   /*-----------------------*/
+   /* destination           */
+   x0 = x+1;
+   y0 = y;
+   /*-----------------------*/
+   /* width, height         */
+   w = $gridWidth - (x+1);
+   h = 1;
+   /*-----------------------*/
+   /* source                */
+   x1 = x;
+   y1 = y;
+   /*-----------------------*/
+   /* transformation        */
+   w   *= $grid_pix_width;
+   x0  *= $grid_pix_width;
+   x1  *= $grid_pix_width;
+   h   *= $grid_pix_height;
+   y0  *= $grid_pix_height;
+   y1  *= $grid_pix_height;
+
+   XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
+             x1,y1,w,h, /* source */
+             x0,y0      /* destination */
+             );
+}
+
+@proc te_ins($)
+{
+   int i,x,y;
+   x = $rsel.x; y=$rsel.y;
+   uint32_t *s = $scr+y* $gridWidth;
+
+   /* letztes zeichen der zeile mit <null> füllen */
+   if( x == $gridWidth -1 ) {
+      s[x] = 0;
+      return;
+   }
+
+   for(i=$gridWidth-2; i>=x ; i-- )
+              s[i+1] = s[i];
+   pix_ins($);
+   s[x] = 32;
+}
+
+
+@proc te_del($)
+{
+   uint16_t i,x,y;
+   x = $rsel.x; y=$rsel.y;
+   uint32_t *s = $scr+y* $gridWidth;
+
+   /* letztes zeichen der zeile mit <null> füllen */
+   if( x == $gridWidth -1 ) {
+      s[x] = 0;
+      return;
+   }
+
+   for(i=x+1; i< $gridWidth; i++ )
+              s[i-1] = s[i];
+   pix_del($);
+}
+
+
 @proc te_putc($, uint32_t ucs4)
 {
     if( $rsel.x >= $gridWidth ) $rsel.x = $gridWidth-1;
@@ -317,34 +435,421 @@
     te_right($);
 }
 
+
+@proc te_left($)
+{
+    if( $rsel.x == 0 ) return;
+    $rsel.x--;
+}
+
+
 @proc exec_line($)
 {
-    int i,len;
+    int i,len, space_left;
     unsigned char *dest;
-    char *string = malloc( $gridWidth * 6 + 2 );
+    // char *string = malloc( $gridWidth * 6 + 2 );
+    char *string = (void*)$cmd;
     uint32_t *s = $scr + $rsel.y * $gridWidth;
     dest = (void*)string;
+    space_left = $cmd_len;
     for( i=0; i< $gridWidth; i++ )
         {
+            if( space_left < 7 ) break;
             len = FcUcs4ToUtf8( *s++, dest );
             dest+=len;
+            space_left -= len;
         }
     *dest = 0;
     printf("str: %s\n", string );
-    free(string);
+
+    /* check if there is a line number prefix */
+    if(! prog_insert_line($, string) ) return;
+
+    if( strncmp( string, "list", 4 ) == 0 ) prog_list($);
+    else if( strncmp( string, "save", 4 ) == 0 ) prog_save($);
+    else if( strncmp( string, "load", 4 ) == 0 ) prog_load($);
+    else if( strncmp( string, "run", 3 ) == 0 ) prog_run($);
+    else if( strncmp( string, "parse", 5 ) == 0 ) prog_parse($);
+    else if( $child ) prog_interpret($);
+}
+
+@proc prog_interpret($)
+{
+    char *s = (void*)$cmd;
+    while(*s && *s == '>' ) s++;
+    dprintf( $child->fd[3], "%s\n", s );
+}
+
+
+@proc prog_child_read($, int *source, XtInputId *id)
+{
+    int ch;
+    if( ! $child ) ERR("memory corruption");
+    if( fork2_read($child) ) {
+        prog_kill($);
+        return;
+    }
+    undraw_selection($);
+    while( (ch=mrb_get($child->buf)) >= 0 )
+        te_putc( $, ch );
+    selection_draw($);
+}
+
+@proc prog_child_err_read($, int *source, XtInputId *id)
+{
+    int len, i;
+
+    if( ! $child ) ERR("memory corruption");
+    char buf[1024];
+    len = read( *source, buf, sizeof(buf) );
+
+    undraw_selection($);
+    for(i=0;i<len;i++)
+        te_putc( $, buf[i] );
+    selection_draw($);
+}
+
+
+@proc prog_run($)
+{
+        if( $child ) prog_kill($);
+        $child = fork2_open( "lua", "-i", "-e", "_PROMPT=''", NULL );
+        $cid = XtAppAddInput( XtWidgetToApplicationContext($),
+                       $child->fd[0],
+                       (XtPointer)XtInputReadMask,
+                       (XtInputCallbackProc)prog_child_read,
+                       $ );
+
+        $eid = XtAppAddInput( XtWidgetToApplicationContext($),
+                       $child->fd[4],
+                       (XtPointer)XtInputReadMask,
+                       (XtInputCallbackProc)prog_child_err_read,
+                       $ );
+
+
+
+}
+
+
+@proc char *progm_alloc($, uint32_t ln, char *s)
+{
+        char *buf = malloc( 5 + strlen(s) );
+        *(uint32_t *)buf = ln;
+        while( isspace(*s) ) s++;
+        strcpy( buf +4, s );
+        return buf;
+}
+
+@proc progm_insert($, int i, uint32_t arg, char *s)
+{
+        m_ins($progm,i, 1);
+        STR($progm, i) = progm_alloc($,arg,s);
+}
+
+@proc progm_overwrite($, int i, uint32_t arg, char *s)
+{
+        free( STR($progm,i));
+        STR($progm, i) = progm_alloc($,arg,s);
+}
+
+@proc progm_append($, uint32_t arg, char *s)
+{
+        char *buf = progm_alloc($,arg,s);
+        m_put( $progm, &buf );
+}
+
+
+@ finde zeile |num| im puffer
+  returns: match
+  |*pos| == zeilennummer
+  match == 0 : gefunden
+  match <  0 : num größte zeile
+  match >  1 : *pos größer als |num|
+@proc int progm_find($, uint32_t num, int *pos)
+{
+        int i;
+        uint32_t n;
+        char *s;
+
+        for(i=0;i<m_len($progm);i++) {
+          s= STR($progm,i);
+          n = *(uint32_t *) s;
+          if( n == num ) { *pos=i; return 0; }
+          else if( n > num ) { *pos=i; return 1; };
+        }
+        *pos = i;
+        return -1;
+}
+
+
+@proc progm_put($, uint32_t arg, char *ln )
+{
+        int i;
+        uint32_t n;
+        char *s;
+
+        for(i=0;i<m_len($progm);i++) {
+          s= STR($progm,i);
+          n = *(uint32_t *) s;
+          if( n == arg ) { progm_overwrite( $, i, arg, ln ); return; }
+          else if( n > arg ) { progm_insert($, i, arg, ln ); return; }
+        }
+        progm_append($,arg, ln );
+}
+
+
+@proc Bool prog_insert_line($, char *buf)
+{
+        char *s = (void*) buf;
+        char *endp;
+        int arg;
+
+        arg = strtol( s,&endp,10);
+        if( s == endp ) { return 1; }
+
+        progm_put($, arg, endp );
+        return 0;
+}
+
+
+@ load a program file to memory
+  syntax: load filename
+
+
+@proc prog_error( $, char *s )
+{
+        te_down($);
+        te_pos1($);
+        te_write($,s);
+        te_down($);
+        te_pos1($);
+}
+
+
+@proc prog_load($)
+{
+        char *s = (void*)$cmd+5;
+        int p = m_create(20,1);
+
+        while( *s && ! isspace(*s) )
+               m_putc( p, *s++ );
+        m_putc(p,0);
+
+        FILE *fp = fopen( m_buf(p), "r" );
+        if( !fp ) { prog_error( $, "file read error" ); goto leave; }
+        m_clear(p);
+
+
+        while( m_fscan2( p, '\n', fp ) == '\n' ) {
+                prog_insert_line($,m_buf(p));
+                m_clear(p);
+        }
+
+        fclose(fp);
+        leave: m_free(p);
+
+}
+
+
+@ save a program file to filesystem
+  syntax: save filename
+@proc prog_save($)
+{
+        /* get two integer args */
+        char *s = (void*)$cmd+5;
+        int p = m_create(20,1);
+        int i;
+
+        while( *s && ! isspace(*s) )
+               m_putc( p, *s++ );
+        m_putc(p,0);
+
+        FILE *fp = fopen( m_buf(p), "w" );
+        if( !fp ) { prog_error( $, "file write error" ); goto leave; }
+
+        for(i=0;i<m_len($progm);i++)
+        {
+                s = STR($progm,i);
+                uint32_t n = *(uint32_t *)s; s+=4;
+                fprintf(fp,"%u %s\n", n,s );
+        }
+
+        fclose(fp);
+        leave: m_free(p);
+}
+
+@proc prog_parse($)
+{
+
+    if(! $child ) {
+        prog_error($,"starting subshell with 'run'");
+        prog_run($);
+    }
+
+    int from,len;
+
+    from = 0;
+    len  = m_len($progm);
+
+    /* get two integer args */
+    char *s = (void*)$cmd+6;
+    char *endp;
+    from = strtol( s,&endp,10);
+    if( s == endp ) { from=0; goto cont; }
+
+ cont:
+    prog_do_parse($, from, len);
+}
+
+@proc prog_list($)
+{
+        int arg,from,len;
+
+        from = 0;
+        len  = 10;
+
+        /* get two integer args */
+        char *s = (void*)$cmd+5;
+        char *endp;
+        arg = strtol( s,&endp,10);
+        if( s == endp ) { arg=0; goto cont; }
+
+        s=endp; if( *s == ',' ) s++;
+        from = arg;
+        arg = strtol( s,&endp,10);
+        if( s == endp ) { arg=0; goto cont; }
+        len = arg;
+
+        cont:
+        te_pos1($); te_down($);
+        prog_do_list($, from, len);
+}
+
+
+@proc te_write($, char *str)
+{
+    int len,l;
+    unsigned char *string = (void*) str;
+    uint32_t ucs4;
+    len = strlen( (char*)string);
+
+    while(1) {
+        l = FcUtf8ToUcs4 (string, &ucs4, len);
+        if( l<= 0 || len <=0 ) return;
+        te_putc($,ucs4);
+        string += l;
+        len -= l;
+    }
+}
+
+@proc te_writeln($,char *s)
+{
+        te_write($,s);
+        te_pos1($);
+        te_down($);
+}
+
+
+@proc prog_print($, int i)
+{
+        char buf[20];
+
+
+        char *s = STR($progm,i);
+        uint32_t num = *(uint32_t *)s;
+        s+=4;
+
+        sprintf(buf,"%d", num);
+        te_write($,buf);
+        te_putc($,32);
+        te_write($,s);
+}
+
+@proc prog_do_list($, int from, int len)
+{
+        int i;
+        int line;
+
+        int match  = progm_find( $, from, &line );
+        if( match < 0 ) return;
+
+        for(i=line;i<line+len;i++) {
+                if( i >= m_len($progm) ) break;
+                prog_print($,i);
+                te_pos1($);
+                te_down($);
+        }
+}
+
+@proc prog_do_parse($, int from, int len)
+{
+        int i;
+        int line;
+
+        int match  = progm_find( $, from, &line );
+        if( match < 0 ) return;
+
+        for(i=line;i<line+len;i++) {
+                if( i >= m_len($progm) ) break;
+                char *s = STR($progm,i);
+                s+=4;
+                dprintf( $child->fd[3], "%s\n", s );
+        }
+}
+
+
+
+@proc prog_kill($)
+{
+        if( $child ) {
+            fork2_close( $child );
+            $child=0;
+        }
+        if( $cid ) { XtRemoveInput($cid); $cid=0; }
+        if( $eid ) { XtRemoveInput($eid); $eid=0; }
 }
 
 
 
 @TRANSLATIONS
-@trans   <Key>Right:    forward_char()
-@trans   <Key>Left:     backward_char()
-@trans   <Key>Up:       prev_line()
-@trans   <Key>Down:     next_line()
-@trans   <Key>Return:   key_return()
-@trans   <Key>:         insert_char()
+@trans   <Key>Right:       forward_char()
+@trans   <Key>Left:        backward_char()
+@trans   <Key>Up:          prev_line()
+@trans   <Key>Down:        next_line()
+@trans   <Key>Return:      key_return()
+@trans   <Key>Delete:      key_del()
+@trans   <Key>BackSpace:   key_backspace()
+@trans   <Key>Escape:      kill_child()
+@trans   <Key>:            insert_char()
+
 
 @ACTIONS
+
+@proc kill_child
+{
+    undraw_selection($);
+    te_writeln($, "kill");
+    prog_kill($);
+
+    selection_draw($);
+}
+
+@proc key_del
+{
+    undraw_selection($);
+    te_del($);
+    selection_draw($);
+}
+
+@proc key_backspace
+{
+    undraw_selection($);
+    te_left($);
+    te_del($);
+    selection_draw($);
+}
+
+
 @proc key_return
 {
     undraw_selection($);
@@ -366,6 +871,7 @@
     if (len <= 0) return;
     FcUtf8ToUcs4 (buf, &ucs4, len);
     undraw_selection($);
+    te_ins($);
     te_putc($,ucs4);
     selection_draw($);
 }
@@ -411,4 +917,6 @@
 @incl "xutil.h"
 @incl "micro_vars.h"
 @incl "converters-xft.h"
+@incl "subshell.h"
+
 @incl <X11/Xaw/XawImP.h>

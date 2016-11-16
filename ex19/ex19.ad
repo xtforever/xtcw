@@ -13,7 +13,7 @@ ex19.wcChildren: gb1
 *Wedit.cursorColor: Black
 
 *gb1.wcClass: gridbox
-*gb1.wcChildren: ent filter ke tr
+*gb1.wcChildren: ent filter ke tr te
 
 
 *ent.wcClass: gridbox
@@ -101,3 +101,11 @@ ex19.wcChildren: gb1
 *u3.wcClass: WviewQV
 *u4.wcClass: WviewQV
 *u5.wcClass: WviewQV
+
+*te.wcClass: TermEd
+*te.gridx: 2
+*te.gridy: 0
+*te.fill: Both
+*te.weightx: 1
+*te.weighty: 1
+*te.gridHeight:      3

@@ -224,6 +224,9 @@
     char *s=$label;
     x = ($width - w) / 2;
     y = ($height -h) / 2;
+
+    printf( "%s: %u %u\n",$name, ((unsigned char*)s)[0], ((unsigned char *)s)[1] );
+
     XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
     			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
     $r_label.x = x;

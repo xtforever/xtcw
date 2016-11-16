@@ -32,6 +32,11 @@
 #include <X11/Vendor.h>
 #include <X11/Xaw/XawInit.h>
 
+#include "lfont.h"
+#include "xtcw/LightTxt.h"
+#include "xtcw/WviewQV.h"
+#include "xtcw/Calib.h"
+
 #include <WcCreate.h>
 #include <Xp.h>
 #include "wcreg2.h"
@@ -69,6 +74,7 @@ typedef struct BasicSetting {
     Widget widget_filelist;
     Widget widget_entry;
     Widget widget_filter;
+    Widget widget_ft1,widget_ft2,widget_ft3;
 
 } BasicSetting;
 
@@ -83,8 +89,18 @@ static XtResource basicSettingRes[] = {
     { NULL, NULL, XtRWidget, sizeof(Widget),
       FLD(widget_entry), XtRString, "*entry"
     },
+
     { NULL, NULL, XtRWidget, sizeof(Widget),
       FLD(widget_filter), XtRString, "*filter"
+    },
+    { NULL, NULL, XtRWidget, sizeof(Widget),
+      FLD(widget_ft1), XtRString, "*ft1"
+    },
+    { NULL, NULL, XtRWidget, sizeof(Widget),
+      FLD(widget_ft2), XtRString, "*ft2"
+    },
+    { NULL, NULL, XtRWidget, sizeof(Widget),
+      FLD(widget_ft3), XtRString, "*ft3"
     },
 
 
@@ -144,6 +160,9 @@ static void RegisterApplication ( Widget top )
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
   RCB( top, quit_gui );
+  RCP( top, lightTxt  );
+  RCP( top, wviewQV  );
+  RCP( top, calib  );
 
 }
 
@@ -181,6 +200,7 @@ void grab_window_quit(Widget top)
     (void) XSetWMProtocols (XtDisplay(top), XtWindow(top),
                             &wm_delete_window, 1);
 }
+
 
 
 
@@ -250,11 +270,29 @@ int main ( int argc, char **argv )
         functions can now communicate with widgets
     */
 
+    int lf = lfont_init( XtDisplay(appShell), "Sans-18" );
+    struct lfont_st *f = lfont_get(lf);
+
+    XtVaSetValues( SETTINGS.widget_ft1, "xftFont", f->xft_font_def[italic],
+                   "label", "italic",
+                   NULL );
+    XtVaSetValues( SETTINGS.widget_ft2, "xftFont", f->xft_font_def[bold],
+                   "label", "bold",
+                   NULL );
+    XtVaSetValues( SETTINGS.widget_ft3, "xftFont", f->xft_font_def[regular],
+                   "label", "regular",
+                   NULL );
+
+
+
+
     /*  -- Realize the widget tree and enter the main application loop
      */
     XtRealizeWidget ( appShell );
     grab_window_quit( appShell );
     //    pin_start_test();
+
+
 
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);

@@ -94,29 +94,35 @@
   return 0;
 }
 
+
+@proc set_values
+{
+    Bool t = False;
+    if( $old$fg_norm != $fg_norm ) { t=True;
+        col_set($,COLOR_FG_NORM); }
+    if( $old$fg_sel != $fg_sel ) { t=True;
+        col_set($,COLOR_FG_SEL); }
+    if( $old$fg_hi != $fg_hi ) { t=True;
+        col_set($,COLOR_FG_HI); }
+    if( $old$bg_norm != $bg_norm ) { t=True;
+        col_set($,COLOR_BG_NORM); }
+    if( $old$bg_sel != $bg_sel ) { t=True;
+        col_set($,COLOR_BG_SEL); }
+    if( $old$bg_hi != $bg_hi ) { t=True;
+        col_set($,COLOR_BG_HI ); }
+    if( $old$xftFont != $xftFont ) { t=True;
+        XftFontClose(XtDisplay($),$old$xftFont); }
+    return t;
+}
+
+
 @proc initialize
 {
   int i;
-  XGCValues     values;
-
-  /* copy colors to array for convenience */
-  $pixel[COLOR_FG_NORM]= $fg_norm;
-  $pixel[COLOR_FG_SEL]= $fg_sel;
-  $pixel[COLOR_FG_HI]= $fg_hi;
-  $pixel[COLOR_BG_NORM]= $bg_norm;
-  $pixel[COLOR_BG_SEL]= $bg_sel;
-  $pixel[COLOR_BG_HI]= $bg_hi;
-
-
-  /* convert 24bit pixel color to XftColor */
-  for(i=0;i<3;i++) {
-    xft_color_alloc( $, $pixel[i], $xft_col+i );
-    values.foreground = $pixel[i+3];
-    $gc[i] = XtGetGC($, GCForeground, &values);
-  }
-  for(i=0;i<3;i++) {
-    xft_color_alloc( $, $pixel[i+3], $xft_col+i+3 );
-  }
+  memset( $gc, 0, sizeof( $gc ));
+  memset( $xft_col, 0, sizeof( $xft_col));
+  for(i=0;i<6;i++)
+      col_set($,i);
 
   $state = STATE_NORMAL;
   $background_pixel = $pixel[STATE_NORMAL+3];
@@ -132,15 +138,42 @@
   Display *dpy = XtDisplay($);
 
   int i;
-  for(i=0;i<3;i++) {
+  for(i=0;i<6;i++) {
     XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
 		 None, $xft_col+i);
-    XtReleaseGC($,$gc[i]);
+    if( i < 3 ) XtReleaseGC($,$gc[i]);
   }
 }
 
 
 @UTILITIES
+@proc col_set($,int num)
+{
+    Display *dpy = XtDisplay($);
+    XGCValues     values;
+
+    switch( num ) {
+    case COLOR_FG_NORM: $pixel[COLOR_FG_NORM]= $fg_norm; break;
+    case COLOR_FG_SEL: $pixel[COLOR_FG_SEL]= $fg_sel; break;
+    case COLOR_FG_HI: $pixel[COLOR_FG_HI]= $fg_hi; break;
+    case COLOR_BG_NORM: $pixel[COLOR_BG_NORM]= $bg_norm; break;
+    case COLOR_BG_SEL: $pixel[COLOR_BG_SEL]= $bg_sel; break;
+    case COLOR_BG_HI: $pixel[COLOR_BG_HI]= $bg_hi; break;
+    }
+
+    /* !TODO! Check if Color is already alloced
+      if( $xft_col[num] )
+        XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+		 None, $xft_col+num);
+    */
+    xft_color_alloc( $, $pixel[num], $xft_col+num );
+
+    if( num >= 3 ) {
+        values.foreground = $pixel[num]; /* background color */
+        if( $gc[num-3] ) XtReleaseGC($,$gc[num-3]);
+        $gc[num-3] = XtGetGC($, GCForeground, &values);
+    }
+}
 
 
 @IMPORTS

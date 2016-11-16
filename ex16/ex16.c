@@ -191,7 +191,39 @@ static void load_temp_single(int i)
     fread( str, sizeof str, 1, fp );
     SETTINGS.temp[i] = atoi(str);
     fclose(fp);
+}static int down_x, down_y;
+static void btndown(Widget w, XEvent* e, String* s, Cardinal* n)
+{
+    int x,y,x0=e->xbutton.x, y0= e->xbutton.y;
+    Display *disp = XtDisplay(TopLevel);
+    Window child_return;
+    XTranslateCoordinates (disp, XtWindow(w), XtWindow(TopLevel),
+                           x0, y0, & x, & y, & child_return);
+
+    TRACE(1,"DOWN: %dx%d", x,y );
+    down_x = x;
+    down_y = y;
+
 }
+
+static void btnmove(Widget w, XEvent* e, String* s, Cardinal* n)
+{
+    int x0=e->xbutton.x, y0= e->xbutton.y;
+    TRACE(1,"%dx%d",x0,y0  );
+    Display *disp = XtDisplay(TopLevel);
+    Window  win   = XtWindow(TopLevel);
+    int screen    = DefaultScreen(disp);
+    Window root   = RootWindow(disp,screen);
+
+    int x,y;
+    Window child_return;
+    XTranslateCoordinates (disp, XtWindow(w), root,
+                           x0, y0, & x, & y, & child_return);
+
+    TRACE(1, "%dx%d", x,y );
+    XMoveWindow(disp,win,x - down_x,y-down_y );
+}
+
 
 static void disp_temp_single(int i)
 {

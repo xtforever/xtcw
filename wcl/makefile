@@ -70,7 +70,7 @@ $(STATIC_LIB): ${OBJS}
 	ar rcs $@ $^
 
 clean:
-	-${RM} *.o *.lo *.so*
+	-${RM} *.o *.lo *.so* *.a *.lex.h *.tab.h
 
 install: $(SL_NAME)
 	-${MKDIR} -p $(INC)
