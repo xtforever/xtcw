@@ -9,10 +9,10 @@ static int first_time = 1;
 void mv_init(void)
 {
   if( first_time ) {
-    MV.map       = MapAg_New();
-    MV.data      = m_create(100,sizeof(struct mv_data));
-    m_new(MV.data,1); /* first element is reserved */
-    first_time=0;
+      MV.map       = MapAg_New();
+      MV.data      = m_create(100,sizeof(struct mv_data));
+      m_new(MV.data,1); /* first element is reserved */
+      first_time=0;
   }
 }
 

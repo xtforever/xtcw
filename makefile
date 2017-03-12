@@ -1,4 +1,4 @@
-all: tool widgets wclib examples
+all: tool widgets wclib 
 
 tool:
 	make  -C wbuild PKGDATADIR=${CURDIR}/wbuild
@@ -9,12 +9,7 @@ widgets: tool
 wclib: widgets
 	make -C wcl
 
-examples: wclib
-	make -C ex11
-
 clean:
 	make  -C wbuild clean
 	make  -C wb clean
 	make  -C wcl clean
-	make  -C ex4 clean
-	make -C ex11 clean

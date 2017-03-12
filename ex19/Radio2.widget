@@ -1,0 +1,67 @@
+@class Radio2 (Gridbox)
+@ ein radio group widget das eine gridbox und mehrere
+  radio buttons erzeugt, einzig eine durch komma getrennte
+  liste von namen muss angegeben werden.
+  Die resource "value" gibt das aktive radio widget an.
+  Die namen der Radio widgets stehen im StringMArray lst.
+
+@PUBLIC
+@var StringMArray lst = <String> "Hello,World"
+@var int value = 0
+
+@PRIVATE
+@var String radioGroup
+
+@METHODS
+@proc initialize
+{
+        asprintf( & $radioGroup, "group_%p", (void*)$ );
+        do_layout($);
+}
+
+@proc destroy
+{
+        free($radioGroup);
+        m_free_strings($lst,0);
+}
+
+@UTILITIES
+@proc do_layout($)
+{
+        Widget w;
+        int i;
+        char *grid = "gridx";
+        for( i=0; i<$num_children;i++ )
+             XtDestroyWidget($children[0]);
+        for( i=0; i<m_len($lst); i++ ) {
+             fprintf(stderr,"create %s\n", STR($lst,i));
+             w = XtVaCreateManagedWidget(STR($lst,i),
+                wradioWidgetClass, $,
+                grid, i,
+                "radioGroup", $radioGroup,
+                "radioData", i,
+                NULL );
+             XtAddCallback(w, XtNcallback, (void*)change_cb, $ );
+        }
+        select_child($,$value);
+}
+
+@proc select_child($, int num)
+{
+        $value=num;
+        if( $value >= m_len($lst) ) $value=0;
+        if( $value < $num_children )
+            wradio_select($children[$value]);
+}
+
+@proc change_cb(Widget caller, $, XtPointer class)
+{
+        $value = (intptr_t) wradio_active_data(caller);
+}
+
+
+@IMPORTS
+@incl <xtcw/Gridbox.h>
+@incl <xtcw/Wradio.h>
+@incl "converters.h"
+@incl "mls.h"

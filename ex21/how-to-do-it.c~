@@ -1,0 +1,55 @@
+
+/* create the gui
+
+   PLAN:
+a   []adam [x]amon []tola []samson                checkbox-list
+b   (x)2.0  ()2.1                                 radiobox-list
+
+c    UP    [1 a-capacity check]                   string-list
+          [2 a-usb programming]
+    ||    [3 a-deep discharge protection]
+          [4 a-cmdline interface]
+    DN    [                     ]
+
+
+d   [1]
+e   [a-capcitiy check] short key
+f   []adam []amon [x]tola [x]samson
+g   (x)2.0  ()2.1
+
+h  [ DESC ] long description
+i  [ save ]
+
+
+how.wcChildren: xa
+*xa.wcClass: VBox
+*xa.wcChildren: a b c d e f g h i
+
+*xa.a.wcClass: Checkbox
+*xa.a.strings: adam amon tola samson
+*xa.a.callback: filter_component
+
+*xa.b.wcClass: Radiobox
+*xa.b.strings: 2.0 2.1
+*xa.b.callback: filter_version
+
+*xa.c.wcClass: Stringlist
+*xa.c.data: requirement_names
+*xa.c.callback: requirement_select
+
+*xa.d.wcClass: Label
+*xa.d.data: req_id
+
+*xa.e.wcClass: Lineinput
+*xa.e.data: req_name
+
+*xa.f.wcClass: Checkbox
+*xa.f.strings: adam amon tola samson
+*xa.f.data:    req_components
+
+*xa.g.wcClass: Radiobox
+*xa.g.strings: 2.0 2.1
+*xa.g.callback: req_versions
+
+*xa.g.wcClass: Textbox
+*xa.g.data:    req_desc

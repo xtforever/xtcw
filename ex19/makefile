@@ -13,7 +13,6 @@ WFLAGS= -d doc -c src -i xtcw --include-prefix=xtcw $(wb_install)/tex.w $(wb_ins
 xtcw/%.h src/%.c: %.widget
 	wb_search=../wb ../wbuild/wb.sh $^ $(WBUILD) $(WFLAGS)
 
-
 all: $(TARGET)
 
 xtcw/WviewQV.h src/WviewQV.c: WviewQV.widget
@@ -22,8 +21,10 @@ xtcw/Wsel.h src/Wsel.c: Wsel.widget
 xtcw/Wsel2.h src/Wsel2.c: Wsel2.widget
 xtcw/KaroEd.h src/KaroEd.c: KaroEd.widget
 xtcw/TermEd.h src/TermEd.c: TermEd.widget
+xtcw/Radio2.h src/Radio2.c: Radio2.widget
+xtcw/Qvlabel.h src/Qvlabel.c: Qvlabel.widget
 
-$(TARGET):  src/TermEd.o src/KaroEd.o src/Wsel2.o src/Wsel.o src/Wmvar.o src/WviewQV.o src/Wlab.o src/DigTab.o $(M)/wcl/libxtcw.a xt_cairo.o mrb.o subshell.o
+$(TARGET):  src/Qvlabel.c src/Radio2.c src/TermEd.o src/KaroEd.o src/Wsel2.o src/Wsel.o src/Wmvar.o src/WviewQV.o src/Wlab.o src/DigTab.o $(M)/wcl/libxtcw.a xt_cairo.o mrb.o subshell.o
 
 
 clean:

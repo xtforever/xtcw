@@ -1,0 +1,51 @@
+Proposal
+
+With debug enabled:
+make -C tool
+
+Without debug:
+make -C tool debug_flag=0
+
+
+make -C wbuild
+make -C xtcw static
+make -C xtcw shared
+
+Task: deploy application
+      Nothing special
+      you need libxtcw.so and your own executeable
+
+
+Task: compile application with externaly installed xtcw-dev tree
+xtcw-dev=/usr/local
+make
+              lib       =/usr/local/lib/libxctw.so
+              include   =/usr/local/include/xtcw
+              bin       =/usr/local/bin/wbuild
+              wbuildcf  =/usr/local/include/xtcw
+
+xtcw-dev:
+              exec:        wbuild
+              lib:         libxtcw.so
+              cf:          wbuild.ini
+              include:     name.widget
+                           name.h
+                           nameP.h
+                           name.3
+                           other.h
+                           otherP.h
+
+
+
+Task: compile application inside xtcw tree
+
+xtcw-dev=~/src/xtcw
+build=$(xtcw-dev)/build
+include=-I$(xtcw-dev)/wcl -I$(xtcw-dev)/widgets -I$(build)/include/xtcw/
+
+1) build wbuild local
+2) create widget source
+3) compile xtcw
+4) link libxtcw
+5) compile example
+6) link example

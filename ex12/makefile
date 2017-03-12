@@ -16,4 +16,4 @@ vdemo: src/Wdemo.o $(M)/wcl/libxtcw.a xt_cairo.o
 src/Wdemo.o: Wdemo.widget
 
 clean:
-	${RM} -rf ex12 *.o src doc vexmo *~
+	${RM} -rf ex12 *.o src doc vexmo *~ vdemo

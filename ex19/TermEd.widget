@@ -1,9 +1,9 @@
 @CLASS TermEd ( Core )
 
 @PUBLIC
-@var int gridWidth = 80
-@var int gridHeight = 25
-@var int size = 12
+@var int gWidth = 40
+@var int gHeight = 25
+@var int size = 8
 @var int selTime = 400
 @var String text = <String> "Hello World\nHow are you?"
 @var <XftColor> XftColor fg = <String> "White"
@@ -41,8 +41,8 @@
     Display *dpy = XtDisplay($);
     font_load($,$size);
     XftTextExtents32(dpy, $xftFont, &bat, 1, &extents);
-    $height = ($grid_pix_height = $xftFont->ascent + $xftFont->descent) * $gridHeight;
-    $width  = ($grid_pix_width = extents.width) * $gridWidth;
+    $height = ($grid_pix_height = $xftFont->ascent + $xftFont->descent) * $gHeight;
+    $width  = ($grid_pix_width = extents.width) * $gWidth;
     $draw=0;
     $cmd=0;
     $scr=0;
@@ -55,6 +55,7 @@
     $timerid = 0;
     $gc_copy =  XtGetGC($, 0,0 );
     $progm = m_create(100,sizeof(char*));
+    do_resize($);
 
 }
 
@@ -82,15 +83,9 @@
 
 @proc resize
 {
-    $gridWidth  = $width / $grid_pix_width;
-    $gridHeight = $height / $grid_pix_height;
-    $scr=realloc($scr, $gridWidth * $gridHeight * 4 );
-    memset($scr,0,$gridWidth * $gridHeight * 4 );
-    $cmd=realloc($cmd,$cmd_len = ($gridWidth+2) * 6 );
-
-    printf("WxH=%dx%d\n",$gridWidth, $gridHeight );
-    printf("pix WxH=%dx%d\n",$grid_pix_width, $grid_pix_height );
-    printf("w WxH=%dx%d\n",$width, $height );
+    $gWidth  = $width / $grid_pix_width;
+    $gHeight = $height / $grid_pix_height;
+    do_resize($);
 }
 
 @proc expose
@@ -150,26 +145,26 @@
 {
     int x,y;
     XftDrawRect($draw,$col[1], 0,0, $width, $height );
-    for(x=0;x<$gridWidth;x++) {
-        for(y=0;y<$gridHeight;y++) {
-            draw_glyph_color($,x,y,0,-1,$scr[x + y * $gridWidth ] );
+    for(x=0;x<$gWidth;x++) {
+        for(y=0;y<$gHeight;y++) {
+            draw_glyph_color($,x,y,0,-1,$scr[x + y * $gWidth ] );
         }
     }
 }
 
 @proc putcharat($, int x, int y, uint32_t ucs4 )
 {
-    if( x < $gridWidth && x >= 0 && y < $gridHeight && y >= 0 )
+    if( x < $gWidth && x >= 0 && y < $gHeight && y >= 0 )
         {
-            $scr[x + y * $gridWidth ] = ucs4;
+            $scr[x + y * $gWidth ] = ucs4;
         }
 }
 
 @proc uint32_t getcharat($, int x, int y )
 {
-    if( x < $gridWidth && x >= 0 && y < $gridHeight && y >= 0 )
+    if( x < $gWidth && x >= 0 && y < $gHeight && y >= 0 )
         {
-            return $scr[x + y * $gridWidth ];
+            return $scr[x + y * $gWidth ];
         }
 
     return 0;
@@ -177,9 +172,9 @@
 
 @proc  drawcharat($, int x, int y, int fg, int bg )
 {
-    if( x < $gridWidth && x >= 0 && y < $gridHeight && y >= 0 )
+    if( x < $gWidth && x >= 0 && y < $gHeight && y >= 0 )
         {
-            draw_glyph_color($,x,y,fg,bg,$scr[x + y * $gridWidth ] );
+            draw_glyph_color($,x,y,fg,bg,$scr[x + y * $gWidth ] );
         }
 }
 
@@ -194,8 +189,8 @@
         l = FcUtf8ToUcs4 (string, &ucs4, len);
         if( l<= 0 || len <=0 ) return;
         if( ucs4 == '\n' ) { x=0; y++; }
-        if( x >= $gridWidth ) { x=0; y++; }
-        if( y >= $gridHeight ) { y=0; }
+        if( x >= $gWidth ) { x=0; y++; }
+        if( y >= $gHeight ) { y=0; }
         if( ucs4 >=' ' ) {
             putcharat($,x,y,ucs4);
             x++;
@@ -207,7 +202,7 @@
 
 @proc test_convert($)
 {
-    draw_string($, 0, $gridHeight / 2, $text );
+    draw_string($, 0, $gHeight / 2, $text );
 }
 
 @proc selection_timer( $, XtIntervalId *id)
@@ -237,8 +232,8 @@
 
 @proc selection_draw($)
 {
-    if( $rsel.x >= $gridWidth ) $rsel.x = $gridWidth-1;
-    if( $rsel.y >= $gridHeight ) $rsel.y = $gridHeight-1;
+    if( $rsel.x >= $gWidth ) $rsel.x = $gWidth-1;
+    if( $rsel.y >= $gHeight ) $rsel.y = $gHeight-1;
     undraw_selection($);
     $selection_visible = True;
     $rsel_old = $rsel;
@@ -247,9 +242,9 @@
 
 @proc scr_scroll_up($)
 {
-        memcpy( $scr, $scr + $gridWidth,
-                ($gridWidth*($gridHeight-1))*4 );
-        memset( $scr + $gridWidth*($gridHeight-1), 0, $gridWidth*4 );
+        memcpy( $scr, $scr + $gWidth,
+                ($gWidth*($gHeight-1))*4 );
+        memset( $scr + $gWidth*($gHeight-1), 0, $gWidth*4 );
 }
 
 @proc pix_scroll_up($)
@@ -265,13 +260,13 @@
 */
     XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
               0, $grid_pix_height,
-              $grid_pix_width * ($gridWidth),
-              $grid_pix_height * ($gridHeight-1),
+              $grid_pix_width * ($gWidth),
+              $grid_pix_height * ($gHeight-1),
               0,0 );
 
     /* clear background */
     XftDrawRect($draw,$col[1],
-    0,      $grid_pix_height * ($gridHeight-1),
+    0,      $grid_pix_height * ($gHeight-1),
     $width, $grid_pix_height );
 
 }
@@ -288,12 +283,12 @@
     x /= 8;
     x ++;
     x *= 8;
-    if( x < $gridWidth ) $rsel.x = x;
+    if( x < $gWidth ) $rsel.x = x;
 }
 
 @proc te_down($)
 {
-    if( $rsel.y < ($gridHeight-1) ) {
+    if( $rsel.y < ($gHeight-1) ) {
         $rsel.y++;
         return;
     }
@@ -316,7 +311,7 @@
 
 @proc te_right($)
 {
-    if( $rsel.x < ($gridWidth-1) ) {
+    if( $rsel.x < ($gWidth-1) ) {
         $rsel.x++;
         return;
     }
@@ -335,7 +330,7 @@
    y0 = y;
    /*-----------------------*/
    /* width, height         */
-   w = $gridWidth - (x+1);
+   w = $gWidth - (x+1);
    h = 1;
    /*-----------------------*/
    /* source                */
@@ -366,7 +361,7 @@
    y0 = y;
    /*-----------------------*/
    /* width, height         */
-   w = $gridWidth - (x+1);
+   w = $gWidth - (x+1);
    h = 1;
    /*-----------------------*/
    /* source                */
@@ -391,15 +386,15 @@
 {
    int i,x,y;
    x = $rsel.x; y=$rsel.y;
-   uint32_t *s = $scr+y* $gridWidth;
+   uint32_t *s = $scr+y* $gWidth;
 
    /* letztes zeichen der zeile mit <null> füllen */
-   if( x == $gridWidth -1 ) {
+   if( x == $gWidth -1 ) {
       s[x] = 0;
       return;
    }
 
-   for(i=$gridWidth-2; i>=x ; i-- )
+   for(i=$gWidth-2; i>=x ; i-- )
               s[i+1] = s[i];
    pix_ins($);
    s[x] = 32;
@@ -410,15 +405,15 @@
 {
    uint16_t i,x,y;
    x = $rsel.x; y=$rsel.y;
-   uint32_t *s = $scr+y* $gridWidth;
+   uint32_t *s = $scr+y* $gWidth;
 
    /* letztes zeichen der zeile mit <null> füllen */
-   if( x == $gridWidth -1 ) {
+   if( x == $gWidth -1 ) {
       s[x] = 0;
       return;
    }
 
-   for(i=x+1; i< $gridWidth; i++ )
+   for(i=x+1; i< $gWidth; i++ )
               s[i-1] = s[i];
    pix_del($);
 }
@@ -426,8 +421,8 @@
 
 @proc te_putc($, uint32_t ucs4)
 {
-    if( $rsel.x >= $gridWidth ) $rsel.x = $gridWidth-1;
-    if( $rsel.y >= $gridHeight ) $rsel.y = $gridHeight-1;
+    if( $rsel.x >= $gWidth ) $rsel.x = $gWidth-1;
+    if( $rsel.y >= $gHeight ) $rsel.y = $gHeight-1;
     if( te_parse($,ucs4) ) return;
     putcharat($, $rsel.x, $rsel.y,ucs4);
     drawcharat($, $rsel.x, $rsel.y, 0,1 );
@@ -447,12 +442,12 @@
 {
     int i,len, space_left;
     unsigned char *dest;
-    // char *string = malloc( $gridWidth * 6 + 2 );
+    // char *string = malloc( $gWidth * 6 + 2 );
     char *string = (void*)$cmd;
-    uint32_t *s = $scr + $rsel.y * $gridWidth;
+    uint32_t *s = $scr + $rsel.y * $gWidth;
     dest = (void*)string;
     space_left = $cmd_len;
-    for( i=0; i< $gridWidth; i++ )
+    for( i=0; i< $gWidth; i++ )
         {
             if( space_left < 7 ) break;
             len = FcUcs4ToUtf8( *s++, dest );
@@ -513,7 +508,7 @@
 @proc prog_run($)
 {
         if( $child ) prog_kill($);
-        $child = fork2_open( "lua", "-i", "-e", "_PROMPT=''", NULL );
+        $child = fork2_open( "lua5.3", "-i", NULL, "-e", "_PROMPT=''", NULL );
         $cid = XtAppAddInput( XtWidgetToApplicationContext($),
                        $child->fd[0],
                        (XtPointer)XtInputReadMask,
@@ -809,6 +804,15 @@
         if( $eid ) { XtRemoveInput($eid); $eid=0; }
 }
 
+@proc do_resize($)
+{
+    $scr=realloc($scr, $gWidth * $gHeight * 4 );
+    memset($scr,0,$gWidth * $gHeight * 4 );
+    $cmd=realloc($cmd,$cmd_len = ($gWidth+2) * 6 );
+    printf("WxH=%dx%d\n",$gWidth, $gHeight );
+    printf("pix WxH=%dx%d\n",$grid_pix_width, $grid_pix_height );
+    printf("w WxH=%dx%d\n",$width, $height );
+}
 
 
 @TRANSLATIONS
@@ -889,7 +893,7 @@
 {
     undraw_selection($);
     te_down($);
-    // if( $rsel.y < ($gridHeight-1) )
+    // if( $rsel.y < ($gHeight-1) )
     // $rsel.y++;
     selection_draw($);
 }
@@ -903,7 +907,7 @@
 
 @proc forward_char
 {
-    if( $rsel.x < ($gridWidth-1) )
+    if( $rsel.x < ($gWidth-1) )
         $rsel.x ++;
     selection_draw($);
 }

@@ -23,4 +23,5 @@ ex3: src/Wim2.o $(M)/wcl/libxtcw.a xt_cairo.o
 src/Wim2.o: Wim2.widget
 
 clean:
-	${RM} ex3 *.o src/*
+	${RM} ex3 *.o src/* vexmo/* xtcw/* doc/*
+

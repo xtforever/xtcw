@@ -13,7 +13,7 @@
 @trans <Ctrl>x:        info()
 @trans <Ctrl>v:        insert_selection()
 @trans <Btn1Down>:     set_cursor()
-@trans <Key>Return:    info()
+@trans <Key>Return:    notify()
 @trans <Key>:          insert_char()
 
 

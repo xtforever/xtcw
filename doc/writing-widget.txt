@@ -1,0 +1,201 @@
+compress_exposure = XtExposeCompressMultiple
+
+initialize
+        - check size
+        set preferred width,height
+
+realize
+        create_window/shape window
+        alloc_pixmaps()
+
+destroy
+        free_pixmaps()        - memory cleanup
+
+resize
+        do_resize()                        - relayout, alloc pixmaps, ...
+
+---------------------------------------------------------------
+set-values - change state
+         - explicit redraw (necc. if compress_exposures is set)
+        update()
+
+---------------------------------------------------------------
+get-values-hook - answer request for state
+         convert values if necc.
+
+
+---------------------------------------------------------------
+expose        - force window redraw
+        draw_parts()             copy rectangles from pixmap cache to window
+
+
+
+update          - update pixmap cache and window
+
+        changed & SIZE  ? do_resize(), changed=EVERYTHING, background_clear = True;
+        changed & VAL1  ? redraw(val1) append_rectangle(val1)
+        changed & VAL2  ? redraw(val2) append_rectangle(val2)
+        changed & VAL3  ? redraw(val3) append_rectangle(val3)
+
+        draw_parts()
+
+        background_clear = False;
+        changed = 0
+
+draw_parts(Region r)
+{
+        optimize_rectangles
+        copy rectangles from pixmap cache to window
+}
+
+
+do_resize()
+{
+        realloc_pixmaps
+        layout
+}
+
+/*
+To generate the smallest rectangle enclosing a region, use XClipBox.
+   XClipBox(r, rect_return)
+     Region r;
+     XRectangle *rect_return;
+*/
+
+/*
+To create a union of a source region and a rectangle, use XUnionRectWithRegion.
+   XUnionRectWithRegion(rectangle, src_region, dest_region_return)
+     XRectangle *rectangle;
+     Region src_region;
+     Region dest_region_return;
+*/
+
+
+draw()
+  resize: hintergrund füllen und alle teile neu zeichnen
+          und pixmap in das window kopieren
+
+  dirty_a: nur hintergrund von teil dirty_a löschen und neu zeichnen
+           und teil dirty_a von pixmap in das window kopieren
+
+expose()
+  nur pixmap in das window kopieren
+
+----------------
+
+Variable
+Hashmap( int key, int value )
+
+struct variable
+       int key_m
+       int type    - fur XtConverter
+
+string:
+        key_m = m_create( 100, 1 )
+
+int:
+        key_m = mv
+
+Instrument (int)
+
+
+
+--------------------------------------
+
+
+redraw-pfade
+
+on-resize: do_init=1
+
+expose:
+
+  if do_init:
+    resize=0
+    re-create pixmaps
+    clear pixmap
+    draw_text
+
+  copy region to window
+
+
+set-values:
+  if not initialized: do_init=1, return;
+
+  if changed(value):
+    clear_old_text_on_pixmap
+    draw_text
+    copy pixmap to window
+    return
+
+  if changed(colors):
+    clear pixmap
+    draw_text
+    copy pixmap to window
+    return
+
+  if force update
+    copy pixmap to window
+    return
+-----------------------------------------------------------------------------------------
+
+composite-widget
+
+init:
+        create sub widgets
+        layout
+
+resize:
+        layout
+
+
+Digital
+----------------
+1.  [X]   IN
+2.  [-]   OUT
+----------------
+
+
+pin-config: pin
+
+Variable: "pin" + Nummer
+Beispiel: pin12 - Zustand von pin12
+Type: Bool
+
+
+Konfiguration: cfg
+
+Variable: "cfg" + Nummer
+Beispiel: cfg12 - Konfiguration von digital pin 12
+Type: (0,1,2) : 0=IN, 1=OUT, 2=Hi-Z
+
+
+
+
+Nachricht von gui and mcu senden, wenn der benutzer den zustand ändern möchte
+  gui -> app-callback (send-msg) -> mcu
+
+Rückmeldung der MCU quittiert den vom benutzer gewählten zustand oder
+macht die änderungen rückgängig.
+  mcu -> mv_write -> gui-update (mv_onwrite)
+
+Problem:
+  trifft eine nachricht von der MCU ein, während der benutzer einen neuen
+  zustand einstellt muss die nachricht zwischengespeichert werden
+
+
+
+
+
+
+
+...
+p1
+c1
+p2
+c2
+...
+a1
+a2
+a3
+a4
+...

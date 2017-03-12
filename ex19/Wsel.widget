@@ -31,6 +31,11 @@
         return 0;
 }
 
+@proc destroy
+{
+        m_free_strings($names,0);
+}
+
 
 @UTILITIES
 @proc String get_name($)

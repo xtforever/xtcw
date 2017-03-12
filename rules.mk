@@ -1,4 +1,8 @@
-CFLAGS += -DMLS_DEBUG -D_GNU_SOURCE -g -Wall
+ifeq ($(debug_flag),0)
+	CFLAGS += -O -Wall
+else
+	CFLAGS += -DMLS_DEBUG -D_GNU_SOURCE -g -Wall
+endif
 
 prefix      ?= $(HOME)
 exec_prefix ?= $(prefix)

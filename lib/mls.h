@@ -41,10 +41,6 @@ extern "C" {
 #define BIT(x) ( 1 <<(x) )
 #endif
 
-#ifndef MaxSet
-#define MaxSet(a,b) do { if( (a) < (b) ) (a)=(b); } while(0)
-#endif
-
 #define increase_by_percent(a,p)  calc_percent(a,p+100)
 #define calc_percent(a,p)  (((p) > 0 ) ? (a) * (p) / 100 : 0)
 
@@ -162,6 +158,8 @@ int _m_next( int ln, const char *fn, const char *fun,
 	    int h, int *i, void *d );
 void _m_clear( int ln, const char *fn, const char *fun,
 	      int h );
+void* _m_buf(int ln, const char *fn, const char *fun,
+	      int m );
 
 // ********************************************
 //
@@ -212,7 +210,6 @@ int m_lookup( int m, int key );
 int m_lookup_obj( int m, void *obj, int size );
 int utf8_getchar(FILE *fp, utf8_char_t buf );
 void m_putc(int m, char c);
-
 int m_lookup_str(int m, const char *key, int NOT_INSERT);
 int utf8char(char **s);
 int m_utf8char(int buf, int *p);
@@ -275,13 +272,15 @@ void    escape_buf( int buf, char *src );
   /* get length of string m without trailing zero */
 int s_strlen(int m );
   /* append strings s1,s2,s3,... to m */
-int s_app(int m, ...);
+int s_app(int m, ...) __attribute__ ((__sentinel__(0)));
+    /* append string |s| to |m| */
 int s_app1(int m, char *s);
   /* write sprintf(...) string to array m at pos p */
 int vas_printf(int m, int p, char *format, va_list argptr );
 int s_printf(int m, int p, char *format, ...);
 int s_index( int buf,int p, int ch );
 int mstrcmp(int m,int p, char *s);
+int mstr_to_long(int buf, int *p, long int *ret_val);
 int s_lastchar(int m);
 int s_copy( int m, int first_char, int last_char  );
 
@@ -327,6 +326,10 @@ enum {
 
 #define m_free(m) \
 	_m_free(__LINE__, \
+	__FILE__, __FUNCTION__,(m))
+
+#define m_buf(m)         \
+	_m_buf(__LINE__, \
 	__FILE__, __FUNCTION__,(m))
 
 #define m_put(m,d) \

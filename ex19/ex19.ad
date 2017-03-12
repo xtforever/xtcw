@@ -1,7 +1,9 @@
 ex19.wcChildren: gb1
 
+ex19.host_name: localhost
+ex19.host_service: 10001
 
-
+*xftFont: Sans-8
 
 *weightx: 1
 *weighty: 1
@@ -18,9 +20,8 @@ ex19.wcChildren: gb1
 
 *ent.wcClass: gridbox
 *ent.weighty: 0
-*ent.wcChildren: entry b1 b2 b3
+*ent.wcChildren: entry b1 b2 b3 b4
 *ent.borderWidth: 0
-
 
 *entry.wcClass: Wedit
 *entry.label: Hello World
@@ -46,12 +47,37 @@ ex19.wcChildren: gb1
 *b3.weightx: 0
 *b3.gridx: 3
 
+*b4.gridy: 1
+*b4.gridWidth: 4
+*b4.fill: Both
+*b4.weightx: 1
+*b4.weighty: 1
+*b4.wcClass: KaroEd
+*b4.auto_resize: 0
+*b4.min_lines: 5
+*b4.grid_height: 5
+*b4.grid_width: 11
+*b4.label: Hello
+*b4.lines: Hello World, 1test,2test,3test,4test
+*b4.xftFont: Source Code Pro-12
+
+
+
+
+
 *filter.wcClass: DigTab
+*filter*weightx: 0
+*filter*weighty: 0
+*filter*fill: None
+*filter*margin: 2
 *filter.gridWidth: 1
 *filter.gridy: 1
-*filter.weighty: 0
-*filter.fill: None
-*filter.pin_config: 0010010203
+*filter.weighty: 2
+*filter.weightx: 1
+*filter.fill: Both
+*filter.pin_config: xx012345000000
+*filter.pin_status: xx111111100011
+*filter.callback: print_config
 
 *xfilter.wcClass: Hbox
 *xfilter.wcChildren: t1 t2 t3
@@ -77,13 +103,38 @@ ex19.wcChildren: gb1
 *fileList.gridWidth: 1
 *fileList.list_max: 20
 
-*ke.wcClass: KaroEd
+*ke.wcClass: Hbox
+*ke.weightx: 0
+*ke.weighty: 0
+*ke.fill: Width
 *ke.gridy: 2
 *ke.gridWidth: 1
-*ke.min_lines: 5
-*ke.label: Hello
-*ke.lines: Hello World, 1test,2test,3test,4test
-*ke.xftFont: Source Code Pro-33
+*ke.wcChildren: adc0 adc1 adc2
+
+*adc0.wcClass: WviewQV
+*adc0.label: ADC0:
+*adc0.var: adc0
+*adc0.enable: en
+
+*adc1.wcClass: WviewQV
+*adc1.label: ADC1:
+*adc1.var: adc1
+*adc1.enable: en
+
+*adc2.wcClass: WviewQV
+*adc2.label: ADC2:
+*adc2.var: adc2
+*adc2.enable: en
+
+*xke.wcClass: KaroEd
+*xke.gridy: 2
+*xke.min_lines: 5
+*xke.grid_height: 5
+*xke.grid_width: 11
+*xke.auto_resize: 0
+*xke.label: Hello
+*xke.lines: Hello World, 1test,2test,3test,4test
+*xke.xftFont: Source Code Pro-12
 
 *tr.*.borderWidth:   0
 *tr.wcClass:         VBox
@@ -102,10 +153,23 @@ ex19.wcChildren: gb1
 *u4.wcClass: WviewQV
 *u5.wcClass: WviewQV
 
-*te.wcClass: TermEd
+*te.wcClass: Box
+*te.wcChildren: te1 te2
 *te.gridx: 2
 *te.gridy: 0
 *te.fill: Both
 *te.weightx: 1
 *te.weighty: 1
 *te.gridHeight:      3
+
+*te1.wcClass: TermEd
+
+*te2.wcClass: Radio2
+*te2.lst: in, in-p, out
+*te2.locked:  0
+*te2.value: 2
+*te2.*borderWidth: 0
+*te2.*bg_hi: White
+*te2.*fg_hi: Black
+*te2.*fg_norm: #333333
+*te2.*xftFont: Sans-18

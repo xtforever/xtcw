@@ -1,0 +1,15 @@
+db-t1.wcChildren: gb1
+
+*weightx: 1
+*weighty: 1
+*fill: Both
+*Gridbox.background: Darkblue
+*background: Lightblue
+*foreground: black
+*cornerRoundPercent: 5
+
+*gb1.wcClass: gridbox
+*gb1.wcChildren: l1
+
+*l1.wcClass: Wlabel
+*l1.label: Test-Demo DataBase App

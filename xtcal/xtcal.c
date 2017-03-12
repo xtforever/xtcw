@@ -135,6 +135,7 @@ void gauss1(void *b, void *res, int eq )
 void dprint_matrix(char *name,
                   void *B, int rows, int cols)
 {
+
     double *b = B;
     int i,j;
 
@@ -158,10 +159,23 @@ struct pt {
 
 };
 
+/* workaround compile bug on RPi float stack alignment not 8-byte */
+void pf(double x)
+{
+    char s[10];
+    gcvt(x,6,s); printf("%s ", s);
+}
+
+
 
 void touch_cal(struct pt *points, int cnt, int width, int height)
 {
+    double abc[3], def[3];
     struct pt *p;
+
+    memset(abc,0,sizeof(abc));
+    memset(def,0,sizeof(abc));
+
     /* normieren */
     double xy[ 4 * cnt ];
     int i; int t;
@@ -227,7 +241,7 @@ void touch_cal(struct pt *points, int cnt, int width, int height)
     print_matrix( "ata\\atx", bgauss1, 3,4 );
     print_matrix( "ata\\aty", bgauss2, 3,4 );
 
-    double abc[3], def[3];
+
 
     gauss1(bgauss1, abc, 3 );
     gauss1(bgauss2, def, 3 );
@@ -235,10 +249,11 @@ void touch_cal(struct pt *points, int cnt, int width, int height)
     print_matrix( "abc", abc, 3,1 );
     print_matrix( "def", def, 3,1 );
 
+
     for(i=0;i<3;i++)
-        printf("%f ", abc[i] );
+        pf( abc[i] );
     for(i=0;i<3;i++)
-        printf("%f ", def[i] );
+        pf( def[i] );
     printf( "0 0 1\n");
 }
 

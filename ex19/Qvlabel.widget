@@ -1,0 +1,41 @@
+@class Qvlabel(Gridbox)
+
+@public
+@var String label = <String> NULL
+@var QVar var  = 0
+@var QVar enable = 0
+
+
+@methods
+@proc initialize
+{
+        if( $label == NULL ) $label=$name;
+        XtVaCreateManagedWidget( $label,
+         wlabWidgetClass, $,
+          XtNgridx,0,
+          XtNgridy,0,
+          XtNfill,0,
+          XtNweightx,0,
+          XtNweighty,0,
+          NULL );
+
+        XtVaCreateManagedWidget( "value",
+          wviewQVWidgetClass, $,
+          XtNgridx,1,
+          XtNgridy,0,
+          XtNfill,0,
+          XtNweightx,0,
+          XtNweighty,0,
+          "var", $var,
+          "enable", $enable,
+          NULL );
+}
+
+@imports
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"
+@incl "converters.h"
+@incl "xtcw/WviewQV.h"
+@incl "xtcw/Wlab.h"
+@incl "xtcw/Gridbox.h"

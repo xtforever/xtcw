@@ -1,11 +1,23 @@
+#include "xborderless.h"
+#include <stdio.h>
+
+#ifdef DEBUG
+#define debug(a...) fprintf(stderr,a)
+#else
+#define debug(a...) do {} while(0)
+#endif
+
 static int down_x, down_y;
 
 static void btndown(Widget w, XEvent* e, String* s, Cardinal* n)
 {
     int x,y,x0=e->xbutton.x, y0= e->xbutton.y;
-    Display *disp = XtDisplay(TopLevel);
+    Display *disp = XtDisplay(w);
     Window child_return;
-    XTranslateCoordinates (disp, XtWindow(w), XtWindow(TopLevel),
+    Widget par = w;
+    while( XtParent(par) ) par = XtParent(par);
+
+    XTranslateCoordinates (disp, XtWindow(w), XtWindow(par),
                            x0, y0, & x, & y, & child_return);
 
     down_x = x;
@@ -16,17 +28,17 @@ static void btnmove(Widget w, XEvent* e, String* s, Cardinal* n)
 {
     int x0=e->xbutton.x, y0= e->xbutton.y;
 
-    Display *disp = XtDisplay(TopLevel);
-    Window  win   = XtWindow(TopLevel);
+    Display *disp = XtDisplay(w);
     int screen    = DefaultScreen(disp);
     Window root   = RootWindow(disp,screen);
-
     int x,y;
     Window child_return;
+    Widget par;
+
     XTranslateCoordinates (disp, XtWindow(w), root,
                            x0, y0, & x, & y, & child_return);
-
-    XMoveWindow(disp,win,x - down_x,y-down_y );
+    while( (par = XtParent(w)) ) w=par;
+    XMoveWindow(disp,XtWindow(w), x - down_x,y-down_y );
 }
 
 
@@ -43,25 +55,28 @@ void make_stay_above(Widget top)
     Display *display = XtDisplay(top);
     int screen = DefaultScreen(display);
     Window root = RootWindow(display,screen);
+    Atom wmStateAbove;
+    Atom wmNetWmState;
+    XClientMessageEvent xclient;
+    memset( &xclient, 0, sizeof (xclient) );
 
-    Atom wmStateAbove = XInternAtom( display, "_NET_WM_STATE_ABOVE", 1 );
+    wmStateAbove = XInternAtom( display, "_NET_WM_STATE_ABOVE", 1 );
     if( wmStateAbove != None ) {
-        printf( "_NET_WM_STATE_ABOVE has atom of %ld\n", (long)wmStateAbove );
+        debug( "_NET_WM_STATE_ABOVE has atom of %ld\n", (long)wmStateAbove );
     } else {
-        printf( "ERROR: cannot find atom for _NET_WM_STATE_ABOVE !\n" );
+        debug( "ERROR: cannot find atom for _NET_WM_STATE_ABOVE !\n" );
     }
 
-    Atom wmNetWmState = XInternAtom( display, "_NET_WM_STATE", 1 );
+    wmNetWmState = XInternAtom( display, "_NET_WM_STATE", 1 );
     if( wmNetWmState != None ) {
-        printf( "_NET_WM_STATE has atom of %ld\n", (long)wmNetWmState );
+        debug( "_NET_WM_STATE has atom of %ld\n", (long)wmNetWmState );
     } else {
-        printf( "ERROR: cannot find atom for _NET_WM_STATE !\n" );
+        debug( "ERROR: cannot find atom for _NET_WM_STATE !\n" );
     }
     // set window always on top hint
     if( wmStateAbove == None ) return;
 
-    XClientMessageEvent xclient;
-    memset( &xclient, 0, sizeof (xclient) );
+
     //
     //window  = the respective client window
     //message_type = _NET_WM_STATE
@@ -127,22 +142,37 @@ void make_borderless_window(Widget top )
                     PropModeReplace, (unsigned char *)&hints, 5);
 }
 
-
-
-static void winmove_translations(Widget w)
+static void wm_quit(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
+
+    XtAppSetExitFlag( XtWidgetToApplicationContext(w) );
+}
+
+
+/* add btnmove/btndown actions to application,
+   override Btn1Motion / Btn1Down translations on widget |w|
+*/
+void add_winmove_translations(Widget w)
+{
+    static Boolean not_initialized = True;
     static XtTranslations app_translations;
-    static XtActionsRec action_table[] = {
-        { "btndown",btndown }
+    XtActionsRec action_table [] = {
+        { "wm_quit", wm_quit },
+        { "btndown",btndown },
         { "btnmove",btnmove }
     };
 
-    static char translation_str[] =
-        "<Btn1Motion>: btnmove\n"
-        "<Btn1Down>: btndown";
+    char translation_str[] =
+        " <Btn2Down>: wm_quit() \n"
+        " <BtnMotion>: btnmove() \n"
+        " <BtnDown>: btndown() \n";
 
-    XtAppContext ctx = XtWidgetToApplicationContext(w);
-    XtAppAddActions(ctx, action_table, 2 );
-    app_translations = XtParseTranslationTable(translation_str);
+
+    if( not_initialized ) {
+        XtAppContext ctx = XtWidgetToApplicationContext(w);
+        XtAppAddActions(ctx, action_table, XtNumber(action_table) );
+        app_translations = XtParseTranslationTable(translation_str);
+        not_initialized = False;
+    }
     XtOverrideTranslations( w, app_translations );
 }

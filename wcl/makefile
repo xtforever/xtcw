@@ -11,14 +11,13 @@
 # wb/      - widgets fuer den wbuilder
 #            wbuilder speichert die erzeugten
 #            widgets in den Verzeichnissen
-#              wb/src, wb/xtcw
+#              wb/src, wb/xtcw, wb/doc
+#
 # widgets/ - alle widgets die ohne wbuilder auskommen
 # lib/     - zusatzliche funktionen
 #
-#
 # install: die lib wird nach $libdir kopiert
 #          die includes landen in $includedir/xtcw
-#
 #
 #
 include ../rules.mk
@@ -62,7 +61,6 @@ ini_lex.lex.o: ini_parse.tab.h
 
 ini_read2.o: ini_lex.lex.o
 
-
 $(SL_NAME): ${ALL_LO}
 	$(LINK.c) $^ $(LOADLIBES) -shared -Wl,-soname,$@ -o $@
 
@@ -75,10 +73,9 @@ clean:
 install: $(SL_NAME)
 	-${MKDIR} -p $(INC)
 	cp *.h $(INC)
-	cp ../vexmo/*.h $(INC)
-	cp ../wb/vexmo/*.h $(INC)
 	cp ../lib/*.h $(INC)
 	cp *.so* $(libdir)
+	cp *.a   $(libdir)
 	ln -sf $(SL_NAME) $(libdir)/$(SL).$(SL_MAJOR).$(SL_MINOR)
 	ln -sf $(SL_NAME) $(libdir)/$(SL).$(SL_MAJOR)
 	ln -sf $(SL_NAME) $(libdir)/$(SL)

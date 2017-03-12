@@ -1,76 +1,65 @@
-@class DigTab(Composite)
+@class DigTab(Gridbox)
+
+@ pin_status - kommt vom arduino
+  pin_config - wird vom widget an arduino gesendet
+  config intern:
+  x
+  0,1,2,3 HiZ,Pullup,Out Low, Out High
+  bit 2: input PIN= hi/low
+  ** config:
+  0 hiz
+  1 pullup
+  2 out-low
+  3 out-high
+  4 pwm
+  5 reserved
+  6 n/a
+  ** status:
+  0x10          - active (output high/low or Pin input high/low)
+ -
+ -
+  0  [x]  (in)  in-p    out
+  1  [ ]   in   in-p   (out)
+  2  reserved
+  3  reserved
+  4  [x]  (in)  in-p    out
+ -
+ -
 
 @public
 @var String pin_config = <String> ""
-
+@var String pin_status = <String> ""
+@var <Callback> XtCallbackList callback   = NULL
 
 @private
-@var int config
+@var int sbuf
 @var int num_pins
-@var int wids
+@var int iwids
+
+@def CFG_OUTPUT=2
+@def CFG_STATUS=0x10
 
 @METHODS
 @proc initialize
 {
         $width=10; $height=10;
-        $config=0;
-
-        int i; char s[10] = "0.";
-        char w[] = "Awidget";
-        Widget b,c;
-        Widget vbox = XtVaCreateManagedWidget(
-        "VBox", vBoxWidgetClass, $,
-        "borderWidth", 0, NULL );
+        $sbuf = m_create(20,1);
+        import_config($);
+        $iwids = m_create($num_pins*2, sizeof(Widget));
+        layout($);
 
 
-        parse_config($);
-        $num_pins = m_len($config) / 2;
-        $wids = m_create($num_pins*2, sizeof(Widget));
-
-        for(i=0;i< $num_pins; i++) {
-          s[0]++;
-          b = XtVaCreateManagedWidget( w, hBoxWidgetClass, vbox,
-                                "hgap", 10,
-                                "borderWidth", 0, NULL ); (*w)++;
-
-
-
-          XtVaCreateManagedWidget( w, wlabWidgetClass, b,
-                            "label", strdup(s),
-                            "borderWidth", 0, NULL ); (*w)++;
-
-
-          c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
-
-          XtVaTypedArg, "names", XtRString, ",",6,
-          /* XtVaTypedArg, "names", XtRString, "[X],[-]",8, */
-                            "borderWidth", 0,
-                            "user_data", i,
-          XtVaTypedArg, "xftFont", XtRString, "FontAwesome-20", 11,
-                            NULL );
-          XtAddCallback( c, "callback", (XtPointer)dig_cb, $ );
-          m_put($wids,&c);
-          (*w)++;
-          c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
-                            XtVaTypedArg, "names",  XtRString, "IN,OUT,Hi-Z",12,
-                            "borderWidth", 0,
-                            "user_data", i,
-                             NULL );
-          XtAddCallback( c, "callback", (XtPointer)conf_cb, $ );
-          m_put($wids,&c);
-          (*w)++;
-        }
-
-        apply_config($);
+        // apply_config($);
 }
 
+
 @ When our parent asks for this widget's preferred geometry
-simply return the geometry as indicated by our childs.
-Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
-to check if the preferred geometry is equal to the current geometry (in
-which case it should really return |XtGeometryNo|) or if the preferred
-geometry is equal to what the parent proposed (in which case a return of
-|XtGeometryYes| should have been given.
+  simply return the geometry as indicated by our childs.
+  Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+  to check if the preferred geometry is equal to the current geometry (in
+  which case it should really return |XtGeometryNo|) or if the preferred
+  geometry is equal to what the parent proposed (in which case a return of
+  |XtGeometryYes| should have been given.
 
 @proc query_geometry
 {
@@ -94,11 +83,13 @@ geometry is equal to what the parent proposed (in which case a return of
 @proc set_values
 {
         if( ($old$pin_config != $pin_config)
-            || strcmp($old$pin_config,$pin_config) )
-            {
-                parse_config($);
+            || strcmp($old$pin_config,$pin_config)
+            || ($old$pin_status != $pin_status)
+            || strcmp($old$pin_status,$pin_status) )
+        {
+                import_config($);
                 apply_config($);
-            }
+         }
          return 0;
 }
 
@@ -106,78 +97,209 @@ geometry is equal to what the parent proposed (in which case a return of
 
 @UTILITIES
 
-@ einlesen einer konfiguration
-@proc parse_config($)
+@  for output pins: set bit 0 (cfg=2 or 3)
+@proc set_pin_status($,int i, int val)
 {
-        if( is_empty($pin_config) ) {
-            $pin_config="00";
+     val = ( val != 0 );
+     if( i  >= $num_pins ) return;
+     if( is_pin_output($,i) )
+         CHAR($sbuf,i) = '2' + val;
+}
+
+@proc set_pin_config($,int i, int cfg)
+{
+     if( i  >= $num_pins ) return;
+     if( cfg < 0 || cfg > 5 ) cfg = 0;
+     CHAR($sbuf,i) = cfg + '0';
+}
+
+@proc int get_pin_config($,int i)
+{
+     int cfg;
+     if( i  >= $num_pins ) return 0;
+     cfg =  CHAR($sbuf,i) - '0';
+     if( cfg < 0 || cfg > 5 ) cfg = 0;
+     return cfg;
+}
+
+@ for input pins: return pin_status
+  for output pins: return bit 0
+@proc int get_pin_status($,int i)
+{
+     if( i  >= $num_pins ) return 0;
+     if( is_pin_output($,i) )
+         return CHAR($sbuf,i) == '3';
+     if( CHAR($sbuf,i) <= '1' ) /* input */
+         return CHAR($sbuf,i+$num_pins+1)=='1';
+     return '0';
+}
+
+@proc int is_pin_output($, int i)
+{
+     if( i  >= $num_pins ) return 0;
+     return CHAR($sbuf,i) == '2' ||
+            CHAR($sbuf,i) == '3';
+}
+
+
+@ change digital status of output pin
+@proc dig_cb(Widget w, $, intptr_t c)
+{
+        int key; int val = ((int)c) != 0;
+        XtVaGetValues( w, XtNuser_data, &key, NULL );
+        if( key >= $num_pins ) return;
+        if( is_pin_output($,key) ) {
+            set_pin_status($,key,val);
+            send_changes($);
         }
-        int len = strlen($pin_config);
-        len++;
-
-        if( $config == 0 )
-            $config = m_create(len,1);
-        else
-            m_setlen($config,len);
-
-        m_write($config,0,$pin_config,len);
-
+        else {
+            val = get_pin_status($,key);
+            XtVaSetValues( w, "value",val , NULL );
+        }
 }
 
-@proc dig_cb(Widget w, $, void *c)
+@ change config of pin
+  0=Hiz,1=in pullup,2=out
+@proc conf_cb(Widget w, $, intptr_t c)
 {
-        int key;
+        int key; int val = ((int)c) ;
         XtVaGetValues( w, XtNuser_data, &key, NULL );
-        printf("dig %d=%d\n", key, (int)c );
-        set_digital_pin($,key,(int)c);
+        printf("conf %d=%d\n", key, val );
+        set_pin_config($,key,val);
+        send_changes($);
 }
 
-@proc conf_cb(Widget w, $, void *c)
+@proc send_changes($)
 {
-        int key;
-        XtVaGetValues( w, XtNuser_data, &key, NULL );
-        printf("conf %d=%d\n", key, (int)c );
-        config_pin($,key,(int)c);
+        XtCallCallbackList( $, $callback, 0 );
 }
 
-
-@proc set_digital_pin($,int pin, int val)
+@proc Widget widget_status($, int pin)
 {
-        if( pin >= $num_pins ) return;
-        pin *= 2; pin++;
-        CHAR($config,pin) = val ? '1' : '0';
+  return *(Widget*)mls($iwids, pin*2);
 }
 
-@proc config_pin($, int pin, int mode)
+@proc Widget widget_config($, int pin)
 {
-        if( pin >= $num_pins ) return;
-        pin *= 2; pin+=2;
-        CHAR($config,pin) = '0' + mode;
+  return *(Widget*)mls($iwids, pin*2+1);
 }
 
 @proc apply_config($)
 {
-
         Widget w;
-        int i,p,v;
+        int i,v,c;
 
         for(i=0;i<$num_pins;i++) {
-           p = i*2;
-           w = *(Widget*)mls($wids,p);
-           v = CHAR($config,p) == '1';
+           v = get_pin_status($,i);
+           c = get_pin_config($,i);
+           if( c > 3 ) continue;
+           if( c == 3 ) c=2; /* out-low, out-high */
+           w = widget_status($,i);
            XtVaSetValues(w, "value", v, NULL );
-           p = i*2+1;
-           w = *(Widget*)mls($wids,p);
-           v = CHAR($config,p) - '0';
-           XtVaSetValues(w, "value", v, NULL );
+           w = widget_config($,i);
+           XtVaSetValues(w, "value", c, NULL );
         }
 }
 
+@ copy pin_config and pin_status to sbuf and set
+  num_pins and let pin_config and pin_status point to sbuf
+@proc import_config($)
+{
+        int len1,len2,i,cfg;
+        len1 = strlen($pin_config);
+        len2 = strlen($pin_status);
+        $num_pins = ( len2 > len1 ) ? len2 : len1;
+        m_setlen($sbuf,$num_pins*2 + 2);
 
+        for(i=0;i<$num_pins;i++) {
+           if( i >= len1 )
+              cfg = '0';
+           else {
+             cfg = $pin_config[i];
+             if( cfg < '0' || cfg > '5' ) cfg = '5';
+           }
+           CHAR($sbuf,i)=cfg;
+        }
+        CHAR($sbuf,$num_pins) = 0;
+
+        for(i=0;i<len2;i++) {
+           if( i >= len2 )
+              cfg = '0';
+           else {
+             cfg = $pin_status[i];
+             if( cfg < '0' || cfg > '1' ) cfg = '0';
+           }
+           CHAR($sbuf,i + $num_pins + 1)=cfg;
+        }
+        CHAR($sbuf,$num_pins*2+1) = 0;
+
+        $pin_config = mls($sbuf,0);
+        $pin_status = mls($sbuf,$num_pins+1);
+}
+
+
+@ params num_pins, pin_config, pin_status
+@proc layout($)
+{
+    char w[] = "Awidget";
+    Position gridx=0,gridy=0;
+    Widget b=$,c,null = 0;
+    int i,cfg;
+    char name[10];
+    m_clear($iwids);
+
+    for(i=0;i< $num_pins; i++) {
+        cfg= get_pin_config($,i);
+        if( cfg > 3 ) {
+            m_put($iwids,&null);
+            m_put($iwids,&null);
+            continue;
+        }
+
+        gridx = 0;
+        sprintf(name,"%2u(%2u).", i, cfg );
+        XtVaCreateManagedWidget( w, wlabWidgetClass, $,
+                           XtNweighty, 0,
+                           XtNweightx, 0,
+                           XtNfill, 0,
+                            XtNgridx, gridx++,
+                            XtNgridy, gridy,
+                            "label", strdup(name),
+                            "borderWidth", 0, NULL ); (*w)++;
+
+        char *s = ","; int len = strlen(s)+1;
+        c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
+                            XtNgridx, gridx++,
+                            XtNgridy, gridy,
+                         XtVaTypedArg, "names", XtRString, s ,len,
+                            "borderWidth", 0,
+                            "user_data", i,
+        XtVaTypedArg, "xftFont", XtRString, "FontAwesome-12", 11,
+                            NULL );
+        XtAddCallback( c, "callback", (XtPointer)dig_cb, $ );
+        m_put($iwids,&c);
+        (*w)++;
+        s="HiZ,INP,OUT"; len=strlen(s)+1;
+        c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
+                            XtNgridx, gridx,
+                            XtNgridy, gridy,
+
+            XtVaTypedArg, "names",  XtRString, s,len,
+                   "borderWidth", 0,
+                   "user_data", i,
+                   NULL );
+        XtAddCallback( c, "callback", (XtPointer)conf_cb, $ );
+        m_put($iwids,&c);
+          (*w)++;
+       gridy++;
+        }
+}
 
 @IMPORTS
+@incl "xtcw/Gridbox.h"
 @incl "xtcw/Wlab.h"
 @incl "xtcw/Wsel.h"
 @incl "xtcw/register_wb.h"
 @incl "converters.h"
 @incl "mls.h"
+@incl "micro_vars.h"

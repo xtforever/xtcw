@@ -1,14 +1,26 @@
+# Makefile to generated widgets via wbuild
+# register-widgets.sh copies widget headers from ../widgets/
+# therefore i need to apply touch after the widget is copied.
+# This makefile needs: WBPREFIX,OUTPUT,WBUILD,WFLAGS
+
 include ../rules.mk
 
+BINC=$(OUTPUT)/include/$(WBPREFIX)
+BSRC=$(OUTPUT)/src
+BDOC=$(OUTPUT)/doc
+
 ALL_WIDGETS:=${notdir $(wildcard *.widget)}
-WIDGET_C:=${ALL_WIDGETS:%.widget=%.c}
+WIDGET_H:=${ALL_WIDGETS:%.widget=$(BINC)/%.h}
 
-ALL: clean all-widgets register-widgets
+ALL: all-widgets $(BINC)/register_wb.h
 
-register-widgets: all-widgets
-	./register-widgets.sh $(OUTPUT)/include/$(WBPREFIX) $(OUTPUT)/src
+$(BINC)/%.h: %.widget
+	wb_search=../wb $(wb_install)/wb.sh $^ $(WBUILD) $(WFLAGS)
 
-all-widgets: $(WIDGET_C)
+$(BINC)/register_wb.h: $(WIDGET_H)
+	./register-widgets.sh $(BINC) $(BSRC)
+
+all-widgets: $(WIDGET_H)
 
 clean:
-	-$(RM) -rf $(OUTPUT)/doc $(OUTPUT)/src $(OUTPUT)/include/$(WBPREFIX) *~
+	-$(RM) -rf $(BDOC) $(BSRC) $(BINC) *~

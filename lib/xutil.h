@@ -13,6 +13,8 @@
 int xft_textwidth( Display *dpy, XftFont *font, char *s );
 Boolean xft_color_alloc(Widget w, Pixel fg, XftColor *xftColor );
 XftFont* xft_fontopen(Display *dpy, int screen, char* name, Boolean core, int angle);
+
+int load_pixmap_from_file_attr(Widget w, char *name, Pixmap *pixmap, Pixmap *mask, XpmAttributes *attr);
 int load_pixmap_from_file(Widget w, char *name, Pixmap *pixmap, Pixmap *mask);
 
 void xft_calc_string_size( Widget X, XftFont *fn, char *s, int *w, int *h );

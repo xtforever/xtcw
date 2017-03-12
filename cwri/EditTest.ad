@@ -1,0 +1,29 @@
+%%
+%% set default colors
+%%
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*borderWidth: 0
+%%
+%% -------------------
+
+
+cwri.WcChildren: vb
+cwri.traceLevel: 0
+
+*vb.WcClass: Vbox
+*vb.WcChildren: l1 ed bt
+
+*l1.WcClass: Wlabel
+*l1.label: Hello
+
+*ed.WcClass: Wedit
+*ed.label: test test test test
+*ed.callback: test_cb
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb

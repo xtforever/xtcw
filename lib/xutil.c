@@ -127,14 +127,20 @@ static int xft_font_angle( const char *name,int *n )
 }
 
 
-int load_pixmap_from_file(Widget w, char *name, Pixmap *pixmap, Pixmap *mask)
+int load_pixmap_from_file(Widget w, char *name, Pixmap *pixmap, Pixmap *mask )
+{
+    XpmAttributes attr;
+    load_pixmap_from_file_attr(w,name,pixmap,mask,&attr);
+}
+
+int load_pixmap_from_file_attr(Widget w, char *name, Pixmap *pixmap, Pixmap *mask, XpmAttributes *attr)
 {
   int status;
-  XpmAttributes attributes;
+  // XpmAttributes attributes;
 
-  attributes.valuemask = 0;
+  attr->valuemask = 0;
   status = XpmReadFileToPixmap(XtDisplay(w),DefaultRootWindow(XtDisplay(w)),
-			       name, pixmap, mask, &attributes);
+			       name, pixmap, mask, attr);
   if (status != XpmSuccess) {
     fprintf(stderr, "File: '%s' XpmError: %s\n", name, XpmGetErrorString(status));
     return -1;

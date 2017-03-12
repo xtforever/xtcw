@@ -13,6 +13,7 @@ do
     if ! [ -f "$INC/$a.h" ]
     then
         cp ../widgets/$a.h $INC/
+        touch $INC/$a.h
     fi
 done
 

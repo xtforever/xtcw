@@ -8,13 +8,16 @@
 @var Bool locked = 0
 @var StringMArray lines = 0
 @var int min_lines = 1
+@var int grid_width = 1
+@var int grid_height = 1
+@var int auto_resize = 1
+
+
 
 @PRIVATE
 @var int drag_last_y
 @var int drag_last_x
 @var int drag_update
-@var int grid_width
-@var int grid_height
 @var int top_x
 @var int top_y
 @var int grid_pix_width
@@ -82,8 +85,10 @@
 @proc expose
 {
         if( $do_init ) {
-            $grid_width = $width / $grid_pix_width;
-            $grid_height = $height / $grid_pix_height;
+            if( $auto_resize ) {
+              $grid_width = $width / $grid_pix_width;
+              $grid_height = $height / $grid_pix_height;
+            }
             $do_init=0;
          }
 

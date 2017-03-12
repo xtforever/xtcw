@@ -27,6 +27,6 @@ $(TARGET): $(M)/wcl/libxtcw.a xt_cairo.o lfont.o src/LightTxt.o src/WviewQV.o sr
 xcal: $(M)/wcl/libxtcw.a xt_cairo.o src/Calib.o xborderless.o fullscreen.o
 
 clean:
-	${RM} -rf $(TARGET) *.o src doc xtcw *~ xcal
+	${RM} -rf $(TARGET) *.o src doc xtcw *~ xcal xtcal
 
 xtcal: src/Calib.o xborderless.o fullscreen.o

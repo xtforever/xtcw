@@ -1,0 +1,32 @@
+
+StringList:   IN-Z, IN, OUT
+Ansonsten wie WButton
+
+Abgeleitet von Wlab
+
+
+Text-encoding:
+
+\big!MAILFUNCTION\n\reg!system $sys found
+
+String-Variablen (v_set, v_init, ...) werden in der Liste <GLOBVAR> gespeichert
+Die nummer von GLOBVAR erhält man durch
+
+    globvar = *mv_var("GLOBVAR");
+
+danach abfrage der Variablen mit
+
+    char *value = v_get( globvar, "key" );
+       
+
+font: 24
+char*s = "MAILFUNCTION"
+
+font: 0
+char *s = "\n"
+
+font: 12
+char *s = "system $sys not found"
+
+
+

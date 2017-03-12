@@ -421,6 +421,17 @@ _CvtStringToStringMArray(dpy, args, num_args, fromVal, toVal, data)
     done( int, m_array );
 }
 
+
+static inline char *m2s(int m, int p)
+{
+    if( m <= 0 ) { WARN("List %d not found", m); return ""; }
+    if( p >= m_len(m) ) {
+        WARN("Item %d in List %d Size=%d not found", p, m, m_len(m)); return "";
+    }
+    char **s = mls(m,p);
+    return *s;
+}
+
 /* ARGSUSED */
 static  Boolean
 _CvtStringMArrayToString(dpy, args, num_args, fromVal, toVal, data)
@@ -445,9 +456,9 @@ _CvtStringMArrayToString(dpy, args, num_args, fromVal, toVal, data)
     m_clear(buf_m);
     if( m_len(strlist_m) == 0 ) m_putc(buf_m, 0);
     else {
-        s_app1(buf_m, STR(strlist_m, 0));
+        s_app1(buf_m, m2s(strlist_m, 0));
         for(i=1;i<m_len(strlist_m);i++) {
-            s_app( buf_m, ",", STR(strlist_m,i) );
+            s_app( buf_m, ",", m2s(strlist_m,i),NULL );
         }
     }
 
@@ -483,8 +494,11 @@ void converters_init(void)
 		       NULL, 0, XtCacheNone, NULL);
     XtSetTypeConverter(XtRInt, XtRAnesthetic, _CvtIntToAnesthetic,
 		       NULL, 0, XtCacheNone, NULL);
-    XtSetTypeConverter(XtRString, "StringArray", cvtStringToStringArray,
+
+    XtSetTypeConverter(XtRString, XtRStringArray, cvtStringToStringArray,
                        NULL, 0, XtCacheNone, NULL);
+
+
     XtSetTypeConverter(XtRString, "StringMArray", _CvtStringToStringMArray,
                        NULL, 0, XtCacheNone, NULL);
     XtSetTypeConverter("StringMArray",XtRString, _CvtStringMArrayToString,

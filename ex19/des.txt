@@ -1,18 +1,33 @@
+config-gui
+global:
+pin[] = gpio,pwm,twi,rs232,blocked
+
+gpio: xx0123xxxxx
+adc
+
+
+
+Arduino
+cfg 01023
+hiz,pullup,out-low,out-high
+X cfg=0101010010101
+
+
 
 
 
 Analog                  Digital
 ----------------------------------
-ADC1  [ 1000 ]          1. [x]  IN
-ADC1  [ 1000 ]          1. [x]  IN
-ADC1  [ 1000 ]          1. [x]  IN
-ADC1  [ 1000 ]          1. [x]  IN
-ADC1  [ 1000 ]          1. [x]  IN
-----------------------  1. [x]  IN
-TWI                     1. [x]  IN
-2                       1. [x]  IN
-22                      1. [x]  IN
-28                      1. [x]  IN
+ADC1  [ 1000 ]           3. [x]  IN      KEY=3 VALUE=1234
+ADC2  [ 1000 ]           4. [x]  IN
+ADC3  [ 1000 ]           5. [x]  IN
+ADC4  [ 1000 ]           7. [x]  IN
+ADC5  [ 1000 ]           9. [x]  IN
+----------------------  10. [x]  IN
+TWI <detect>            11. [x]  IN
+2                       12. [x]  IN
+22                      13. [x]  IN
+28                      14. [x]  IN
 32
 65
 

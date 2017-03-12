@@ -1,3 +1,7 @@
+# ifdef S_SPLINT_S
+#define __BEGIN_DECLS
+# endif
+
 #define MLS_DEBUG_DISABLE
 #include "mls.h"
 
@@ -7,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <search.h>
+#include <limits.h>
 
 static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jens Exp $";
 
@@ -29,6 +34,8 @@ static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jen
 // 2014-06-30 lst_resize, lst_create - fill allocated memory with  0
 // 2014-07-09 m_utf8getchar - benutzt jetzt neue UTF8CHAR
 // 2014-07-09 void m_qsort( int list, int(*compar)(const void *, const void *))
+// 2016-11-27 mstr_to_long
+//
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -291,7 +298,8 @@ void *lst_peek( lst_t l, int i )
   return &l->d[l->w*i];
 }
 
-// returns zero
+// returns zero on succ.
+// n==0 is aceptable, no error
 int lst_write( lst_t *lp, int p, const void *data, int n)
 {
   void *mem;
@@ -791,6 +799,14 @@ int _m_free(int ln, const char *fn, const char *fun,
   o->fun = fun; o->fn = fn;
   TRACE(1,"Free List %d", m );
   return 0;
+}
+
+void* _m_buf(int ln, const char *fn, const char *fun,
+	       int m )
+{
+  if( !m ) return 0;
+  _mlsdb_caller(__FUNCTION__, ln,fn,fun,3,m,0,0 );
+  return m_buf(m);
 }
 
 void* _mls( int ln, const char *fn, const char *fun,
@@ -1337,8 +1353,6 @@ int m_lookup_str( int m, const char * key, int NOT_INSERT )
 }
 
 
-
-
 // ***********
 //  VARIABLES
 // ***********
@@ -1360,7 +1374,7 @@ void    v_free( int vl )
 // using variable name
 
 //
-int     v_set( int vs, const char* name, const char* value, int pos )
+int v_set( int vs, const char* name, const char* value, int pos )
 {
   int key = v_lookup(vs,name);
   v_kset( key, value, pos );
@@ -1424,6 +1438,7 @@ void v_remove( int vs, const char* name )
   }
 }
 
+/* return key to access variable "name" inside "vl" */
 int v_lookup( int vl, const char* name )
 {
   if( is_empty(name) ) return -1;
@@ -1718,13 +1733,16 @@ char*   se_string( int vl, const char *frm )
  return STR(data,1);
 }
 
-/* returns: length of string */
+/* returns: length of mstring */
 int s_strlen(int m)
 {
     int p = m_len(m);
     return p && CHAR(m,p-1)==0 ? p-1 : p;
 }
 
+/** append cstring to mstr
+ * returns: mstr
+ */
 int s_app1( int m, char *s )
 {
     int p = s_strlen(m);
@@ -1742,7 +1760,7 @@ static int vas_app(int m, va_list ap)
     return m;
 }
 
-/** anhängen der char* strings an |m| */
+/** anhängen der cstrings an |m| */
 int s_app(int m, ...)
 {
     va_list ap;
@@ -1960,4 +1978,47 @@ int mstrcmp(int m,int p, char *s)
     p++; s++;
   }
   return res;
+}
+
+int mstr_to_long(int buf, int *p, long int *ret_val)
+{
+    int sign=0;
+    int ch;
+    long int val = 0;
+    int pp = 0;
+    if( !p ) p=&pp;
+
+    if( buf <= 0 || *p < 0 || *p >= m_len(buf) ) return -1;
+
+    while( isspace(ch=CHAR(buf,*p)) ) {
+        (*p)++;
+        if( *p >= m_len(buf) ) return -1;
+    }
+
+    if(! isdigit(ch) ) {
+        if( ch == '-' )  { sign = -1; (*p)++; }
+        else if( ch == '+' )  (*p)++;
+        else return -1;
+        if( *p >= m_len(buf) ) return -1;
+        ch=CHAR(buf,*p);
+        if(! isdigit(ch) ) return -1;
+    }
+    ch -= '0';
+
+    while(1) {
+
+        val += ch;
+        (*p)++;
+
+        if( *p >= m_len(buf) ) break;
+        ch=CHAR(buf,*p);
+        if(! isdigit(ch) ) break;
+        ch -='0';
+        if( val > LONG_MAX / 10 ) return -2 + sign;
+        val *= 10;
+        if( val > (LONG_MAX - ch) ) return -2 + sign;
+    }
+
+    *ret_val = sign ?  -val : val;
+    return 0;
 }

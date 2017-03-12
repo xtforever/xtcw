@@ -1,8 +1,8 @@
 @class Wradio (Wheel)
 @ Radio Widget - Nur Ein Widget einer Gruppe ist jeweils aktiv.
   Die Gruppe wird durch das Feld |radioGroup| identifiziert.
-  Wird ein Widget aktiviert, wird das Feld 
-  |activeWidget| des |radioWidget| auf das zu aktivierende 
+  Wird ein Widget aktiviert, wird das Feld
+  |activeWidget| des |radioWidget| auf das zu aktivierende
   Widget gesetzt. War |activeWidget| gesetzt, wird das zugehörige
   Widget deaktiviert.
 
@@ -24,8 +24,8 @@
 @PRIVATE
 @type pix_t = struct {
   char *fileName;
-  Pixmap map,mask; 
-  XRectangle pm_rect; 
+  Pixmap map,mask;
+  XRectangle pm_rect;
   int pm_depth; }
 
 @type radio_group_t = struct {
@@ -45,22 +45,32 @@
 
 
 @EXPORTS
+@proc XtPointer wradio_data($)
+{
+        return $radioData;
+}
+
+@proc XtPointer wradio_active_data($)
+{
+        Widget w = rgroups_get_active_widget($);
+        return w ? wradio_data(w) : NULL;
+}
 
 @proc wradio_select($)
-{ 
+{
 	set($, 0,0,0 );
-} 
+}
 
 @proc wradio_deselect($)
-{ 
+{
     unset($, 0,0,0 );
-} 
+}
 
 @METHODS
 
-@proc class_initialize { 
+@proc class_initialize {
         converters_init();
-} 
+}
 
 @proc initialize
 {
@@ -68,46 +78,46 @@
   char *s = $label;
   int w=10,h=10;
 
-  /* init classvar 
+  /* init classvar
      wbuild |$| does not work for class_initialize
   */
 
 
   $pix=0;
-  if( $pixmapNames ) $pix = load_pixmap($, $pixmapNames ); 
+  if( $pixmapNames ) $pix = load_pixmap($, $pixmapNames );
   if( ! s || ! *s )
     s=$name;
   $label = XtNewString(s);
 
   /* breite und höhe der Pixmap, falls vorhanden */
 
-  xft_calc_string_size( $, $xftFont, s, &$label_width, 0 ); 
+  xft_calc_string_size( $, $xftFont, s, &$label_width, 0 );
   if( $width == 0 ) {
       if( $pix ) w = $pix->pm_rect.width; else w = $label_width;
-      $width = increase_by_percent( w, $innerBorderPercent );    
+      $width = increase_by_percent( w, $innerBorderPercent );
   }
 
   if( $height == 0 ) {
       h = $pix ? $pix->pm_rect.height : $xftFont->height ;
       $height = increase_by_percent( h, $innerBorderPercent);
   }
-  
-  if( $draw_override == 0 ) 
-    $draw_override = default_label_draw; 
+
+  if( $draw_override == 0 )
+    $draw_override = default_label_draw;
 
     int activate_me = $active;
     $rg = 0;
-    if(! $radioGroup ) $radioGroup = $name; 
-    rgroup_lookup($); 
+    if(! $radioGroup ) $radioGroup = $name;
+    rgroup_lookup($);
 
-    /* wir werden aktiviert, wenn wir die gruppe erzeugen 
+    /* wir werden aktiviert, wenn wir die gruppe erzeugen
        falls die Gruppe schon existiert hat ist
-       ein anderes widget aktiv und $active wird 
+       ein anderes widget aktiv und $active wird
        auf Null gesetzt.
     */
-    
-    if( activate_me ) { set($,0,0,0); notify($,0,0,0); } 
-  
+
+    if( activate_me ) { set($,0,0,0); notify($,0,0,0); }
+
 }
 
 @proc exec_command
@@ -117,7 +127,7 @@
       notify($,0,0,0);
       return 1;
   }
-  
+
   return 0;
 }
 
@@ -126,14 +136,14 @@
  {
 	XtCreateWindow($, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
-        /* this gc is Not shared and its writeable */               
+        /* this gc is Not shared and its writeable */
         $pix_gc    = XCreateGC(XtDisplay($),XtWindow($),0,NULL );
   	reshape_widget($);
 }
 
 @proc resize
 {
-    if (XtIsRealized($)) reshape_widget($); 
+    if (XtIsRealized($)) reshape_widget($);
 }
 
 @proc destroy
@@ -141,7 +151,7 @@
   if( $draw) XftDrawDestroy( $draw );
   XtFree($label);
   if( $pix_gc ) XFreeGC(XtDisplay($),$pix_gc);
-  if( $pix ) unload_pixmap( $, $pix );  
+  if( $pix ) unload_pixmap( $, $pix );
   /* what if we are radioGroup and others want reach us ? */
 }
 
@@ -206,18 +216,18 @@
 	    w = w * $cornerRoundPercent / 100;
 	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
 	}
-  
+
         if( $pix ) {
             pix_t *p = $pix;
 	    /* initialise pixmap position and mask */
                /* center pixmap */
-            p->pm_rect.x  = ($width - p->pm_rect.width) / 2;    
+            p->pm_rect.x  = ($width - p->pm_rect.width) / 2;
             p->pm_rect.y  = ($height - p->pm_rect.height) / 2;
-               /* create mask for transparent background */ 
+               /* create mask for transparent background */
 
-            if( $pix_gc ) {               
-      	        XSetClipMask(XtDisplay($), $pix_gc,  p->mask);     
-      	        XSetClipOrigin(XtDisplay($), $pix_gc, 
+            if( $pix_gc ) {
+      	        XSetClipMask(XtDisplay($), $pix_gc,  p->mask);
+      	        XSetClipOrigin(XtDisplay($), $pix_gc,
                                p->pm_rect.x, p->pm_rect.y );
             }
         }
@@ -235,13 +245,13 @@
   if( $active && st == STATE_NORMAL ) st = STATE_ARMED;
 
   if( $active )
-       XSetWindowBorder( dpy, XtWindow($), $borderColAct ); 
-  else XSetWindowBorder( dpy, XtWindow($), $borderColNorm ); 
+       XSetWindowBorder( dpy, XtWindow($), $borderColAct );
+  else XSetWindowBorder( dpy, XtWindow($), $borderColNorm );
 
   if( $pix ) {
         pix_t *p = $pix;
-	XCopyArea(dpy, p->map, XtWindow($), $pix_gc, 
-	          0, 0, p->pm_rect.width, p->pm_rect.height, 
+	XCopyArea(dpy, p->map, XtWindow($), $pix_gc,
+	          0, 0, p->pm_rect.width, p->pm_rect.height,
    	      	  p->pm_rect.x, p->pm_rect.y );
         return;
   }
@@ -252,12 +262,12 @@
   XFillRectangle( dpy, XtWindow($), $gc[st], 0,0, $width, $height );
 
   if( s && *s ) {
-      
-    y = ($height - $xftFont->height)/2; 
+
+    y = ($height - $xftFont->height)/2;
     x = ($width - $label_width) /2;
     rect.x = 0; rect.y=0; rect.width=$width; rect.height=$height;
     XftDrawSetClipRectangles( $draw,0,0,&rect, 1);
-    XftDrawStringUtf8($draw,$xft_col + st, $xftFont, 
+    XftDrawStringUtf8($draw,$xft_col + st, $xftFont,
     			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
     XftDrawSetClip($draw,0);
 
@@ -271,7 +281,7 @@
 @proc Widget rgroup_lookup($)
 {
     int p;
-    if( !$rgroups ) 
+    if( !$rgroups )
     {
 		$rgroups = m_create(5,sizeof(radio_group_t));
 		printf("Group created:%d,%s\n", $rgroups, $radioGroup);
@@ -280,11 +290,11 @@
     /* radio group finden */
     if( $rg == NULL ) {
         p = m_lookup_str( $rgroups, $radioGroup, -1 );
-        if( p >= 0 ) 
+        if( p >= 0 )
 		{
 			$rg = mls( $rgroups, p );
 		}
-        else 
+        else
         {   /* radio group anlegen ? */
             $rg = m_add($rgroups);
             $rg->name = strdup( $radioGroup );
@@ -292,7 +302,7 @@
             $active = True;
         }
     }
-    
+
     if( $rg->active == 0 ) $rg->active  = $;
     return $rg->active;
 }
@@ -303,7 +313,7 @@
 	int p = m_lookup_str( $rgroups, $radioGroup, -1 );
     if(p >= 0)
 		$rg = mls( $rgroups, p );
-    else 
+    else
 		$rg = 0;
     if(! $rg ) ERR("Widget %s is not registered in any radio group", $name );
     return ( $rg->active );
@@ -314,7 +324,7 @@
 	int p = m_lookup_str( $rgroups, $radioGroup, -1 );
     if(p >= 0)
 		$rg = mls( $rgroups, p );
-    else 
+    else
 		$rg = 0;
     if(! $rg ) ERR("Widget %s is not registered in any radio group", $name );
     $rg->active = $;
@@ -329,7 +339,7 @@
 		free(p);
 		return 0;
 	}
-	return p;	
+	return p;
 }
 
 
@@ -341,20 +351,20 @@
 }
 
 @ load a pixmap. store information about pixmap in |*p|.
-  the filename ptr is stored too - but not a copy of that string. 
+  the filename ptr is stored too - but not a copy of that string.
 @proc int load_pix( $, char *name, pix_t *p )
 {
   Display *dpy = XtDisplay($);
-  unsigned int width, height, bw, depth; 
+  unsigned int width, height, bw, depth;
   Window win;
   int err,x,y;
 
   if( load_pixmap_from_file($, name, & p->map, & p->mask) )
     return -1;
 
-  if (! XGetGeometry(dpy, p->map, &win, &x, &y, &width, &height, &bw, &depth)) 
+  if (! XGetGeometry(dpy, p->map, &win, &x, &y, &width, &height, &bw, &depth))
     return -1;
-    
+
   /* printf("loading success %s\n", name ); */
   p->fileName = name;
   p->pm_rect.width  = (unsigned short) width;
@@ -386,7 +396,7 @@
 @proc unset
 {
     $active = 0;
-    $expose($, NULL,NULL ); 
+    $expose($, NULL,NULL );
 }
 
 @proc set
@@ -395,12 +405,12 @@
     Widget w = rgroups_get_active_widget($);
     if( w && w != $ ) unset(w, 0,0,0 );
     rgroups_set_active_widget($);
-    $expose($, NULL,NULL ); 
+    $expose($, NULL,NULL );
 }
 
 @proc toggle
 {
-   if( $active ) unset($,0,0,0); else set($,0,0,0); 
+   if( $active ) unset($,0,0,0); else set($,0,0,0);
 }
 
 @proc notify

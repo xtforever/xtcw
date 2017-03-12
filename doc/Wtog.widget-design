@@ -1,0 +1,10 @@
+
+StringList:   IN-Z, IN, OUT
+Ansonsten wie WButton
+
+Abgeleitet von Wlab
+
+
+Text-encoding:
+
+\big!MAILFUNCTION\n\reg!system %par% not found

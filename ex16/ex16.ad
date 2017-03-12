@@ -5,19 +5,23 @@ ex16.thermal1div: 1000
 ex16.thermal2: /sys/class/thermal/thermal_zone2/temp
 ex16.thermal2div: 1000
 ex16.update_ms: 2000
+ex16.cache_dir: .cache/ex16
 
 *weightx: 1
 *weighty: 1
 *fill: Both
 *Gridbox.background: Darkblue
-*background: Lightblue
-*foreground: black
+*background: Darkblue
+*foreground: White
+*bg_norm: Darkblue
+*fg_norm: White
+*borderWidth: 0
 *cornerRoundPercent: 25
 *Wlabel.heightIncreasePercent: 50
 *Wlabel.leftOffsetPercent: 20
-*Wlabel.xftFont: Sans-10
+*Wlabel.xftFont: Ubuntu-10
 
-*translations: #override <BtnDown>: btndown() \n <BtnMotion>: btnmove() \n <Key>q: wm_quit()
+*translations: #override <Key>q: wm_quit()
 
 
 
@@ -29,7 +33,6 @@ ex16.update_ms: 2000
 *ent1.gridx: 0
 *ent1.weighty: 0
 *ent1.weightx: 0
-
 
 *ent2.wcClass: Wlabel
 *ent2.label: 00000

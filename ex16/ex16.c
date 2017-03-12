@@ -27,11 +27,17 @@
 #include <X11/Xmu/Editres.h>
 #include <X11/Vendor.h>
 #include <X11/Xaw/XawInit.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 
 #include <WcCreate.h>
 #include <Xp.h>
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
+#include <xborderless.h>
+
 
 Widget TopLevel;
 
@@ -66,12 +72,18 @@ typedef struct BasicSetting {
     int update_ms;
     int thermaldiv[2];
     int temp[2];
-
-
+    char *cache_dir;
 
 } BasicSetting;
 
+/* application resource struct syntax
 
+   Widget ent = <String> "*ent1"
+
+   int thermal1div = 0;
+
+   Type <ResourceName> VariableNameC = <Type> Value
+*/
 
 #define FLD(n)  XtOffsetOf(BasicSetting,n)
 static XtResource basicSettingRes[] = {
@@ -98,6 +110,10 @@ static XtResource basicSettingRes[] = {
 
     { "update_ms", "Update_ms", XtRInt, sizeof(int),
       FLD(update_ms), XtRImmediate, 0
+    },
+
+    { "cache_dir", "Cache_dir", XtRString, sizeof(String),
+      FLD(cache_dir), XtRString, ""
     },
 
 
@@ -140,6 +156,17 @@ static void wm_quit ( Widget w, XEvent *event, String *params,
 
   -------------------------------------------------------------------------------------------------------------------- */
 
+int file_read(int buf, char *fn)
+{
+    if(buf<=0) buf=m_create(10,1); else m_clear(buf);
+    FILE *fp = fopen(fn,"r");
+    if(fp) {
+        m_fscan(buf,'\n',fp);
+        fclose(fp);
+    }
+    return buf;
+}
+
 
 
 /******************************************************************************
@@ -148,88 +175,20 @@ static void wm_quit ( Widget w, XEvent *event, String *params,
 **  Translations bind events to actions
 ******************************************************************************/
 
-static int down_x, down_y;
-static void btndown(Widget w, XEvent* e, String* s, Cardinal* n)
-{
-    int x,y,x0=e->xbutton.x, y0= e->xbutton.y;
-    Display *disp = XtDisplay(TopLevel);
-    Window child_return;
-    XTranslateCoordinates (disp, XtWindow(w), XtWindow(TopLevel),
-                           x0, y0, & x, & y, & child_return);
-
-    TRACE(1,"DOWN: %dx%d", x,y );
-    down_x = x;
-    down_y = y;
-
-}
-
-static void btnmove(Widget w, XEvent* e, String* s, Cardinal* n)
-{
-    int x0=e->xbutton.x, y0= e->xbutton.y;
-    TRACE(1,"%dx%d",x0,y0  );
-    Display *disp = XtDisplay(TopLevel);
-    Window  win   = XtWindow(TopLevel);
-    int screen    = DefaultScreen(disp);
-    Window root   = RootWindow(disp,screen);
-
-    int x,y;
-    Window child_return;
-    XTranslateCoordinates (disp, XtWindow(w), root,
-                           x0, y0, & x, & y, & child_return);
-
-    TRACE(1, "%dx%d", x,y );
-    XMoveWindow(disp,win,x - down_x,y-down_y );
-}
-
 static void load_temp_single(int i)
 {
-    char str[100];
-    SETTINGS.temp[i] = 0;
-    char *path = SETTINGS.p[i];
-    FILE *fp = fopen(path,"r");
-    if(!fp) return;
-    fread( str, sizeof str, 1, fp );
-    SETTINGS.temp[i] = atoi(str);
-    fclose(fp);
-}static int down_x, down_y;
-static void btndown(Widget w, XEvent* e, String* s, Cardinal* n)
-{
-    int x,y,x0=e->xbutton.x, y0= e->xbutton.y;
-    Display *disp = XtDisplay(TopLevel);
-    Window child_return;
-    XTranslateCoordinates (disp, XtWindow(w), XtWindow(TopLevel),
-                           x0, y0, & x, & y, & child_return);
-
-    TRACE(1,"DOWN: %dx%d", x,y );
-    down_x = x;
-    down_y = y;
-
+    long val;
+    int tempStr;
+    tempStr = file_read(0,SETTINGS.p[i] );
+    SETTINGS.temp[i] = mstr_to_long(tempStr,0,&val) ? 0 : val;
+    m_free(tempStr);
 }
-
-static void btnmove(Widget w, XEvent* e, String* s, Cardinal* n)
-{
-    int x0=e->xbutton.x, y0= e->xbutton.y;
-    TRACE(1,"%dx%d",x0,y0  );
-    Display *disp = XtDisplay(TopLevel);
-    Window  win   = XtWindow(TopLevel);
-    int screen    = DefaultScreen(disp);
-    Window root   = RootWindow(disp,screen);
-
-    int x,y;
-    Window child_return;
-    XTranslateCoordinates (disp, XtWindow(w), root,
-                           x0, y0, & x, & y, & child_return);
-
-    TRACE(1, "%dx%d", x,y );
-    XMoveWindow(disp,win,x - down_x,y-down_y );
-}
-
 
 static void disp_temp_single(int i)
 {
     char str[100];
     float f = SETTINGS.temp[i] * 1.0 / SETTINGS.thermaldiv[i];
-    sprintf(str,"%4.2f", f );
+    snprintf(str,sizeof str, "%4.2f", f );
     XtVaSetValues( SETTINGS.widget_ent[i], "label", str, NULL );
 }
 
@@ -251,10 +210,64 @@ static void update_cb(void *user_data, XtIntervalId *id)
 
 }
 
+FILE *open_cachfile(int write)
+{
+    const char *s;
+    if ((s = getenv("HOME")) == NULL) {
+        s = getpwuid(getuid())->pw_dir;
+    }
+    if( s==NULL ) s="/tmp";
+
+    int fn = s_printf( 0,0, "%s/%s", s, SETTINGS.cache_dir );
+
+    FILE *fp = fopen( m_buf(fn), write ? "w" : "r" );
+    m_free(fn);
+    return fp;
+}
+
+void save_window_position(int x, int y)
+{
+    FILE *fp = open_cachfile(1);
+    if( !fp ) return;
+    fprintf( fp, "%d %d\n", x,y );
+    fclose(fp);
+}
+
+int load_window_position(int *x, int *y)
+{
+    FILE *fp = open_cachfile(0);
+    if( !fp ) return 1;
+    fscanf( fp, "%d %d", x,y );
+    fclose(fp);
+    return 0;
+}
+
 /******************************************************************************
 **  Private Functions
 ******************************************************************************/
 
+
+static void handle_sigterm(int signum)
+{
+    fprintf(stderr,"terminate\n");
+    XtAppSetExitFlag( XtWidgetToApplicationContext(TopLevel) );
+}
+
+static void catch_sigterm(void)
+{
+    //in the source file
+    static struct sigaction myaction;
+    myaction.sa_handler = handle_sigterm;
+    myaction.sa_flags = 0;
+
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGTERM);
+    sigaddset(&mask, SIGINT);
+    sigaction(SIGTERM, &myaction, NULL);
+    sigaction(SIGINT, &myaction, NULL);
+    myaction.sa_mask = mask;
+}
 
 /*ARGSUSED*/
 static void RegisterApplication ( Widget top )
@@ -264,8 +277,7 @@ static void RegisterApplication ( Widget top )
 
 
     /* -- Register application specific actions */
-  RAC( top, btnmove );
-  RAC( top, btndown );
+
 }
 
 
@@ -276,101 +288,6 @@ static void syntax(void)
   puts( syntax_wcl );
 }
 
-/** append to the list of client properties a property that
-    tells the window manager to keep this window above others
-*/
-void make_stay_above(Widget top)
-{
-#define _NET_WM_STATE_REMOVE        0    // remove/unset property
-#define _NET_WM_STATE_ADD           1    // add/set property
-#define _NET_WM_STATE_TOGGLE        2    // toggle property
-
-    Display *display = XtDisplay(top);
-    int screen = DefaultScreen(display);
-    Window root = RootWindow(display,screen);
-
-    Atom wmStateAbove = XInternAtom( display, "_NET_WM_STATE_ABOVE", 1 );
-    if( wmStateAbove != None ) {
-        printf( "_NET_WM_STATE_ABOVE has atom of %ld\n", (long)wmStateAbove );
-    } else {
-        printf( "ERROR: cannot find atom for _NET_WM_STATE_ABOVE !\n" );
-    }
-
-    Atom wmNetWmState = XInternAtom( display, "_NET_WM_STATE", 1 );
-    if( wmNetWmState != None ) {
-        printf( "_NET_WM_STATE has atom of %ld\n", (long)wmNetWmState );
-    } else {
-        printf( "ERROR: cannot find atom for _NET_WM_STATE !\n" );
-    }
-    // set window always on top hint
-    if( wmStateAbove == None ) return;
-
-    XClientMessageEvent xclient;
-    memset( &xclient, 0, sizeof (xclient) );
-    //
-    //window  = the respective client window
-    //message_type = _NET_WM_STATE
-    //format = 32
-    //data.l[0] = the action, as listed below
-    //data.l[1] = first property to alter
-    //data.l[2] = second property to alter
-    //data.l[3] = source indication (0-unk,1-normal app,2-pager)
-    //other data.l[] elements = 0
-    //
-    xclient.type = ClientMessage;
-    xclient.window = XtWindow(top); // GDK_WINDOW_XID(window);
-    xclient.message_type = wmNetWmState; //gdk_x11_get_xatom_by_name_for_display( display, "_NET_WM_STATE" );
-    xclient.format = 32;
-    xclient.data.l[0] = _NET_WM_STATE_ADD; // add ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE;
-    xclient.data.l[1] = wmStateAbove; //gdk_x11_atom_to_xatom_for_display (display, state1);
-    xclient.data.l[2] = 0; //gdk_x11_atom_to_xatom_for_display (display, state2);
-    xclient.data.l[3] = 0;
-    xclient.data.l[4] = 0;
-    //gdk_wmspec_change_state( FALSE, window,
-    //  gdk_atom_intern_static_string ("_NET_WM_STATE_BELOW"),
-    //  GDK_NONE );
-    XSendEvent( display,
-                //mywin - wrong, not app window, send to root window!
-                root, // !! DefaultRootWindow( display ) !!!
-                False,
-                SubstructureRedirectMask | SubstructureNotifyMask,
-                (XEvent *)&xclient );
-}
-
-/** tell window manager to not decorated this shell window
- */
-void make_borderless_window(Widget top )
-{
-    Window window = XtWindow(top);
-    Display *display = XtDisplay(top);
-
-    struct MwmHints {
-        unsigned long flags;
-        unsigned long functions;
-        unsigned long decorations;
-        long input_mode;
-        unsigned long status;
-    };
-
-    enum {
-        MWM_HINTS_FUNCTIONS = (1L << 0),
-        MWM_HINTS_DECORATIONS =  (1L << 1),
-
-        MWM_FUNC_ALL = (1L << 0),
-        MWM_FUNC_RESIZE = (1L << 1),
-        MWM_FUNC_MOVE = (1L << 2),
-        MWM_FUNC_MINIMIZE = (1L << 3),
-        MWM_FUNC_MAXIMIZE = (1L << 4),
-        MWM_FUNC_CLOSE = (1L << 5)
-    };
-    struct MwmHints hints;
-    Atom mwmHintsProperty = XInternAtom(display, "_MOTIF_WM_HINTS", 0);
-
-    hints.flags = MWM_HINTS_DECORATIONS;
-    hints.decorations = 0;
-    XChangeProperty(display, window, mwmHintsProperty, mwmHintsProperty, 32,
-                    PropModeReplace, (unsigned char *)&hints, 5);
-}
 
 /* if the window manager closes the window, tell the
    window manager to send a message to xt. xt will
@@ -430,13 +347,16 @@ Widget init_application(int *argc, char **argv )
 ******************************************************************************/
 int main ( int argc, char **argv )
 {
+
+    Widget appShell = init_application(&argc, argv );
+    catch_sigterm();
     trace_main = TRACE_MAIN;
     signal(SIGPIPE, SIG_IGN); /* ignore broken pipe on write */
-    Widget appShell = init_application(&argc, argv );
 
     /*  -- Register all application specific callbacks and widget classes
      */
     RegisterApplication ( appShell );
+    add_winmove_translations(appShell);
 
     /*  -- Create widget tree below toplevel shell using Xrm database
            register callbacks,actions, widget classe before
@@ -467,7 +387,17 @@ int main ( int argc, char **argv )
     grab_window_quit( appShell );
     make_borderless_window(appShell);
     make_stay_above(appShell);
+
+    int x0,y0;
+    if( load_window_position(&x0,&y0) == 0 )
+        XMoveWindow(XtDisplay(appShell),XtWindow(appShell), x0, y0 );
+
     XtAppMainLoop(XtWidgetToApplicationContext(appShell)); /* use XtAppSetExitFlag */
+
+    Dimension x,y;
+    XtVaGetValues( appShell, "x", &x, "y", &y, NULL );
+    save_window_position(x,y);
+
     XtDestroyWidget(appShell);
     v_free( SETTINGS.vset );
     m_destruct();
