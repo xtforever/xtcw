@@ -1,0 +1,24 @@
+video.wcChildren: gb1
+
+*xftFont: Sans-8
+*weightx: 1
+*weighty: 1
+*fill: Both
+*Gridbox.background: Darkblue
+*background: Lightblue
+*foreground: black
+*cornerRoundPercent: 5
+*Wedit.cursorColor: Black
+
+*gb1.wcClass: gridbox
+*gb1.wcChildren: frame startstop
+
+*frame.wcClass: wcap
+*frame.fill: none
+*frame.gravity: center
+
+*startstop.wcClass: Wbutton
+*startstop.gridy: 1
+*startstop.weighty: 0
+*startstop.label: Start/Stop
+*startstop.callback: startstop_cb

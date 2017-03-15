@@ -1,0 +1,170 @@
+@class Wcap(Core)
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+
+@PUBLIC
+@var <Callback> XtCallbackList callback  = NULL
+@var int grab = 0
+
+@PRIVATE
+@var GC gc_copy
+@var int pic_w
+@var int pic_h
+@var XImage *img
+@var XShmSegmentInfo shmSegInfo
+@var XtInputId inp_id
+@var XtIntervalId autoupd_id
+
+@METHODS
+
+@proc initialize
+{
+  $pic_w = 320;
+  $pic_h = 240;
+  $width = $pic_w;
+  $height = $pic_h;
+  $gc_copy = XtGetGC($,0,NULL);
+  $img=0; $grab=1;
+  shm_init($);
+  xv4l2_init_grab();
+}
+
+@proc destroy
+{
+  XtReleaseGC($,$gc_copy);
+  shm_destroy($);
+  xv4l2_destroy();
+}
+
+@proc set_values
+{
+        fprintf(stderr,"set_values grab\n");
+        autoupd_cb($,NULL);
+        return 0;
+}
+
+@proc expose
+{
+   fprintf(stderr,"expose\n");
+   /* grab($); */
+   paint($);
+}
+
+@proc realize
+{
+  XtCreateWindow($, (unsigned int) InputOutput,
+  	  (Visual *) CopyFromParent, *mask, attributes);
+}
+
+@proc query_geometry
+{
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  $pic_w;
+    reply->height = $pic_h;
+    return XtGeometryAlmost;
+}
+
+@UTILITIES
+
+@proc paint($)
+{
+        if( $img ) shm_paint($);
+}
+
+@proc shm_paint($)
+{
+        Display *d = XtDisplay($);
+        Window   w = XtWindow($);
+
+        if(!XShmPutImage(d,w,$gc_copy,$img,
+                0,0, /* source x,y */
+                0,0, /* dest x,y */
+                $pic_w,$pic_h,
+                False))
+          ERR("ShmPutImage error");
+}
+
+@proc grab($)
+{
+        xv4l2_grab( (void*)$img->data,
+        $img->width, $img->height,
+        $img->bytes_per_line );
+}
+
+@proc img_fill($)
+{
+        int i;
+        /* int height = $img->height; */
+        int width = $img->width;
+        /* 24BIT, B G R */
+        unsigned char *data = (void*) $img->data;
+        data += $img->bytes_per_line * 10;
+        for(i=0;i<width;i++) {
+                data[i+1] = 0xff;
+                data+=3;
+        }
+}
+
+@proc shm_destroy($)
+{
+        if( ! $img ) return;
+        Display *d = XtDisplay($);
+        XShmDetach (d, & $shmSegInfo );
+        XDestroyImage ($img);
+        shmdt ($shmSegInfo.shmaddr);
+        shmctl ($shmSegInfo.shmid, IPC_RMID, 0);
+}
+
+
+
+@proc shm_init($)
+{
+        int ShmMajor,ShmMinor;
+        Bool ShmPixmaps;
+        Display *d = XtDisplay($);
+        Visual *v = DefaultVisual(d,DefaultScreen(d));
+        Screen *screen = DefaultScreenOfDisplay(d);
+        int screenNr   = DefaultScreen(screen);
+        int depth = DefaultDepth(d,screenNr);
+        fprintf(stderr,"depth=%d\n", depth );
+        if(!XShmQueryVersion(d,&ShmMajor,&ShmMinor,&ShmPixmaps))
+                return; /* N/A */
+
+        $img=XShmCreateImage(d,v,24,ZPixmap,NULL,&$shmSegInfo,
+                $width,$height );
+        $shmSegInfo.shmid = shmget (IPC_PRIVATE,
+                $img->bytes_per_line * $img->height,
+                IPC_CREAT | 0777 );
+        $shmSegInfo.shmaddr = $img->data =
+                shmat ($shmSegInfo.shmid, 0, 0);
+        $shmSegInfo.readOnly = False;
+        if(! XShmAttach(d,&$shmSegInfo) )
+           ERR("ShmAttach returns non-zero");
+
+        $pic_w = $width;
+        $pic_h = $height;
+
+        img_fill($);
+}
+
+@proc autoupd_cb(XtPointer client_data, XtIntervalId *id)
+{
+	Widget self = (Widget) client_data;
+        grab($); paint($);
+
+        if( $grab ) {
+        $autoupd_id =
+	XtAppAddTimeOut( XtWidgetToApplicationContext( self ),
+        1000/25, autoupd_cb, self );
+        }
+
+}
+
+@IMPORTS
+@incl <X11/extensions/XShm.h>
+@incl <sys/ipc.h>
+@incl <sys/shm.h>
+@incl <mls.h>
+@incl "xv4l2.h"
