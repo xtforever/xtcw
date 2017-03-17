@@ -8,12 +8,11 @@
 @var int grab = 0
 
 @PRIVATE
+@var Bool cap
 @var GC gc_copy
 @var int pic_w
 @var int pic_h
-@var XImage *img
-@var XShmSegmentInfo shmSegInfo
-@var XtInputId inp_id
+@var shimg_t *im
 @var XtIntervalId autoupd_id
 
 @METHODS
@@ -25,30 +24,28 @@
   $width = $pic_w;
   $height = $pic_h;
   $gc_copy = XtGetGC($,0,NULL);
-  $img=0; $grab=1;
-  shm_init($);
+  $cap=0;
+  $im = shm_create($, $pic_w, $pic_h );
   xv4l2_init_grab();
 }
 
 @proc destroy
 {
   XtReleaseGC($,$gc_copy);
-  shm_destroy($);
+  shm_destroy($im);
   xv4l2_destroy();
 }
 
 @proc set_values
 {
-        fprintf(stderr,"set_values grab\n");
-        autoupd_cb($,NULL);
+        capture_update($);
         return 0;
 }
 
 @proc expose
 {
-   fprintf(stderr,"expose\n");
-   /* grab($); */
-   paint($);
+        capture_update($);
+        paint($);
 }
 
 @proc realize
@@ -70,15 +67,11 @@
 
 @proc paint($)
 {
-        if( $img ) shm_paint($);
-}
+        if(! $im ) return;
 
-@proc shm_paint($)
-{
         Display *d = XtDisplay($);
         Window   w = XtWindow($);
-
-        if(!XShmPutImage(d,w,$gc_copy,$img,
+        if(!XShmPutImage(d,w,$gc_copy,$im->img,
                 0,0, /* source x,y */
                 0,0, /* dest x,y */
                 $pic_w,$pic_h,
@@ -88,78 +81,44 @@
 
 @proc grab($)
 {
-        xv4l2_grab( (void*)$img->data,
-        $img->width, $img->height,
-        $img->bytes_per_line );
+        XImage *img = $im->img;
+        xv4l2_grab( (void*)img->data,
+                    img->width, img->height,
+                    img->bytes_per_line );
 }
 
-@proc img_fill($)
+@proc autoupd_cb(XtPointer self, XtIntervalId *id)
 {
-        int i;
-        /* int height = $img->height; */
-        int width = $img->width;
-        /* 24BIT, B G R */
-        unsigned char *data = (void*) $img->data;
-        data += $img->bytes_per_line * 10;
-        for(i=0;i<width;i++) {
-                data[i+1] = 0xff;
-                data+=3;
-        }
-}
-
-@proc shm_destroy($)
-{
-        if( ! $img ) return;
-        Display *d = XtDisplay($);
-        XShmDetach (d, & $shmSegInfo );
-        XDestroyImage ($img);
-        shmdt ($shmSegInfo.shmaddr);
-        shmctl ($shmSegInfo.shmid, IPC_RMID, 0);
-}
-
-
-
-@proc shm_init($)
-{
-        int ShmMajor,ShmMinor;
-        Bool ShmPixmaps;
-        Display *d = XtDisplay($);
-        Visual *v = DefaultVisual(d,DefaultScreen(d));
-        Screen *screen = DefaultScreenOfDisplay(d);
-        int screenNr   = DefaultScreen(screen);
-        int depth = DefaultDepth(d,screenNr);
-        fprintf(stderr,"depth=%d\n", depth );
-        if(!XShmQueryVersion(d,&ShmMajor,&ShmMinor,&ShmPixmaps))
-                return; /* N/A */
-
-        $img=XShmCreateImage(d,v,24,ZPixmap,NULL,&$shmSegInfo,
-                $width,$height );
-        $shmSegInfo.shmid = shmget (IPC_PRIVATE,
-                $img->bytes_per_line * $img->height,
-                IPC_CREAT | 0777 );
-        $shmSegInfo.shmaddr = $img->data =
-                shmat ($shmSegInfo.shmid, 0, 0);
-        $shmSegInfo.readOnly = False;
-        if(! XShmAttach(d,&$shmSegInfo) )
-           ERR("ShmAttach returns non-zero");
-
-        $pic_w = $width;
-        $pic_h = $height;
-
-        img_fill($);
-}
-
-@proc autoupd_cb(XtPointer client_data, XtIntervalId *id)
-{
-	Widget self = (Widget) client_data;
+        if(! $grab ) return;
         grab($); paint($);
-
-        if( $grab ) {
+        XtAppContext ctx = XtWidgetToApplicationContext($);
         $autoupd_id =
-	XtAppAddTimeOut( XtWidgetToApplicationContext( self ),
-        1000/25, autoupd_cb, self );
+	        XtAppAddTimeOut( ctx,
+                                 1000/25,
+                                 autoupd_cb, $ );
+}
+
+@proc capture_update($)
+{
+        if( $grab && !$cap ) {
+            start_capture($); $cap=1;
+            autoupd_cb($,NULL);
+            return;
         }
 
+        if( $cap && !$grab ) {
+            stop_capture($); $cap=0;
+        }
+}
+
+@proc start_capture($)
+{
+        xv4l2_start_capture();
+}
+
+@proc stop_capture($)
+{
+        xv4l2_stop_capture();
 }
 
 @IMPORTS
@@ -168,3 +127,4 @@
 @incl <sys/shm.h>
 @incl <mls.h>
 @incl "xv4l2.h"
+@incl "xshm-util.h"

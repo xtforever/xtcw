@@ -1,17 +1,9 @@
 /* most important define,
-   check APPNAME.ad !
-
-
-PWM Widget
------------------
-PWM     FREQ
-293     10000 Hz
------------------
+   check APP_NAME.ad !
 */
 #define APP_NAME "video"
 
-/*
- */
+
 
 
 #include "mls.h"

@@ -25,10 +25,16 @@
 #include <libv4l2.h>
 #include <mls.h>
 
+void xv4l2_wait_rdy(void);
 
 #define PR(x) do {} while(0)
 // #define PR(x) fprintf(stderr,"trace: %s\n",x)
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
+void yuv420tobgr(uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v,
+                 unsigned int ystride, unsigned int ustride, unsigned int vstride, uint8_t *out);
+
+void simple_rgb24tobgr32(uint16_t width, uint16_t height, uint8_t *src, uint8_t *dst );
+void simple_yuv420tobgr(uint16_t width, uint16_t height, uint8_t *src, uint8_t *dst );
 
 struct buffer {
         void   *start;
@@ -43,13 +49,11 @@ static void xioctl(int fh, int request, void *arg)
     xv4l2_wait_rdy();
 
         do {
-            PR("ioctl start");
             r = v4l2_ioctl(fh, request, arg);     usleep(1000);
-            PR("ioctl returns");
         } while (to-- && r == -1 && ((errno == EINTR) || (errno == EAGAIN)));
 
         if (r == -1) {
-                fprintf(stderr, "error %d, %s\\n", errno, strerror(errno));
+                fprintf(stderr, "error %d, %s\n", errno, strerror(errno));
                 exit(EXIT_FAILURE);
         }
 
@@ -77,21 +81,27 @@ int xv4l2_init_grab(void)
 {
         unsigned int                    i, n_buffers;
 
-    XV.fd = v4l2_open(XV.dev_name, O_RDWR | O_NONBLOCK, 0);
+        if( XV.fd >= 0 ) return -1;
+
+        XV.fd = v4l2_open(XV.dev_name, O_RDWR | O_NONBLOCK, 0);
         if (XV.fd < 0) {
                 perror("Cannot open device");
                 exit(EXIT_FAILURE);
         }
 
+        int pix_format = V4L2_PIX_FMT_RGB24;
+        // int pix_format = V4L2_PIX_FMT_YUV420;
         CLEAR(XV.fmt);
         XV.fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         XV.fmt.fmt.pix.width       = 320;
         XV.fmt.fmt.pix.height      = 240;
-        XV.fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
+        XV.fmt.fmt.pix.pixelformat = pix_format;
+        // XV.fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
         XV.fmt.fmt.pix.field       = 0; // V4L2_FIELD_INTERLACED;
         xioctl(XV.fd, VIDIOC_S_FMT, &XV.fmt);
-        if (XV.fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24) {
+        if (XV.fmt.fmt.pix.pixelformat != pix_format ) {
                 printf("Libv4l didn't accept RGB24 format. Can't proceed.\\n");
+                printf("returns: %u\n", XV.fmt.fmt.pix.pixelformat );
                 exit(EXIT_FAILURE);
         }
         if ((XV.fmt.fmt.pix.width != 320) || (XV.fmt.fmt.pix.height != 240))
@@ -134,12 +144,28 @@ int xv4l2_init_grab(void)
         }
 
 
-        PR("start cap");
-        XV.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        xioctl(XV.fd, VIDIOC_STREAMON, &XV.type);
 
         return XV.fd;
 }
+
+
+void xv4l2_start_capture(void)
+{
+    xv4l2_init_grab();
+    PR("start cap");
+    XV.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    xioctl(XV.fd, VIDIOC_STREAMON, &XV.type);
+    xv4l2_wait_rdy();
+}
+
+void xv4l2_stop_capture(void)
+{
+    PR("stop cap");
+    XV.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    xioctl(XV.fd, VIDIOC_STREAMOFF, &XV.type);
+    xv4l2_destroy();
+}
+
 
 void xv4l2_grab(unsigned char *data, unsigned w,unsigned h, unsigned bytes_per_line )
 {
@@ -153,23 +179,35 @@ void xv4l2_grab(unsigned char *data, unsigned w,unsigned h, unsigned bytes_per_l
     // XV.buffers[XV.buf.index].start, XV.buf.bytesused
     // XV.fmt.fmt.pix.width, XV.fmt.fmt.pix.height
 
-    /* rbg24 to bgr24 */
     unsigned char *src = XV.buffers[XV.buf.index].start;
     unsigned char *dst = data;
-    unsigned src_len = XV.buf.bytesused;
-    unsigned dst_len = bytes_per_line * h;
+    // unsigned src_len = XV.buf.bytesused;
+    // unsigned dst_len = bytes_per_line * h;
     unsigned src_w = XV.fmt.fmt.pix.width;
     unsigned src_h =  XV.fmt.fmt.pix.height;
-    unsigned x,y;
-    unsigned char r,g,b;
 
-    /*
-      printf("src=%ux%d (%u) dst=%ux%u\n", src_w, src_h, src_len,
-           w,h );
-           printf("bpl=%u\n", bytes_per_line );
-    */
-    for( y=0;y < src_h; y++) {
-        for(x=0;x<src_w;x++) {
+
+
+    if( XV.fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUV420 ) {
+        simple_yuv420tobgr(src_w, src_h, src, dst );
+    }
+    else if( XV.fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_RGB24 ) {
+        simple_rgb24tobgr32(src_w, src_h, src, dst );
+    }
+
+    PR("deq 2");
+    xioctl(XV.fd, VIDIOC_QBUF, &XV.buf);
+}
+
+void simple_rgb24tobgr32(uint16_t width, uint16_t height, uint8_t *src, uint8_t *dst )
+{
+    unsigned int src_len = width * height * 3,
+        dst_len = width * height * 4,
+        x,y;
+
+    for( y=0; y < height; y++) {
+        for(x=0; x < width; x++) {
+            uint8_t r,g,b;
             if( src_len < 3 || dst_len < 4 ) return;
             r = src[0];
             g = src[1];
@@ -181,16 +219,63 @@ void xv4l2_grab(unsigned char *data, unsigned w,unsigned h, unsigned bytes_per_l
             dst+=4; dst_len-=4;
         }
     }
-
-    PR("deq 2");
-    xioctl(XV.fd, VIDIOC_QBUF, &XV.buf);
-
-    /*
-    PR("stop cap");
-    XV.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    xioctl(XV.fd, VIDIOC_STREAMOFF, &XV.type);
-    */
 }
+
+
+
+/*
+
+ */
+void yuv420tobgr(uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v,
+                 unsigned int ystride, unsigned int ustride, unsigned int vstride, uint8_t *out) {
+    for (unsigned long int i = 0; i < height; ++i) {
+        for (unsigned long int j = 0; j < width; ++j) {
+            uint8_t *point = out + 4 * ((i * width) + j);
+            int       t_y   = y[((i * ystride) + j)];
+            const int t_u   = u[(((i / 2) * ustride) + (j / 2))];
+            const int t_v   = v[(((i / 2) * vstride) + (j / 2))];
+            t_y            = t_y < 16 ? 16 : t_y;
+
+            const int r = (298 * (t_y - 16) + 409 * (t_v - 128) + 128) >> 8;
+            const int g = (298 * (t_y - 16) - 100 * (t_u - 128) - 208 * (t_v - 128) + 128) >> 8;
+            const int b = (298 * (t_y - 16) + 516 * (t_u - 128) + 128) >> 8;
+
+            point[2] = r > 255 ? 255 : r < 0 ? 0 : r;
+            point[1] = g > 255 ? 255 : g < 0 ? 0 : g;
+            point[0] = b > 255 ? 255 : b < 0 ? 0 : b;
+            point[3] = ~0;
+        }
+    }
+}
+
+void simple_yuv420tobgr(uint16_t width, uint16_t height, uint8_t *src, uint8_t *dst )
+{
+    unsigned int x,y;
+    uint8_t *point = dst;
+    uint8_t *dy = src;
+    uint8_t *du = src + (width * height);
+    uint8_t *dv = du  + (width * height) / 4;
+
+    for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
+            int       t_y   = dy[x];
+            int t_u   = du[x/2];
+            int t_v   = dv[x/2];
+            t_y            = t_y < 16 ? 16 : t_y;
+            int r = (298 * (t_y - 16) + 409 * (t_v - 128) + 128) >> 8;
+            int g = (298 * (t_y - 16) - 100 * (t_u - 128) - 208 * (t_v - 128) + 128) >> 8;
+            int b = (298 * (t_y - 16) + 516 * (t_u - 128) + 128) >> 8;
+            point[0] = b > 255 ? 255 : b < 0 ? 0 : b;
+            point[1] = g > 255 ? 255 : g < 0 ? 0 : g;
+            point[2] = r > 255 ? 255 : r < 0 ? 0 : r;
+            point[3] = ~0;
+            point+=4;
+        }
+        dy += width;
+        if( y & 1) { du += width/2;  dv += width/2; }
+    }
+}
+
 
 void xv4l2_wait_rdy(void)
 {
@@ -222,6 +307,7 @@ void xv4l2_wait_rdy(void)
 void xv4l2_destroy(void)
 {
     unsigned int i;
+    if( XV.fd < 0 ) return;
     XV.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     xioctl(XV.fd, VIDIOC_STREAMOFF, &XV.type);
     for (i = 0; i < XV.req.count; ++i)

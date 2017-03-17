@@ -16,6 +16,8 @@ video.wcChildren: gb1
 *frame.wcClass: wcap
 *frame.fill: none
 *frame.gravity: center
+*frame.borderWidth: 0
+*frame.grab: 1
 
 *startstop.wcClass: Wbutton
 *startstop.gridy: 1
