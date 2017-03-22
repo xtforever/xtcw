@@ -3,7 +3,7 @@ WBUILD=../wbuild/wbuild
 CFLAGS +=-Wall
 CPPFLAGS+=-I. -D_GNU_SOURCE
 WFLAGS= -d doc -c src -i xtcw --include-prefix=xtcw $(wb_install)/tex.w $(wb_install)/nroff.w
-LOADLIBES=-lX11 -lXaw -lXxf86vm -lXft -lXt -lXext -lXmu
+LOADLIBES=-lX11 -lXaw -lXxf86vm -lXft -lXt -lXext -lXmu -lXi
 
 ifeq ($(debug),1)
 CFLAGS+=-g -O0 -DDEBUG

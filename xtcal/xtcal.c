@@ -15,6 +15,10 @@
 #include <X11/Vendor.h>
 #include <X11/Xaw/XawInit.h>
 
+#include <X11/Xutil.h>
+#include <X11/extensions/XInput.h>
+#include <X11/extensions/XInput2.h>
+
 #include "xtcw/Calib.h"
 #include "xfullscreen.h"
 #include "xborderless.h"
@@ -27,9 +31,19 @@
 #define print_matrix(a,b,c,d) do {} while(0)
 #endif
 
+
+typedef struct Matrix {
+    float m[9];
+} Matrix;
+
 int x_width, x_height;
 
 Widget TopLevel;
+
+static void matrix_print(void *f);
+static int apply_matrix(Display *dpy, int deviceid, Matrix *m);
+static void matrix_set(Matrix *m, int row, int col, float val);
+static void matrix_set_unity(Matrix *m);
 
 void quit_gui( Widget w, void *u, void *c )
 {
@@ -42,12 +56,39 @@ static void wm_quit ( Widget w, XEvent *event, String *params,
     XtAppSetExitFlag( XtWidgetToApplicationContext(w) );
 }
 
-
 /* --------------------------------------------------------------------------------------------------------------------
 
                         IMPLEMENTATION
 
   -------------------------------------------------------------------------------------------------------------------- */
+
+
+static XrmOptionDescRec options[] = {
+  { "-deviceName",	"*deviceName",	XrmoptionSepArg, NULL }
+};
+typedef struct app_conf {
+    char *deviceName;
+    long deviceId;
+} app_conf;
+static app_conf CONF;
+
+#define FLD(n)  XtOffsetOf(app_conf,n)
+static XtResource app_res[] = {
+  { "deviceName", "DeviceName", XtRString, sizeof(String),
+    FLD(deviceName), XtRString, ""
+  }
+};
+#undef FLD
+
+static void get_config(Widget top)
+{
+    /* get application resources */
+    XtGetApplicationResources(	top, (XtPointer)&CONF,
+				app_res,
+				XtNumber(app_res),
+				(ArgList)0, 0 );
+}
+/*  -------------------------------------------------------------------------------------------------------------------- */
 
 void dpr_mx(void *B, int rows, int cols)
 {
@@ -163,9 +204,8 @@ struct pt {
 void pf(double x)
 {
     char s[10];
-    gcvt(x,6,s); printf("%s ", s);
+    char *e=gcvt(x,6,s); (void)e; printf("%s ", s);
 }
-
 
 
 void touch_cal(struct pt *points, int cnt, int width, int height)
@@ -241,8 +281,6 @@ void touch_cal(struct pt *points, int cnt, int width, int height)
     print_matrix( "ata\\atx", bgauss1, 3,4 );
     print_matrix( "ata\\aty", bgauss2, 3,4 );
 
-
-
     gauss1(bgauss1, abc, 3 );
     gauss1(bgauss2, def, 3 );
 
@@ -255,6 +293,14 @@ void touch_cal(struct pt *points, int cnt, int width, int height)
     for(i=0;i<3;i++)
         pf( def[i] );
     printf( "0 0 1\n");
+
+    Matrix mc;
+    matrix_set_unity(&mc);
+    for(i=0;i<3;i++) {
+        matrix_set(&mc,0,i, abc[i] );
+        matrix_set(&mc,1,i, def[i] );
+    }
+    apply_matrix(XtDisplay(TopLevel), CONF.deviceId, &mc);
 }
 
 void process_cal_data( Widget w, void *u, void *p )
@@ -316,13 +362,131 @@ char* fallback_resources[] = {
     NULL
 };
 
+
+static void matrix_set(Matrix *m, int row, int col, float val)
+{
+    unsigned int i = row*3+col;
+    assert( i < 9);
+    m->m[i] = val;
+}
+
+static void matrix_set_unity(Matrix *m)
+{
+    memset(m, 0, sizeof(m->m));
+    matrix_set(m, 0, 0, 1);
+    matrix_set(m, 1, 1, 1);
+    matrix_set(m, 2, 2, 1);
+}
+
+void xi_show(Display *d,  XDeviceInfo    *info )
+{
+    printf("%s : %ld\n", info->name, info->id );
+}
+
+void xi_list_devices(Widget top)
+{
+    XDeviceInfo         *info;
+    int                 loop;
+    int                 num_devices;
+
+    Display *display = XtDisplay(top);
+    info = XListInputDevices(display, &num_devices);
+    for(loop=0; loop<num_devices; loop++) {
+        xi_show(display, info+loop);
+    }
+}
+
+long xi_find_device_id(Widget top, char *device_name)
+{
+    XDeviceInfo         *info;
+    int                 loop;
+    int                 num_devices;
+
+    Display *display = XtDisplay(top);
+    if( ! (device_name && *device_name)) return 0;
+    info = XListInputDevices(display, &num_devices);
+    for(loop=0; loop<num_devices; loop++) {
+        if( strcmp(device_name, info[loop].name)==0 )
+            return info[loop].id;
+    }
+    return 0;
+}
+
+static void matrix_print(void *f)
+{
+    Matrix *m = f;
+    printf("[ %3.3f %3.3f %3.3f ]\n", m->m[0], m->m[1], m->m[2]);
+    printf("[ %3.3f %3.3f %3.3f ]\n", m->m[3], m->m[4], m->m[5]);
+    printf("[ %3.3f %3.3f %3.3f ]\n", m->m[6], m->m[7], m->m[8]);
+}
+
+static int
+apply_matrix(Display *dpy, int deviceid, Matrix *m)
+{
+    Atom prop_float, prop_matrix;
+
+    union {
+        unsigned char *c;
+        float *f;
+    } data;
+    int format_return;
+    Atom type_return;
+    unsigned long nitems;
+    unsigned long bytes_after;
+
+    int rc;
+
+    prop_float = XInternAtom(dpy, "FLOAT", False);
+    prop_matrix = XInternAtom(dpy, "Coordinate Transformation Matrix", False);
+
+    if (!prop_float)
+    {
+        fprintf(stderr, "Float atom not found. This server is too old.\n");
+        return EXIT_FAILURE;
+    }
+    if (!prop_matrix)
+    {
+        fprintf(stderr, "Coordinate transformation matrix not found. This "
+                "server is too old\n");
+        return EXIT_FAILURE;
+    }
+
+    rc = XIGetProperty(dpy, deviceid, prop_matrix, 0, 9, False, prop_float,
+                       &type_return, &format_return, &nitems, &bytes_after,
+                       &data.c);
+    if (rc != Success || prop_float != type_return || format_return != 32 ||
+        nitems != 9 || bytes_after != 0)
+    {
+        fprintf(stderr, "Failed to retrieve current property values\n");
+        return EXIT_FAILURE;
+    }
+
+    matrix_print(data.f);
+
+    memcpy(data.f, m->m, sizeof(m->m));
+    matrix_print(data.f);
+    XIChangeProperty(dpy, deviceid, prop_matrix, prop_float,
+                     format_return, PropModeReplace, data.c, nitems);
+
+    XFree(data.c);
+    XFlush(dpy);
+    return EXIT_SUCCESS;
+}
+
+void xi_set_unity(Widget top, long id)
+{
+    Matrix M;
+    matrix_set_unity(&M);
+    apply_matrix(XtDisplay(top), id, &M );
+}
+
+
+
 /******************************************************************************
 *   MAIN function
 ******************************************************************************/
 int main ( int argc, char **argv )
 {
-
-
     XtAppContext app;
     Widget appShell,w;
     XtSetLanguageProc (NULL, NULL, NULL);
@@ -330,13 +494,23 @@ int main ( int argc, char **argv )
     /*  -- Intialize Toolkit creating the application shell
      */
     appShell = XtOpenApplication (&app, argv[0],
-                                         NULL,0, // options, XtNumber(options),
+                                        options, XtNumber(options),
                                          &argc, argv,
                                          fallback_resources,
                                          sessionShellWidgetClass,
                                          NULL, 0
                                          );
     TopLevel = appShell;
+    get_config(appShell);
+    long int id = xi_find_device_id(appShell,CONF.deviceName);
+    if( id <0 ) {
+        xi_list_devices(appShell);
+        exit(EXIT_SUCCESS);
+    }
+    CONF.deviceId = id;
+    printf("id=%ld\n", id );
+    xi_set_unity(appShell, id );
+
     w = XtVaCreateManagedWidget( "calib", calibWidgetClass, TopLevel,
                              NULL );
     XtAddCallback(w, XtNcallback, process_cal_data, NULL );
