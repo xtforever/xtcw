@@ -1,0 +1,1104 @@
+\input wbuildmac.tex
+\Class{Wtxt}Editor Widget
+
+
+
+
+
+
+
+\Publicvars
+\Table{Wtxt}
+XtNfontName&XtCFontName&String &"Source Code Pro-22"\cr
+XtNforeground&XtCForeground&Pixel &XtDefaultForeground \cr
+XtNcursorColor&XtCCursorColor&Pixel &XtDefaultForeground \cr
+XtNlineWidth&XtCLineWidth&int &1 \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &20 \cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNlabel&XtCLabel&String &NULL \cr
+\endTable
+\Section
+\Publicvar{XtNfontName}
+String  fontName = {\langle}String{\rangle}"Source Code Pro-22"
+
+\Section
+\Publicvar{XtNforeground}
+Pixel  foreground = XtDefaultForeground 
+
+\Section
+\Publicvar{XtNcursorColor}
+Pixel  cursorColor = XtDefaultForeground 
+
+\Section
+\Publicvar{XtNlineWidth}
+int  lineWidth = 1 
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = 20 
+
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\Section
+\Publicvar{XtNlabel}
+String  label = NULL 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Translations
+\Section
+\Code
+{\langle}Key{\rangle}Right: forward{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Left: backward{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Delete: remove{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}BackSpace: backward{\underline}char() remove{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Ctrl{\rangle}x: info() \endCode
+
+
+\Section
+\Code
+{\langle}Ctrl{\rangle}v: insert{\underline}selection() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Down{\rangle}: set{\underline}cursor() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Return: info() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}: insert{\underline}char() \endCode
+
+
+\End\Actions
+\Section
+\Action{info}\Code
+void info({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    dump({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{backward{\underline}char}\Code
+void backward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    cursor{\underline}left({\dollar});
+    if( {\dollar}dirty ) paint({\dollar}); else draw{\underline}cursor({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{forward{\underline}char}\Code
+void forward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    cursor{\underline}right({\dollar});
+    if( {\dollar}dirty ) paint({\dollar}); else draw{\underline}cursor({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{insert{\underline}char}\Code
+void insert{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    int len;
+    unsigned char buf[32];
+    KeySym key{\underline}sim;
+
+    len = {\underline}XawLookupString({\dollar},(XKeyEvent *) event, (char*)buf,sizeof buf, {\ampersand}key{\underline}sim );
+    if (len {\langle}= 0) return;
+
+    insert{\underline}char{\underline}at{\underline}cursor({\dollar}, (char*)buf, len );
+    cursor{\underline}right({\dollar});
+    paint({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{remove{\underline}char}\Code
+void remove{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    remove{\underline}char{\underline}at{\underline}cursor({\dollar});
+    paint({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{set{\underline}cursor}\Code
+void set{\underline}cursor({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    int x = event-{\rangle}xbutton.x;
+    int y = event-{\rangle}xbutton.y;
+    x -= {\dollar}pix.r.x;
+    y -= {\dollar}pix.r.y;
+    int p = {\dollar}left{\underline}char{\underline}offset;
+    int pix = 0;
+    do {\lbrace}
+        pix += INT({\dollar}glyph{\underline}xoff{\underline}m, p);
+        if( x {\langle} pix ) break;
+        p++;
+    {\rbrace} while( p {\langle} (m{\underline}len({\dollar}glyph{\underline}xoff{\underline}m)-1) );
+    {\dollar}crsr{\underline}pos = p;
+    draw{\underline}cursor({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{insert{\underline}selection}insert_selection(Widget aw, XEvent * event, String * params, Cardinal * num_params)
+
+
+
+\Code
+void insert{\underline}selection({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    XtGetSelectionValue({\dollar}, XA{\underline}PRIMARY, {\dollar}XA{\underline}UTF8{\underline}STRING,
+                        RequestSelection,
+                        NULL, 0 );
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}assert.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Intrinsic.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xatom.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xaw/XawImP.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "font.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+ BG\endCode
+
+
+\Section
+\Code
+ FG\endCode
+
+
+\Section
+\Code
+ CRSR\endCode
+
+
+\Section
+\Code
+struct {\lbrace} Pixmap data; XRectangle r; {\rbrace} pix{\underline}info\endCode
+
+
+\Section
+\Code
+struct {\lbrace}
+    int xp,yp;
+    int glyph{\underline}m;
+    int line{\underline}m;
+    int char{\underline}m;
+    int unicode;
+    struct {\lbrace} int unicode; XGlyphInfo info; {\rbrace} *char{\underline}ent;
+    struct {\lbrace} int endp,txtp, height,ascent; {\rbrace} *line{\underline}ent;
+{\rbrace} layout{\underline}t\endCode
+
+
+\Section
+\Code
+layout{\underline}t  lay\endCode
+
+
+\Section
+\Code
+XftFont * xftFont\endCode
+
+
+\Section
+\Code
+pix{\underline}info  pix\endCode
+
+
+\Section
+\Code
+int  str{\underline}m\endCode
+
+
+\Section
+\Code
+int  label{\underline}m\endCode
+
+
+\Section
+\Code
+int  glyph{\underline}m\endCode
+
+
+\Section
+\Code
+int  glyph{\underline}xoff{\underline}m\endCode
+
+
+\Section
+\Code
+int  glyphi{\underline}m\endCode
+
+
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+GC  gc[3]\endCode
+
+
+\Section
+\Code
+XftColor  xcol[3]\endCode
+
+
+\Section
+\Code
+XRectangle  crsr{\underline}rect\endCode
+
+
+\Section
+\Code
+XRectangle  txt\endCode
+
+
+\Section
+\Code
+char  crsr{\underline}on\endCode
+
+
+\Section
+\Code
+int  crsr{\underline}pos\endCode
+
+
+\Section
+\Code
+int  crsr{\underline}width\endCode
+
+
+\Section
+\Code
+int  left{\underline}char{\underline}offset\endCode
+
+
+\Section
+\Code
+int  left{\underline}pixel{\underline}offset\endCode
+
+
+\Section
+\Code
+int  dirty\endCode
+
+
+\Section
+\Code
+int  dirty{\underline}str\endCode
+
+
+\End\Classvars
+\Section
+\Code
+Atom  XA{\underline}UTF8{\underline}STRING = 0 \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  Display *dpy = XtDisplay({\dollar});
+ /*
+     {\dollar}xftFont = 0;
+  */
+ {\dollar}draw = 0;
+ // {\dollar}xftFont = XftFontOpenName( dpy, DefaultScreen(dpy), {\dollar}fontName );
+  {\dollar}xftFont = font{\underline}load(dpy, DefaultScreen(dpy), {\dollar}fontName );
+  int w,h;
+  alloc{\underline}colors({\dollar});
+  if(! {\dollar}label ) {\dollar}label = {\dollar}name;
+  {\dollar}glyph{\underline}m = m{\underline}create( 50, sizeof(XftGlyphFontSpec) );
+  {\dollar}glyph{\underline}xoff{\underline}m = m{\underline}create( 50, sizeof(int) );
+  {\dollar}glyphi{\underline}m = m{\underline}create( 50, sizeof( XGlyphInfo) );
+  {\dollar}str{\underline}m  = m{\underline}create( 50, 1 );
+  {\dollar}label{\underline}m = m{\underline}create( 50, 1 );
+  char *s = {\dollar}label; if( is{\underline}empty(s) ) s={\dollar}name;
+  copy{\underline}str( {\dollar}, s );
+
+  w=0; h=0;
+  calculate{\underline}prefered{\underline}size({\dollar},{\ampersand}w,{\ampersand}h);
+  if( {\dollar}width {\langle} w ) {\dollar}width = w;
+  if( {\dollar}height {\langle} h) {\dollar}height = h;
+  if(! {\dollar}XA{\underline}UTF8{\underline}STRING )
+      {\dollar}XA{\underline}UTF8{\underline}STRING = XInternAtom(XtDisplay({\dollar}), "UTF8{\underline}STRING", True);
+  TRACE(4,"{\percent}s: size:{\percent}dx{\percent}d", {\dollar}name, {\dollar}width,{\dollar}height);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+        free{\underline}colors({\dollar});
+        XftDrawDestroy( {\dollar}draw );
+        m{\underline}free({\dollar}glyph{\underline}m);
+        m{\underline}free({\dollar}str{\underline}m);
+        m{\underline}free({\dollar}glyph{\underline}xoff{\underline}m);
+        m{\underline}free({\dollar}label{\underline}m);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    int i;
+    for(i=0;i{\langle}*num{\underline}args;i++) {\lbrace}
+        if( strcmp(args[i].name, "label" ) ==0 )
+            {\lbrace}
+                copy{\underline}str({\dollar}, {\dollar}label );
+            {\rbrace}
+    {\rbrace}
+    reinit({\dollar});
+    return True; /* call expose() to update widget */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+get{\underline}values{\underline}hook({\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    int i;
+    for(i=0;i{\langle}*num{\underline}args;i++) {\lbrace}
+        if( strcmp(args[i].name, "label" ) ==0 )
+            {\lbrace}
+                int l = m{\underline}len({\dollar}str{\underline}m);
+                m{\underline}write({\dollar}label{\underline}m, 0, m{\underline}buf({\dollar}str{\underline}m), l );
+                CHAR({\dollar}label{\underline}m, l-1)=0;
+                *((char**)args[i].value) = m{\underline}buf({\dollar}label{\underline}m);
+                return;
+            {\rbrace}
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+  Display *dpy = XtDisplay({\dollar});
+  XClearWindow( dpy, XtWindow({\dollar}) );
+  {\dollar}crsr{\underline}on = 0; /* cursor not visible */
+  paint({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+        XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+        resize{\underline}widget({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+    if (XtIsRealized({\dollar})) resize{\underline}widget({\dollar});
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+resize{\underline}widget({\dollar})
+{\lbrace}
+        /*
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+        */
+
+    {\dollar}txt.height = {\dollar}height;
+
+    if( {\dollar}pix.data ) {\lbrace} XFreePixmap( XtDisplay({\dollar}), {\dollar}pix.data ); {\rbrace}
+    {\dollar}pix.data = XtCreatePixmap({\dollar},{\dollar}width,{\dollar}txt.height);
+    {\dollar}pix.r.width = {\dollar}width; {\dollar}pix.r.height = {\dollar}txt.height;
+
+    {\dollar}pix.r.x = 0;  {\dollar}pix.r.y = ({\dollar}height - {\dollar}txt.height) / 2;
+    if( ! {\dollar}draw ) {\lbrace}
+        {\dollar}draw = XtXftDrawCreate({\dollar},{\dollar}pix.data);
+    {\rbrace}
+    else {\lbrace}
+        XftDrawChange({\dollar}draw,{\dollar}pix.data);
+    {\rbrace}
+
+    {\dollar}left{\underline}char{\underline}offset = 0;
+    {\dollar}crsr{\underline}pos = 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+clear{\underline}pixmap({\dollar})
+{\lbrace}
+   XFillRectangle(XtDisplay({\dollar}),{\dollar}pix.data,
+                       {\dollar}gc[BG], 0,0, {\dollar}pix.r.width, {\dollar}pix.r.height );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}text{\underline}on{\underline}pixmap({\dollar})
+{\lbrace}
+    /* str{\underline}to{\underline}glyphlist({\dollar}); */
+    draw{\underline}glyphs({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}pixmap{\underline}on{\underline}window({\dollar})
+{\lbrace}
+        XtCopyArea({\dollar}, {\dollar}pix.data, XtWindow({\dollar}),
+                   0,0, {\dollar}pix.r.width, {\dollar}pix.r.height, /* src */
+                   {\dollar}pix.r.x, {\dollar}pix.r.y );             /* dest */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+XftGlyphFontSpec * get{\underline}glyph{\underline}spec({\dollar}, int  p)
+{\lbrace}
+        return mls({\dollar}glyph{\underline}m, p);
+{\rbrace}\endCode
+
+
+\Section
+calculate cursor rectangle and draw cursor on window
+
+
+\Code
+draw{\underline}cursor({\dollar})
+{\lbrace}
+        XRectangle r;
+        if( {\dollar}crsr{\underline}pos {\rangle}= m{\underline}len({\dollar}glyph{\underline}m) )
+            {\dollar}crsr{\underline}pos=m{\underline}len({\dollar}glyph{\underline}m)-1;
+
+        r.width = INT({\dollar}glyph{\underline}xoff{\underline}m,{\dollar}crsr{\underline}pos);
+        r.x = screen{\underline}px({\dollar}, {\dollar}crsr{\underline}pos) + {\dollar}pix.r.x;
+        r.y = {\dollar}pix.r.y;
+        r.height = {\dollar}xftFont-{\rangle}height;
+        cursor{\underline}xdraw( {\dollar}, {\ampersand}r );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+dump({\dollar})
+{\lbrace}
+    int i; for(i=0;i{\langle} m{\underline}len({\dollar}str{\underline}m)-1; i++)
+               printf("{\percent}x ", (unsigned char) CHAR({\dollar}str{\underline}m, i) );
+    putc(10,stdout);
+    fwrite( m{\underline}buf({\dollar}str{\underline}m), m{\underline}len({\dollar}str{\underline}m), 1, stdout );
+    printf("Left:{\percent}d Crsr:{\percent}d{\backslash}n", {\dollar}left{\underline}char{\underline}offset, {\dollar}crsr{\underline}pos );
+{\rbrace}\endCode
+
+
+\Section
+clear the pixmap, draw text on pixmap, draw pixmap on window
+
+
+\Code
+paint({\dollar})
+{\lbrace}
+        clear{\underline}pixmap({\dollar});
+        draw{\underline}text{\underline}on{\underline}pixmap({\dollar});
+        draw{\underline}pixmap{\underline}on{\underline}window({\dollar}); {\dollar}crsr{\underline}on = 0;
+        draw{\underline}cursor({\dollar});
+        {\dollar}dirty = 0;
+{\rbrace}\endCode
+
+
+\Section
+XOR draw cursor at current {\tt {\dollar}crsr{\underline}rect}
+
+
+\Code
+cursor{\underline}toggle({\dollar})
+{\lbrace}
+        {\dollar}crsr{\underline}on {\caret}= 1;
+        XtFillRectangle({\dollar}, {\dollar}gc[CRSR], {\ampersand} {\dollar}crsr{\underline}rect );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+cursor{\underline}undraw({\dollar})
+{\lbrace}
+    if( {\dollar}crsr{\underline}on ) cursor{\underline}toggle({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+remove old cursor and draw new cursor on window
+
+
+\Code
+cursor{\underline}xdraw({\dollar}, XRectangle * r)
+{\lbrace}
+    cursor{\underline}undraw({\dollar});
+    {\dollar}crsr{\underline}rect = *r;
+    cursor{\underline}toggle({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}prefered{\underline}size({\dollar}, int * w, int * h)
+{\lbrace}
+  calculate{\underline}size({\dollar},w,h);
+  (*w) += 20;
+  (*h) += 20;
+  TRACE(4,"size: {\percent}dx{\percent}d", *w,*h );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}size({\dollar}, int * w, int * h)
+{\lbrace}
+    layout({\dollar},w,h,0);
+    *w += 4;
+    *h += 4;
+    TRACE(4,"size: {\percent}dx{\percent}d", *w,*h );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+copy{\underline}str({\dollar}, char * s)
+{\lbrace}
+        m{\underline}clear( {\dollar}str{\underline}m );
+        m{\underline}write( {\dollar}str{\underline}m, 0, s, strlen(s) );
+        m{\underline}putc( {\dollar}str{\underline}m, '.' );
+        str{\underline}to{\underline}glyphlist({\dollar});
+        {\dollar}dirty = 1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+reinit({\dollar})
+{\lbrace}
+        free{\underline}colors({\dollar});
+        alloc{\underline}colors({\dollar});
+
+        int w,h;
+        calculate{\underline}prefered{\underline}size({\dollar},{\ampersand}w,{\ampersand}h);
+        make{\underline}resize{\underline}request({\dollar},w,h);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+make{\underline}resize{\underline}request({\dollar}, int  w, int  h)
+{\lbrace}
+        Dimension w{\underline}out, h{\underline}out;
+        if( {\dollar}width == w {\ampersand}{\ampersand} {\dollar}height == h ) return;
+        if( XtMakeResizeRequest({\dollar},w,h, {\ampersand}w{\underline}out, {\ampersand}h{\underline}out ) ==
+            XtGeometryAlmost ) XtMakeResizeRequest({\dollar},w{\underline}out,h{\underline}out,NULL,NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+alloc{\underline}colors({\dollar})
+{\lbrace}
+
+  XGCValues     values = {\lbrace}
+                foreground: {\dollar}background{\underline}pixel,
+                graphics{\underline}exposures: False,
+                line{\underline}width: {\dollar}lineWidth {\rbrace};
+  uint          mask = GCForeground {\bar} GCGraphicsExposures {\bar}  GCLineWidth;
+  {\dollar}gc[BG] = XtGetGC({\dollar}, mask, {\ampersand}values);
+  values.foreground = {\dollar}foreground;
+  {\dollar}gc[FG] = XtGetGC({\dollar},mask,{\ampersand}values);
+
+  mask = GCForeground {\bar} GCBackground {\bar} GCFunction;
+  values.foreground = {\dollar}cursorColor {\caret} {\dollar}background{\underline}pixel;
+  values.background = {\dollar}background{\underline}pixel;
+  values.function = GXxor;
+  {\dollar}gc[CRSR] = XtGetGC({\dollar}, mask, {\ampersand}values);
+
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}background{\underline}pixel, {\dollar}xcol+BG );
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}foreground,       {\dollar}xcol+FG );
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}cursorColor,      {\dollar}xcol+CRSR );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+free{\underline}colors({\dollar})
+{\lbrace}
+        int i;
+        Display *dpy = XtDisplay({\dollar});
+        for(i=0;i{\langle}2;i++) {\lbrace}
+                XtReleaseGC({\dollar},{\dollar}gc[i]);
+                XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+                 None, {\dollar}xcol+i);
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+draw glyphs from index {\tt start} to index {\tt stop}
+
+
+\Code
+draw{\underline}glyphs{\underline}spec({\dollar}, int  start, int  stop)
+{\lbrace}
+    int i, xa = 0;
+    if( start {\langle} 0 ) start = 0;
+    if( stop {\rangle} m{\underline}len({\dollar}glyph{\underline}m) ) stop = m{\underline}len({\dollar}glyph{\underline}m)-1;
+    if( stop {\langle} start ) return;
+
+    for( i=start; i {\langle}= stop; i++ ) {\lbrace}
+        get{\underline}glyph{\underline}spec({\dollar},i)-{\rangle}x = xa;
+        xa += INT({\dollar}glyph{\underline}xoff{\underline}m,i);
+    {\rbrace}
+
+    XftDrawGlyphFontSpec( {\dollar}draw, {\dollar}xcol + FG,
+                          mls({\dollar}glyph{\underline}m, start), stop-start +1 );
+{\rbrace}\endCode
+
+
+\Section
+draw glyphs from $left_char_offset until width exceeded or end of string
+
+
+\Code
+draw{\underline}glyphs({\dollar})
+{\lbrace}
+    int w,h;
+    w={\dollar}width/2;
+    h=0;
+    layout({\dollar},{\ampersand}w,{\ampersand}h,1); return;
+
+
+    if( {\dollar}dirty{\underline}str ) str{\underline}to{\underline}glyphlist({\dollar});
+
+    int nglyphs = m{\underline}len({\dollar}glyph{\underline}m) -1;
+
+    int width = {\dollar}pix.r.width;
+    int p = {\dollar}left{\underline}char{\underline}offset;
+    while( p {\langle} nglyphs ) {\lbrace}
+        width -= INT({\dollar}glyph{\underline}xoff{\underline}m,p);
+        if( width {\langle} 0 ) break;
+        p++;
+    {\rbrace}
+
+    draw{\underline}glyphs{\underline}spec({\dollar}, {\dollar}left{\underline}char{\underline}offset, p-1 );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+add{\underline}char({\dollar}, int  unicode, XftGlyphFontSpec * specs, XGlyphInfo * info)
+{\lbrace}
+    if( {\dollar}lay.line{\underline}ent == 0 )
+        {\dollar}lay.line{\underline}ent = m{\underline}add( {\dollar}lay.line{\underline}m );
+
+    specs-{\rangle}x = {\dollar}lay.xp;
+    specs-{\rangle}y = {\dollar}lay.yp;
+    {\dollar}lay.xp += info-{\rangle}xOff;
+    {\dollar}lay.yp += info-{\rangle}yOff;
+    MaxSet({\dollar}lay.line{\underline}ent-{\rangle}height, specs-{\rangle}font-{\rangle}height );
+    MaxSet({\dollar}lay.line{\underline}ent-{\rangle}ascent, specs-{\rangle}font-{\rangle}ascent );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+layout({\dollar}, int * max{\underline}w, int * max{\underline}h, int  do{\underline}draw)
+{\lbrace}
+    TRACE(2,"layout" );
+    XftGlyphFontSpec *specs;
+    XGlyphInfo *info;
+    int unicode;
+
+    {\dollar}lay.line{\underline}m = m{\underline}create(20,sizeof(*{\dollar}lay.line{\underline}ent));
+    {\dollar}lay.glyph{\underline}m = m{\underline}create(20, sizeof( XftGlyphFontSpec) );
+    {\dollar}lay.char{\underline}m = m{\underline}create(20, sizeof( *{\dollar}lay.char{\underline}ent ));
+    {\dollar}lay.xp = 0;
+    {\dollar}lay.yp = 0;
+
+    int old{\underline}w = *max{\underline}w;
+    int old{\underline}h = *max{\underline}h;
+
+    int p,i;
+    int xp=0,yp=0;
+    int line{\underline}height = 0;
+    int max{\underline}ascent = 0;
+    int line{\underline}start = -1;
+
+    int wrap{\underline}x = 10000;
+    /* den string in unicode 32 bit umwandeln */
+    /* und ende der zeilen finden
+       umbruch bei wrap{\underline}x
+    */
+    *max{\underline}w = 0; *max{\underline}h = 0;
+    for(p=0; (unicode = m{\underline}utf8char({\dollar}str{\underline}m, {\ampersand}p)) != -1;)
+    {\lbrace}
+        specs = m{\underline}add({\dollar}lay.glyph{\underline}m);
+        {\dollar}lay.char{\underline}info = m{\underline}add({\dollar}lay.char{\underline}m);
+        {\dollar}lay.char{\underline}info-{\rangle}unicode = unicode;
+        info = {\ampersand}({\dollar}lay.char{\underline}info-{\rangle}info);
+        unicode{\underline}to{\underline}glyphspec({\dollar}, unicode, specs, info );
+        add{\underline}char({\dollar},unicode,specs,info);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+m{\underline}puti(int  m, int  i)
+{\lbrace}
+    m{\underline}put(m,{\ampersand}i);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+unicode{\underline}to{\underline}glyphspec({\dollar}, uint  unicode, XftGlyphFontSpec * specs, XGlyphInfo * e)
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+    static FT{\underline}UInt glyph{\underline}fallback = 0;
+    FT{\underline}UInt glyphindex;
+
+    XftFont *fnt = {\dollar}xftFont;
+
+    if( !glyph{\underline}fallback )
+        glyph{\underline}fallback = XftCharIndex(dpy,fnt, '{\hashmark}' );
+
+    fnt = font{\underline}unicode{\underline}find({\dollar}fontName, unicode,(int*) {\ampersand}glyphindex );
+    if(!glyphindex) {\lbrace}
+             fnt={\dollar}xftFont;
+             glyphindex = glyph{\underline}fallback;
+    {\rbrace}
+    XftGlyphExtents( dpy, fnt, {\ampersand}glyphindex, 1, e );
+    specs-{\rangle}font = fnt;
+    specs-{\rangle}glyph = glyphindex;
+{\rbrace}\endCode
+
+
+\Section
+text aus str_m holen und die listen XftGlyphFontSpec {\tt glyph{\underline}m}
+  und int {\tt glyph{\underline}xoff{\underline}m} aufbauen
+
+
+
+\Code
+str{\underline}to{\underline}glyphlist({\dollar})
+{\lbrace}
+    XGlyphInfo *e;
+    XftGlyphFontSpec *specs;
+    int unicode;
+    int p;
+    int xp,yp;
+    yp = {\dollar}xftFont-{\rangle}ascent;
+    xp = 0;
+
+    m{\underline}clear( {\dollar}glyph{\underline}m );
+    m{\underline}clear( {\dollar}glyph{\underline}xoff{\underline}m );
+    m{\underline}clear( {\dollar}glyphi{\underline}m );
+    p=0;
+    while( (unicode = m{\underline}utf8char({\dollar}str{\underline}m, {\ampersand}p)) != -1 )
+        {\lbrace}
+            specs = m{\underline}add({\dollar}glyph{\underline}m);
+            e = m{\underline}add({\dollar}glyphi{\underline}m );
+            unicode{\underline}to{\underline}glyphspec( {\dollar}, unicode, specs, e );
+
+            specs-{\rangle}x = xp;
+            specs-{\rangle}y = yp;
+            xp += e-{\rangle}xOff;
+            yp += e-{\rangle}yOff;
+            m{\underline}put( {\dollar}glyph{\underline}xoff{\underline}m, {\ampersand}(e-{\rangle}xOff));
+        {\rbrace}
+
+    {\dollar}txt.x = 0;
+    {\dollar}txt.y = 0;
+    {\dollar}txt.width  = xp;
+    {\dollar}txt.height = {\dollar}xftFont-{\rangle}ascent + {\dollar}xftFont-{\rangle}descent+2;
+
+    {\dollar}dirty = 1;         /* ggf. update der bildschirmausgabe */
+    {\dollar}dirty{\underline}str = 0;     /* glyphlist ist aktualisiert */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  char{\underline}offset({\dollar}, int  index)
+{\lbrace}
+    int i,p1=0;
+    for(i=0;i{\langle}index;i++)
+        m{\underline}utf8char( {\dollar}str{\underline}m, {\ampersand}p1 );
+    return p1;
+{\rbrace}\endCode
+
+
+\Section
+einfügen des übergebenen zeichencodes in den String
+  und neuberechnung der glyphs
+
+
+\Code
+insert{\underline}char{\underline}at{\underline}cursor({\dollar}, char * buf, int  len)
+{\lbrace}
+    int p = char{\underline}offset({\dollar},{\dollar}crsr{\underline}pos);
+    m{\underline}ins( {\dollar}str{\underline}m, p, len );
+    m{\underline}write( {\dollar}str{\underline}m, p, buf, len );
+    str{\underline}to{\underline}glyphlist({\dollar});
+    {\dollar}dirty = 1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+remove{\underline}char{\underline}at{\underline}cursor({\dollar})
+{\lbrace}
+    int p1=0, p2=0;
+    if( {\dollar}crsr{\underline}pos {\rangle}= m{\underline}len({\dollar}glyph{\underline}m)-1 ) return;
+    m{\underline}del( {\dollar}glyph{\underline}m, {\dollar}crsr{\underline}pos );
+    m{\underline}del( {\dollar}glyph{\underline}xoff{\underline}m, {\dollar}crsr{\underline}pos );
+    p1 = char{\underline}offset({\dollar},{\dollar}crsr{\underline}pos);
+    p2=p1; m{\underline}utf8char( {\dollar}str{\underline}m, {\ampersand}p2 );
+    m{\underline}remove( {\dollar}str{\underline}m, p1, p2-p1 );
+    {\dollar}dirty     = 1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+char  scroll{\underline}left({\dollar})
+{\lbrace}
+    if( {\dollar}left{\underline}char{\underline}offset {\langle} m{\underline}len({\dollar}glyph{\underline}m)-1 ) {\lbrace}
+        {\dollar}left{\underline}char{\underline}offset++;
+        {\dollar}dirty = 1;
+        return 0;
+    {\rbrace}
+    return -1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+char  scroll{\underline}right({\dollar})
+{\lbrace}
+    if( {\dollar}left{\underline}char{\underline}offset {\langle}= 0 ) return -1;
+    {\dollar}left{\underline}char{\underline}offset--;
+    {\dollar}dirty = 1;
+    return 0;
+{\rbrace}\endCode
+
+
+\Section
+coordinate transformation functions
+  there are three coordinate systems:
+  Character Index inside Text
+  Character Pixel Position inside visible area
+  Character Pixel Position inside text
+  This function returns the Position of the left offset inside the whole text area
+
+
+
+\Code
+int  px{\underline}left{\underline}offset({\dollar})
+{\lbrace}
+    return px{\underline}char({\dollar},{\dollar}left{\underline}char{\underline}offset);
+{\rbrace}\endCode
+
+
+\Section
+this function returns the poosition of the character at {\tt index} inside the whole text area
+  if you subtract the px_left_offset() you get the Position inside the visibile area
+
+
+
+\Code
+int  px{\underline}char({\dollar}, int  index)
+{\lbrace}
+    int x=0,i;
+    for(i=0;i{\langle}index;i++)
+        x+= INT({\dollar}glyph{\underline}xoff{\underline}m, i);
+    return x;
+{\rbrace}\endCode
+
+
+\Section
+this function returns the pixel postion relative to the visible area
+
+
+
+\Code
+int  screen{\underline}px({\dollar}, int  index)
+{\lbrace}
+    return px{\underline}char({\dollar},index) - px{\underline}left{\underline}offset({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+ if cursor is not visible after moving,
+   scroll display to the left
+   to scroll set {\tt left{\underline}char{\underline}offset}
+
+
+
+\Code
+cursor{\underline}right({\dollar})
+{\lbrace}
+    int xa = 0;
+    if( {\dollar}crsr{\underline}pos {\rangle}= m{\underline}len( {\dollar}glyph{\underline}m ) -1 ) return;
+
+    {\dollar}crsr{\underline}pos++;
+    /* das zeichen unter dem cursor sollte komplett sichtbar sein */
+    while(1) {\lbrace}
+        xa = screen{\underline}px({\dollar}, {\dollar}crsr{\underline}pos );
+        xa += INT({\dollar}glyph{\underline}xoff{\underline}m,{\dollar}crsr{\underline}pos);
+        if( xa {\langle}= {\dollar}pix.r.width ) break;
+        if( scroll{\underline}left({\dollar}) ) break;
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+ if cursor is not visible after moving,
+   scroll display to the right
+
+
+
+\Code
+cursor{\underline}left({\dollar})
+{\lbrace}
+    int xa;
+    if( {\dollar}crsr{\underline}pos {\langle}= 0 ) return;
+
+    {\dollar}crsr{\underline}pos--;
+    while(1) {\lbrace}
+      xa = screen{\underline}px({\dollar}, {\dollar}crsr{\underline}pos );
+      if( xa {\rangle}= 0 ) break;
+      if( scroll{\underline}right({\dollar}) ) break;
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+callback function, called by XtGetSelectionValue()
+
+
+\Code
+RequestSelection({\dollar}, XtPointer  client, Atom * selection, Atom * type, XtPointer  value, unsigned  long * length, int * format)
+{\lbrace}
+    char *s = value;
+    int len = *length;
+    if( is{\underline}empty(s) {\bar}{\bar} len {\langle}= 0 ) return;
+    insert{\underline}char{\underline}at{\underline}cursor({\dollar},s,len);
+    while( utf8char({\ampersand}s) != -1 ) cursor{\underline}right({\dollar});
+    paint({\dollar});
+{\rbrace}\endCode
+
+
+\End\bye

@@ -1,0 +1,450 @@
+\input wbuildmac.tex
+\Class{DigTab}pin_status - kommt vom arduino
+  pin_config - wird vom widget an arduino gesendet
+  config intern:
+  x
+  0,1,2,3 HiZ,Pullup,Out Low, Out High
+  bit 2: input PIN= hi/low
+  ** config:
+  0 hiz
+  1 pullup
+  2 out-low
+  3 out-high
+  4 pwm
+  5 reserved
+  6 n/a
+  ** status:
+  0x10          - active (output high/low or Pin input high/low)
+ -
+ -
+  0  [x]  (in)  in-p    out
+  1  [ ]   in   in-p   (out)
+  2  reserved
+  3  reserved
+  4  [x]  (in)  in-p    out
+ -
+ -
+
+
+
+\Publicvars
+\Table{DigTab}
+XtNpin{\underline}config&XtCPin{\underline}config&String &""\cr
+XtNpin{\underline}status&XtCPin{\underline}status&String &""\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+\endTable
+\Section
+\Publicvar{XtNpin{\underline}config}
+String  pin{\underline}config = {\langle}String{\rangle}""
+
+\Section
+\Publicvar{XtNpin{\underline}status}
+String  pin{\underline}status = {\langle}String{\rangle}""
+
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\End\Table{Gridbox}
+XtNdefaultDistance&XtCDefaultDistance&Int &4 \cr
+\endTable
+\Table{Composite}
+XtNchildren&XtCChildren&WidgetList &NULL \cr
+insertPosition&XtCInsertPosition&XTOrderProc &NULL \cr
+numChildren&XtCNumChildren&Cardinal &0 \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} "xtcw/Gridbox.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xtcw/Wlab.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xtcw/Wsel.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xtcw/register{\underline}wb.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "micro{\underline}vars.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+int  sbuf\endCode
+
+
+\Section
+\Code
+int  num{\underline}pins\endCode
+
+
+\Section
+\Code
+int  iwids\endCode
+
+
+\Section
+\Code
+ CFG{\underline}OUTPUT\endCode
+
+
+\Section
+\Code
+ CFG{\underline}STATUS\endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        {\dollar}width=10; {\dollar}height=10;
+        {\dollar}sbuf = m{\underline}create(20,1);
+        import{\underline}config({\dollar});
+        {\dollar}iwids = m{\underline}create({\dollar}num{\underline}pins*2, sizeof(Widget));
+        layout({\dollar});
+
+
+        // apply{\underline}config({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+When our parent asks for this widget's preferred geometry
+  simply return the geometry as indicated by our childs.
+  Currently, the method always returns {\tt XtGeometryAlmost}. It doesn't bother
+  to check if the preferred geometry is equal to the current geometry (in
+  which case it should really return {\tt XtGeometryNo}) or if the preferred
+  geometry is equal to what the parent proposed (in which case a return of
+  {\tt XtGeometryYes} should have been given.
+
+
+
+\Code
+XtGeometryResult  query{\underline}geometry({\dollar}, XtWidgetGeometry * request, XtWidgetGeometry * reply)
+{\lbrace}
+    /* every proposed geometry is fine */
+    if ({\dollar}num{\underline}children == 0) return XtGeometryYes;
+
+    XtWidgetGeometry creply;
+    (void) XtQueryGeometry({\dollar}children[0], NULL, {\ampersand}creply);
+    int w = creply.width + creply.border{\underline}width * 2;
+    int h = creply.height+ creply.border{\underline}width * 2;
+    printf("Height: {\percent}d{\backslash}n", h );
+
+    reply-{\rangle}request{\underline}mode = CWX {\bar} CWY {\bar} CWWidth {\bar} CWHeight;
+    reply-{\rangle}x=0; reply-{\rangle}y=0;
+    reply-{\rangle}width =  w;
+    reply-{\rangle}height = h;
+
+    return XtGeometryAlmost;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        if( ({\dollar}old{\dollar}pin{\underline}config != {\dollar}pin{\underline}config)
+            {\bar}{\bar} strcmp({\dollar}old{\dollar}pin{\underline}config,{\dollar}pin{\underline}config)
+            {\bar}{\bar} ({\dollar}old{\dollar}pin{\underline}status != {\dollar}pin{\underline}status)
+            {\bar}{\bar} strcmp({\dollar}old{\dollar}pin{\underline}status,{\dollar}pin{\underline}status) )
+        {\lbrace}
+                import{\underline}config({\dollar});
+                apply{\underline}config({\dollar});
+         {\rbrace}
+         return 0;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+ for output pins: set bit 0 (cfg=2 or 3)
+
+
+\Code
+set{\underline}pin{\underline}status({\dollar}, int  i, int  val)
+{\lbrace}
+     val = ( val != 0 );
+     if( i  {\rangle}= {\dollar}num{\underline}pins ) return;
+     if( is{\underline}pin{\underline}output({\dollar},i) )
+         CHAR({\dollar}sbuf,i) = '2' + val;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+set{\underline}pin{\underline}config({\dollar}, int  i, int  cfg)
+{\lbrace}
+     if( i  {\rangle}= {\dollar}num{\underline}pins ) return;
+     if( cfg {\langle} 0 {\bar}{\bar} cfg {\rangle} 5 ) cfg = 0;
+     CHAR({\dollar}sbuf,i) = cfg + '0';
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  get{\underline}pin{\underline}config({\dollar}, int  i)
+{\lbrace}
+     int cfg;
+     if( i  {\rangle}= {\dollar}num{\underline}pins ) return 0;
+     cfg =  CHAR({\dollar}sbuf,i) - '0';
+     if( cfg {\langle} 0 {\bar}{\bar} cfg {\rangle} 5 ) cfg = 0;
+     return cfg;
+{\rbrace}\endCode
+
+
+\Section
+for input pins: return pin_status
+  for output pins: return bit 0
+
+
+\Code
+int  get{\underline}pin{\underline}status({\dollar}, int  i)
+{\lbrace}
+     if( i  {\rangle}= {\dollar}num{\underline}pins ) return 0;
+     if( is{\underline}pin{\underline}output({\dollar},i) )
+         return CHAR({\dollar}sbuf,i) == '3';
+     if( CHAR({\dollar}sbuf,i) {\langle}= '1' ) /* input */
+         return CHAR({\dollar}sbuf,i+{\dollar}num{\underline}pins+1)=='1';
+     return '0';
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  is{\underline}pin{\underline}output({\dollar}, int  i)
+{\lbrace}
+     if( i  {\rangle}= {\dollar}num{\underline}pins ) return 0;
+     return CHAR({\dollar}sbuf,i) == '2' {\bar}{\bar}
+            CHAR({\dollar}sbuf,i) == '3';
+{\rbrace}\endCode
+
+
+\Section
+change digital status of output pin
+
+
+\Code
+dig{\underline}cb(Widget  w, {\dollar}, intptr{\underline}t  c)
+{\lbrace}
+        int key; int val = ((int)c) != 0;
+        XtVaGetValues( w, XtNuser{\underline}data, {\ampersand}key, NULL );
+        if( key {\rangle}= {\dollar}num{\underline}pins ) return;
+        if( is{\underline}pin{\underline}output({\dollar},key) ) {\lbrace}
+            set{\underline}pin{\underline}status({\dollar},key,val);
+            send{\underline}changes({\dollar});
+        {\rbrace}
+        else {\lbrace}
+            val = get{\underline}pin{\underline}status({\dollar},key);
+            XtVaSetValues( w, "value",val , NULL );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+change config of pin
+  0=Hiz,1=in pullup,2=out
+
+
+\Code
+conf{\underline}cb(Widget  w, {\dollar}, intptr{\underline}t  c)
+{\lbrace}
+        int key; int val = ((int)c) ;
+        XtVaGetValues( w, XtNuser{\underline}data, {\ampersand}key, NULL );
+        printf("conf {\percent}d={\percent}d{\backslash}n", key, val );
+        set{\underline}pin{\underline}config({\dollar},key,val);
+        send{\underline}changes({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+send{\underline}changes({\dollar})
+{\lbrace}
+        XtCallCallbackList( {\dollar}, {\dollar}callback, 0 );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Widget  widget{\underline}status({\dollar}, int  pin)
+{\lbrace}
+  return *(Widget*)mls({\dollar}iwids, pin*2);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Widget  widget{\underline}config({\dollar}, int  pin)
+{\lbrace}
+  return *(Widget*)mls({\dollar}iwids, pin*2+1);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+apply{\underline}config({\dollar})
+{\lbrace}
+        Widget w;
+        int i,v,c;
+
+        for(i=0;i{\langle}{\dollar}num{\underline}pins;i++) {\lbrace}
+           v = get{\underline}pin{\underline}status({\dollar},i);
+           c = get{\underline}pin{\underline}config({\dollar},i);
+           if( c {\rangle} 3 ) continue;
+           if( c == 3 ) c=2; /* out-low, out-high */
+           w = widget{\underline}status({\dollar},i);
+           XtVaSetValues(w, "value", v, NULL );
+           w = widget{\underline}config({\dollar},i);
+           XtVaSetValues(w, "value", c, NULL );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+copy pin_config and pin_status to sbuf and set
+  num_pins and let pin_config and pin_status point to sbuf
+
+
+\Code
+import{\underline}config({\dollar})
+{\lbrace}
+        int len1,len2,i,cfg;
+        len1 = strlen({\dollar}pin{\underline}config);
+        len2 = strlen({\dollar}pin{\underline}status);
+        {\dollar}num{\underline}pins = ( len2 {\rangle} len1 ) ? len2 : len1;
+        m{\underline}setlen({\dollar}sbuf,{\dollar}num{\underline}pins*2 + 2);
+
+        for(i=0;i{\langle}{\dollar}num{\underline}pins;i++) {\lbrace}
+           if( i {\rangle}= len1 )
+              cfg = '0';
+           else {\lbrace}
+             cfg = {\dollar}pin{\underline}config[i];
+             if( cfg {\langle} '0' {\bar}{\bar} cfg {\rangle} '5' ) cfg = '5';
+           {\rbrace}
+           CHAR({\dollar}sbuf,i)=cfg;
+        {\rbrace}
+        CHAR({\dollar}sbuf,{\dollar}num{\underline}pins) = 0;
+
+        for(i=0;i{\langle}len2;i++) {\lbrace}
+           if( i {\rangle}= len2 )
+              cfg = '0';
+           else {\lbrace}
+             cfg = {\dollar}pin{\underline}status[i];
+             if( cfg {\langle} '0' {\bar}{\bar} cfg {\rangle} '1' ) cfg = '0';
+           {\rbrace}
+           CHAR({\dollar}sbuf,i + {\dollar}num{\underline}pins + 1)=cfg;
+        {\rbrace}
+        CHAR({\dollar}sbuf,{\dollar}num{\underline}pins*2+1) = 0;
+
+        {\dollar}pin{\underline}config = mls({\dollar}sbuf,0);
+        {\dollar}pin{\underline}status = mls({\dollar}sbuf,{\dollar}num{\underline}pins+1);
+{\rbrace}\endCode
+
+
+\Section
+params num_pins, pin_config, pin_status
+
+
+\Code
+layout({\dollar})
+{\lbrace}
+    char w[] = "Awidget";
+    Position gridx=0,gridy=0;
+    Widget b={\dollar},c,null = 0;
+    int i,cfg;
+    char name[10];
+    m{\underline}clear({\dollar}iwids);
+
+    for(i=0;i{\langle} {\dollar}num{\underline}pins; i++) {\lbrace}
+        cfg= get{\underline}pin{\underline}config({\dollar},i);
+        if( cfg {\rangle} 3 ) {\lbrace}
+            m{\underline}put({\dollar}iwids,{\ampersand}null);
+            m{\underline}put({\dollar}iwids,{\ampersand}null);
+            continue;
+        {\rbrace}
+
+        gridx = 0;
+        sprintf(name,"{\percent}2u({\percent}2u).", i, cfg );
+        XtVaCreateManagedWidget( w, wlabWidgetClass, {\dollar},
+                           XtNweighty, 0,
+                           XtNweightx, 0,
+                           XtNfill, 0,
+                            XtNgridx, gridx++,
+                            XtNgridy, gridy,
+                            "label", strdup(name),
+                            "borderWidth", 0, NULL ); (*w)++;
+
+        char *s = ","; int len = strlen(s)+1;
+        c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
+                            XtNgridx, gridx++,
+                            XtNgridy, gridy,
+                         XtVaTypedArg, "names", XtRString, s ,len,
+                            "borderWidth", 0,
+                            "user{\underline}data", i,
+        XtVaTypedArg, "xftFont", XtRString, "FontAwesome-12", 11,
+                            NULL );
+        XtAddCallback( c, "callback", (XtPointer)dig{\underline}cb, {\dollar} );
+        m{\underline}put({\dollar}iwids,{\ampersand}c);
+        (*w)++;
+        s="HiZ,INP,OUT"; len=strlen(s)+1;
+        c = XtVaCreateManagedWidget( w, wselWidgetClass, b,
+                            XtNgridx, gridx,
+                            XtNgridy, gridy,
+
+            XtVaTypedArg, "names",  XtRString, s,len,
+                   "borderWidth", 0,
+                   "user{\underline}data", i,
+                   NULL );
+        XtAddCallback( c, "callback", (XtPointer)conf{\underline}cb, {\dollar} );
+        m{\underline}put({\dollar}iwids,{\ampersand}c);
+          (*w)++;
+       gridy++;
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\End\bye

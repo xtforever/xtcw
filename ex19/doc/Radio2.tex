@@ -1,0 +1,140 @@
+\input wbuildmac.tex
+\Class{Radio2}ein radio group widget das eine gridbox und mehrere
+  radio buttons erzeugt, einzig eine durch komma getrennte
+  liste von namen muss angegeben werden.
+  Die resource "value" gibt das aktive radio widget an.
+  Die namen der Radio widgets stehen im StringMArray lst.
+
+
+
+\Publicvars
+\Table{Radio2}
+XtNlst&XtCLst&StringMArray &"Hello,World"\cr
+XtNvalue&XtCValue&int &0 \cr
+\endTable
+\Section
+\Publicvar{XtNlst}
+StringMArray  lst = {\langle}String{\rangle}"Hello,World"
+
+\Section
+\Publicvar{XtNvalue}
+int  value = 0 
+
+\End\Table{Gridbox}
+XtNdefaultDistance&XtCDefaultDistance&Int &4 \cr
+\endTable
+\Table{Composite}
+XtNchildren&XtCChildren&WidgetList &NULL \cr
+insertPosition&XtCInsertPosition&XTOrderProc &NULL \cr
+numChildren&XtCNumChildren&Cardinal &0 \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}xtcw/Gridbox.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}xtcw/Wradio.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+String  radioGroup\endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        asprintf( {\ampersand} {\dollar}radioGroup, "group{\underline}{\percent}p", (void*){\dollar} );
+        do{\underline}layout({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+        free({\dollar}radioGroup);
+        m{\underline}free{\underline}strings({\dollar}lst,0);
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+do{\underline}layout({\dollar})
+{\lbrace}
+        Widget w;
+        int i;
+        char *grid = "gridx";
+        for( i=0; i{\langle}{\dollar}num{\underline}children;i++ )
+             XtDestroyWidget({\dollar}children[0]);
+        for( i=0; i{\langle}m{\underline}len({\dollar}lst); i++ ) {\lbrace}
+             fprintf(stderr,"create {\percent}s{\backslash}n", STR({\dollar}lst,i));
+             w = XtVaCreateManagedWidget(STR({\dollar}lst,i),
+                wradioWidgetClass, {\dollar},
+                grid, i,
+                "radioGroup", {\dollar}radioGroup,
+                "radioData", i,
+                NULL );
+             XtAddCallback(w, XtNcallback, (void*)change{\underline}cb, {\dollar} );
+        {\rbrace}
+        select{\underline}child({\dollar},{\dollar}value);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+select{\underline}child({\dollar}, int  num)
+{\lbrace}
+        {\dollar}value=num;
+        if( {\dollar}value {\rangle}= m{\underline}len({\dollar}lst) ) {\dollar}value=0;
+        if( {\dollar}value {\langle} {\dollar}num{\underline}children )
+            wradio{\underline}select({\dollar}children[{\dollar}value]);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+change{\underline}cb(Widget  caller, {\dollar}, XtPointer  class)
+{\lbrace}
+        {\dollar}value = (intptr{\underline}t) wradio{\underline}active{\underline}data(caller);
+{\rbrace}\endCode
+
+
+\End\bye

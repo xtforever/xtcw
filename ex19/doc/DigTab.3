@@ -1,0 +1,124 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+DigTab
+.SH DESCRIPTION
+pin_status - kommt vom arduino
+  pin_config - wird vom widget an arduino gesendet
+  config intern:
+  x
+  0,1,2,3 HiZ,Pullup,Out Low, Out High
+  bit 2: input PIN= hi/low
+  ** config:
+  0 hiz
+  1 pullup
+  2 out-low
+  3 out-high
+  4 pwm
+  5 reserved
+  6 n/a
+  ** status:
+  0x10          - active (output high/low or Pin input high/low)
+ -
+ -
+  0  [x]  (in)  in-p    out
+  1  [ ]   in   in-p   (out)
+  2  reserved
+  3  reserved
+  4  [x]  (in)  in-p    out
+ -
+ -
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+DigTab
+Name	Class	Type	Default
+XtNpin_config	XtCPin_config	String 	""
+XtNpin_status	XtCPin_status	String 	""
+XtNcallback	XtCCallback	Callback	NULL 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNpin_config"
+
+
+
+.TP
+.I "XtNpin_status"
+
+
+
+.TP
+.I "XtNcallback"
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Gridbox
+Name	Class	Type	Default
+XtNdefaultDistance	XtCDefaultDistance	Int 	4 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2

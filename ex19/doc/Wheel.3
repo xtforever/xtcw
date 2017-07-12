@@ -1,0 +1,189 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+Wheel
+.SH DESCRIPTION
+simple Wheel Input widget
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Wheel
+Name	Class	Type	Default
+XtNxftFont	XtCXFtFont	XftFont	"Sans-22"
+XtNcallback	XtCCallback	Callback	NULL 
+XtNbg_norm	XtCBg_norm	Pixel	"lightblue"
+XtNbg_sel	XtCBg_sel	Pixel	"yellow"
+XtNbg_hi	XtCBg_hi	Pixel	"red"
+XtNfg_norm	XtCFg_norm	Pixel	"black"
+XtNfg_sel	XtCFg_sel	Pixel	"green"
+XtNfg_hi	XtCFg_hi	Pixel	"white"
+XtNuser_data	XtCUser_data	int 	0 
+XtNfocus_group	XtCFocus_group	String 	""
+XtNstate	XtCState	int 	0 
+XtNregister_focus_group	XtCRegister_focus_group	Boolean 	True 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNxftFont"
+
+
+
+.TP
+.I "XtNcallback"
+
+
+
+.TP
+.I "XtNbg_norm"
+
+
+
+.TP
+.I "XtNbg_sel"
+
+
+
+.TP
+.I "XtNbg_hi"
+
+
+
+.TP
+.I "XtNfg_norm"
+
+
+
+.TP
+.I "XtNfg_sel"
+
+
+
+.TP
+.I "XtNfg_hi"
+
+
+
+.TP
+.I "XtNuser_data"
+
+
+
+.TP
+.I "XtNfocus_group"
+
+
+
+.TP
+.I "XtNstate"
+
+
+
+.TP
+.I "XtNregister_focus_group"
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+
+.nf
+
+.B type
+ wheel_state = enum {
+  STATE_NORMAL = 0,
+  STATE_SELECTED = 1,
+  STATE_ARMED = 2,
+  STATE_MAX = 3
+}
+.fi
+
+
+
+.nf
+
+.B type
+ wheel_cmd = enum {
+      WHEEL_NOCOMMAND,
+      WHEEL_LEFT,
+      WHEEL_RIGHT,
+      WHEEL_FIRE,
+      WHEEL_KEYPAD
+}
+.fi
+
+
+
+.nf
+
+.B type
+ wheel_colors = enum {
+ COLOR_FG_NORM, COLOR_FG_SEL, COLOR_FG_HI, COLOR_BG_NORM, COLOR_BG_SEL, COLOR_BG_HI
+}
+.fi
+
+
+\fBdef\fP COLOR_FG_MAX = 3 
+
+
+.nf
+
+.B type
+ wheel_gcs = enum {
+ GC_BG_NORM, GC_BG_SEL, GC_BG_HI
+}
+.fi
+
+
+
+.nf
+int  wheel_exec_command( $, int  cmd, int  val)
+.fi
+
+
+
+.nf
+int  wheel_sig_recv( $, Widget  from, int  type, void * class, void * data)
+.fi
+

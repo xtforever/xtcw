@@ -1,0 +1,192 @@
+\input wbuildmac.tex
+\Class{WviewQV}\Publicvars
+\Table{WviewQV}
+XtNvar&XtCVar&QVar &0 \cr
+XtNenable&XtCEnable&QVar &0 \cr
+\endTable
+\Section
+\Publicvar{XtNvar}
+QVar  var = 0 
+
+\Section
+\Publicvar{XtNenable}
+QVar  enable = 0 
+
+\End\Table{Wlabel}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&Int &0 \cr
+XtNdraw{\underline}override&XtCDraw{\underline}override&XTCallbackProc &NULL \cr
+XtNheightIncreasePercent&XtCHeightIncreasePercent&Int &0 \cr
+XtNleftOffsetPercent&XtCLeftOffsetPercent&Int &5 \cr
+XtNupdate&XtCUpdate&Int &0 \cr
+\endTable
+\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "micro{\underline}vars.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+int  drawn\endCode
+
+
+\Section
+\Code
+Bool  change{\underline}val\endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+
+        {\dollar}draw{\underline}override = show{\underline}data;
+        {\dollar}height = ({\dollar}xftFont-{\rangle}height) * 2.5;
+
+        if( {\dollar}enable {\ampersand}{\ampersand} {\dollar}var ) {\lbrace}
+            mv{\underline}onwrite( {\dollar}enable,(voidfn{\underline}t) change{\underline}enable, {\dollar}, 0 );
+            change{\underline}enable( {\dollar} );
+        {\rbrace}
+
+        {\dollar}change{\underline}val = False;
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  cache{\underline}hit({\dollar})
+{\lbrace}
+        int val = *mv{\underline}var( {\dollar}var );
+        Bool hit = ({\dollar}drawn == val);
+        hit = hit {\ampersand}{\ampersand} {\hashmark}cache{\underline}hit({\dollar});
+        return hit;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    int i;
+    for(i=0;i{\langle}*num{\underline}args;i++) {\lbrace}
+        if( strcmp(args[i].name, "var" ) == 0 ) {\lbrace}
+          if( {\dollar}old{\dollar}var ) mv{\underline}onwrite( {\dollar}old{\dollar}var,(voidfn{\underline}t) do{\underline}update,{\dollar}, 1 );
+          change{\underline}enable({\dollar});
+        {\rbrace}
+        else if( strcmp(args[i].name, "enable" ) == 0 ) {\lbrace}
+          change{\underline}enable({\dollar});
+        {\rbrace}
+    {\rbrace}
+    return False;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+change{\underline}enable({\dollar})
+{\lbrace}
+        int remove{\underline}watcher =  ! *mv{\underline}var({\dollar}enable);
+        TRACE(1, "{\percent}s: remove={\percent}d", {\dollar}name, remove{\underline}watcher );
+        mv{\underline}onwrite({\dollar}var, (voidfn{\underline}t)do{\underline}update, {\dollar},  remove{\underline}watcher );
+
+        if( !remove{\underline}watcher ) do{\underline}update({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+do{\underline}update({\dollar})
+{\lbrace}
+        TRACE(1, "{\percent}s", {\dollar}name );
+        {\dollar}change{\underline}val = True;
+        XtVaSetValues( {\dollar}, "update", {\dollar}update+1, NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+show{\underline}data({\dollar}, void * a, void * b)
+{\lbrace}
+
+        int wh,val,h,x,y;
+        char *s, str[30];
+        val = *mv{\underline}var( {\dollar}var );
+        sprintf(str,"{\percent}d", val );
+
+        s = {\dollar}label;
+        h = {\dollar}xftFont-{\rangle}height;
+        wh = {\dollar}height / 2;
+        x = ({\dollar}width - xft{\underline}textwidth( XtDisplay({\dollar}), {\dollar}xftFont, s ))/2;
+        if( x {\langle} 0 ) x=0;
+        y = (wh-h) / 2 + {\dollar}xftFont-{\rangle}ascent;
+        XftDrawStringUtf8({\dollar}draw,{\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+
+
+        y += wh;
+        s = str;
+
+        x = ({\dollar}width - xft{\underline}textwidth( XtDisplay({\dollar}), {\dollar}xftFont, s ))/2;
+        if( x {\langle} 0 ) x=0;
+        XftDrawStringUtf8({\dollar}draw,{\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+        {\dollar}drawn = val;
+
+{\rbrace}\endCode
+
+
+\End\bye

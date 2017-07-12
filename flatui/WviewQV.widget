@@ -1,0 +1,107 @@
+@class WviewQV ( Wlabel )
+
+
+
+
+@public
+@var QVar var     = 0
+@var QVar enable  = 0
+
+@private
+@var int drawn
+@var Bool change_val
+
+@methods
+@proc initialize
+{
+
+        $draw_override = show_data;
+        $height = ($xftFont->height) * 2.5;
+
+        if( $enable && $var ) {
+            mv_onwrite( $enable,(voidfn_t) change_enable, $, 0 );
+            change_enable( $ );
+        }
+
+        $change_val = False;
+
+}
+
+@proc Bool cache_hit
+{
+        int val = *mv_var( $var );
+        Bool hit = ($drawn == val);
+        hit = hit && #cache_hit($);
+        return hit;
+}
+
+@proc set_values
+{
+    int i;
+    for(i=0;i<*num_args;i++) {
+        if( strcmp(args[i].name, "var" ) == 0 ) {
+          if( $old$var ) mv_onwrite( $old$var,(voidfn_t) do_update,$, 1 );
+          change_enable($);
+        }
+        else if( strcmp(args[i].name, "enable" ) == 0 ) {
+          change_enable($);
+        }
+    }
+    return False;
+}
+
+
+
+@utilities
+
+
+@proc change_enable($)
+{
+        int remove_watcher =  ! *mv_var($enable);
+        TRACE(1, "%s: remove=%d", $name, remove_watcher );
+        mv_onwrite($var, (voidfn_t)do_update, $,  remove_watcher );
+
+        if( !remove_watcher ) do_update($);
+}
+
+@proc do_update($)
+{
+        TRACE(1, "%s", $name );
+        $change_val = True;
+        XtVaSetValues( $, "update", $update+1, NULL );
+}
+
+@proc show_data($,void *a, void *b)
+{
+
+        int wh,val,h,x,y;
+        char *s, str[30];
+        val = *mv_var( $var );
+        sprintf(str,"%d", val );
+
+        s = $label;
+        h = $xftFont->height;
+        wh = $height / 2;
+        x = ($width - xft_textwidth( XtDisplay($), $xftFont, s ))/2;
+        if( x < 0 ) x=0;
+        y = (wh-h) / 2 + $xftFont->ascent;
+        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+
+
+        y += wh;
+        s = str;
+
+        x = ($width - xft_textwidth( XtDisplay($), $xftFont, s ))/2;
+        if( x < 0 ) x=0;
+        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+        $drawn = val;
+
+}
+
+@imports
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"
+@incl "converters.h"

@@ -1,0 +1,222 @@
+\input wbuildmac.tex
+\Class{Wsel}\Publicvars
+\Table{Wsel}
+XtNvalue&XtCValue&int &0 \cr
+XtNlocked&XtCLocked&Bool &0 \cr
+XtNnames&XtCNames&StringMArray &0 \cr
+\endTable
+\Section
+\Publicvar{XtNvalue}
+int  value = 0 
+
+\Section
+\Publicvar{XtNlocked}
+Bool  locked = 0 
+
+\Section
+\Publicvar{XtNnames}
+StringMArray  names = 0 
+
+\End\Table{Wlab}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&Int &0 \cr
+XtNinnerBorder&XtCInnerBorder&Int &0 \cr
+XtNupdate&XtCUpdate&Int &0 \cr
+\endTable
+\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Translations
+\Section
+\Code
+{\langle}EnterWindow{\rangle}: highlight() \endCode
+
+
+\Section
+\Code
+{\langle}LeaveWindow{\rangle}: reset() \endCode
+
+
+\Section
+\Code
+{\langle}BtnDown{\rangle}: notify() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Motion{\rangle}: motion{\underline}start() \endCode
+
+
+\End\Actions
+\Section
+\Action{highlight}\Code
+void highlight({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}locked ) return;
+  XtVaSetValues({\dollar},"state", STATE{\underline}SELECTED, NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Action{reset}\Code
+void reset({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    XtVaSetValues({\dollar},"state", STATE{\underline}NORMAL, NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Action{notify}\Code
+void notify({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}locked ) return;
+  {\dollar}value = {\dollar}value +1;
+  XtVaSetValues({\dollar},"label", get{\underline}name({\dollar}), NULL );
+  XtCallCallbackList( {\dollar}, {\dollar}callback, (XtPointer) {\dollar}value );
+{\rbrace}\endCode
+
+
+\Section
+\Action{motion{\underline}start}\Code
+void motion{\underline}start({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}locked ) return;
+
+        int y = event-{\rangle}xbutton.y;
+        int x = event-{\rangle}xbutton.x;
+        ulong t = (ulong ) event-{\rangle}xbutton.time;
+
+        /* drag startete vor über einer sekunde, seitdem keine änderung */
+        /* darum: vergessen und neu starten */
+        if( {\dollar}drag{\underline}update + 1000 {\langle} t ) goto restart{\underline}drag;
+        {\dollar}drag{\underline}update = t;
+
+        int move = ({\dollar}drag{\underline}last{\underline}y - y) / 30;
+        if(!move) move = ({\dollar}drag{\underline}last{\underline}x - x) / 30;
+        if( move ) {\lbrace}
+            {\dollar}drag{\underline}last{\underline}x = x;
+            {\dollar}drag{\underline}last{\underline}y = y;
+            printf("Move {\percent}d{\backslash}n", move );
+            {\dollar}value = {\dollar}value +move;
+            XtVaSetValues({\dollar},"label", get{\underline}name({\dollar}), NULL );
+        {\rbrace}
+        return; /* drag in progress */
+
+  restart{\underline}drag:
+        {\dollar}drag{\underline}last{\underline}y = event-{\rangle}xbutton.y;
+        {\dollar}drag{\underline}last{\underline}x = event-{\rangle}xbutton.x;
+        {\dollar}drag{\underline}update = t;
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+int  max{\underline}value\endCode
+
+
+\Section
+\Code
+int  drag{\underline}last{\underline}y\endCode
+
+
+\Section
+\Code
+int  drag{\underline}last{\underline}x\endCode
+
+
+\Section
+\Code
+int  drag{\underline}update\endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        if( {\dollar}names == 0 ) {\dollar}max{\underline}value=0;
+        else {\dollar}max{\underline}value = m{\underline}len({\dollar}names);
+        {\dollar}label = get{\underline}name({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        if( {\dollar}old{\dollar}value != {\dollar}value ) {\lbrace}
+            XtVaSetValues({\dollar},"label", get{\underline}name({\dollar}), NULL );
+        {\rbrace}
+        return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+        m{\underline}free{\underline}strings({\dollar}names,0);
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+String  get{\underline}name({\dollar})
+{\lbrace}
+  if( {\dollar}max{\underline}value == 0 ) return "";
+  if( {\dollar}value {\langle} 0 ) {\dollar}value = {\dollar}max{\underline}value -1;
+  else if( {\dollar}value {\rangle}= {\dollar}max{\underline}value ) {\dollar}value = 0;
+  return STR({\dollar}names,{\dollar}value);
+{\rbrace}\endCode
+
+
+\End\bye

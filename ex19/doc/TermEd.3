@@ -1,0 +1,217 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+TermEd
+.SH DESCRIPTION
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+TermEd
+Name	Class	Type	Default
+XtNgWidth	XtCGWidth	int 	40 
+XtNgHeight	XtCGHeight	int 	25 
+XtNsize	XtCSize	int 	8 
+XtNselTime	XtCSelTime	int 	400 
+XtNtext	XtCText	String 	"Hello World\\nHow are you?"
+XtNfg	XtCFg	XftColor	"White"
+XtNbg	XtCBg	XftColor	"Darkgreen"
+XtNcbg	XtCCbg	XftColor	"Red"
+XtNcfg	XtCCfg	XftColor	"Green"
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNgWidth"
+
+
+
+.TP
+.I "XtNgHeight"
+
+
+
+.TP
+.I "XtNsize"
+
+
+
+.TP
+.I "XtNselTime"
+
+
+
+.TP
+.I "XtNtext"
+
+
+
+.TP
+.I "XtNfg"
+
+
+
+.TP
+.I "XtNbg"
+
+
+
+.TP
+.I "XtNcbg"
+
+
+
+.TP
+.I "XtNcfg"
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+
+.nf
+<Key>Right: forward_char() 
+.fi
+
+
+
+.nf
+<Key>Left: backward_char() 
+.fi
+
+
+
+.nf
+<Key>Up: prev_line() 
+.fi
+
+
+
+.nf
+<Key>Down: next_line() 
+.fi
+
+
+
+.nf
+<Key>Return: key_return() 
+.fi
+
+
+
+.nf
+<Key>Delete: key_del() 
+.fi
+
+
+
+.nf
+<Key>BackSpace: key_backspace() 
+.fi
+
+
+
+.nf
+<Key>Escape: kill_child() 
+.fi
+
+
+
+.nf
+<Key>: insert_char() 
+.fi
+
+
+.SS "Actions"
+
+
+.TP
+.I "kill_child
+
+
+
+
+.TP
+.I "key_del
+
+
+
+
+.TP
+.I "key_backspace
+
+
+
+
+.TP
+.I "key_return
+
+
+
+
+.TP
+.I "insert_char
+
+
+
+
+.TP
+.I "prev_line
+
+
+
+
+.TP
+.I "next_line
+
+
+
+
+.TP
+.I "backward_char
+
+
+
+
+.TP
+.I "forward_char
+
+
+

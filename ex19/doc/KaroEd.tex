@@ -1,0 +1,1205 @@
+\input wbuildmac.tex
+\Class{KaroEd}\Publicvars
+\Table{KaroEd}
+XtNlocked&XtCLocked&Bool &0 \cr
+XtNlines&XtCLines&StringMArray &0 \cr
+XtNmin{\underline}lines&XtCMin{\underline}lines&int &1 \cr
+XtNgrid{\underline}width&XtCGrid{\underline}width&int &1 \cr
+XtNgrid{\underline}height&XtCGrid{\underline}height&int &1 \cr
+XtNauto{\underline}resize&XtCAuto{\underline}resize&int &1 \cr
+\endTable
+\Section
+\Publicvar{XtNlocked}
+Bool  locked = 0 
+
+\Section
+\Publicvar{XtNlines}
+StringMArray  lines = 0 
+
+\Section
+\Publicvar{XtNmin{\underline}lines}
+int  min{\underline}lines = 1 
+
+\Section
+\Publicvar{XtNgrid{\underline}width}
+int  grid{\underline}width = 1 
+
+\Section
+\Publicvar{XtNgrid{\underline}height}
+int  grid{\underline}height = 1 
+
+\Section
+\Publicvar{XtNauto{\underline}resize}
+int  auto{\underline}resize = 1 
+
+\End\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Translations
+\Section
+\Code
+{\langle}EnterWindow{\rangle}: highlight() \endCode
+
+
+\Section
+\Code
+{\langle}LeaveWindow{\rangle}: reset() \endCode
+
+
+\Section
+\Code
+{\langle}Btn2Down{\rangle}: info() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Down{\rangle}: selection{\underline}set() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Motion{\rangle}: motion{\underline}start() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Up{\rangle}: selection{\underline}end() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Right: forward{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Left: backward{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Up: prev{\underline}line() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Down: next{\underline}line() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Delete: remove{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}BackSpace: backward{\underline}char() remove{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Return: key{\underline}return() \endCode
+
+
+\Section
+\Code
+{\langle}Ctrl{\rangle}v: insert{\underline}selection() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}: insert{\underline}char() \endCode
+
+
+\End\Actions
+\Section
+\Action{copy{\underline}selection}\Code
+void copy{\underline}selection({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    /*
+    XStoreBuffer(display, bytes, nbytes, buffer)
+      Display *display;
+      char *bytes;
+      int nbytes;
+      int buffer;
+    */
+
+
+{\rbrace}\endCode
+
+
+\Section
+\Action{insert{\underline}selection}\Code
+void insert{\underline}selection({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    XtGetSelectionValue({\dollar}, XA{\underline}PRIMARY, {\dollar}XA{\underline}UTF8{\underline}STRING,
+                        RequestSelection,
+                        NULL, 0 );
+{\rbrace}\endCode
+
+
+\Section
+\Action{key{\underline}return}\Code
+void key{\underline}return({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    Bool d = split{\underline}line{\underline}at{\underline}cursor({\dollar}) {\bar} cursor{\underline}down({\dollar}) {\bar} cursor{\underline}pos1({\dollar});
+    if( d )  redraw{\underline}full({\dollar});
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{prev{\underline}line}\Code
+void prev{\underline}line({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    if( {\dollar}rsel.y == 0 ) return;
+    {\dollar}rsel.y--;
+    if( {\dollar}rsel.y {\langle} {\dollar}top{\underline}y ) {\lbrace}
+        {\dollar}top{\underline}y = {\dollar}rsel.y;
+        redraw{\underline}full({\dollar});
+    {\rbrace}
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{next{\underline}line}\Code
+void next{\underline}line({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    {\dollar}rsel.y++;
+    if( {\dollar}rsel.y {\rangle}= {\dollar}grid{\underline}height ) {\lbrace}
+        {\dollar}top{\underline}y = {\dollar}rsel.y - {\dollar}grid{\underline}height + 1;
+        redraw{\underline}full({\dollar});
+    {\rbrace}
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{backward{\underline}char}\Code
+void backward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    if( {\dollar}rsel.x == 0 ) return;
+    {\dollar}rsel.x--;
+    if( {\dollar}rsel.x {\langle} {\dollar}top{\underline}x )
+    {\lbrace}
+        {\dollar}top{\underline}x = {\dollar}rsel.x;
+        redraw{\underline}full({\dollar});
+    {\rbrace}
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{forward{\underline}char}\Code
+void forward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    cursor{\underline}right({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{info}\Code
+void info({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    int i;
+    for(i=0;i{\langle}m{\underline}len({\dollar}lines);i++) {\lbrace}
+
+        printf("'{\percent}s'{\backslash}n", STR({\dollar}lines,i));
+    {\rbrace}
+    printf("{\backslash}n");
+{\rbrace}\endCode
+
+
+\Section
+\Action{remove{\underline}char}\Code
+void remove{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    /* could be expanded to remove region */
+    if( current{\underline}line{\underline}empty({\dollar}) ) {\lbrace}
+        remove{\underline}current{\underline}line({\dollar});
+        redraw{\underline}full({\dollar});
+    {\rbrace}
+    else {\lbrace}
+        remove{\underline}char{\underline}at{\underline}cursor({\dollar});
+        draw{\underline}line{\underline}from({\dollar}, {\dollar}rsel.x, {\dollar}rsel.y );
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Action{insert{\underline}char}\Code
+void insert{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    int len;
+    unsigned char buf[32];
+    KeySym key{\underline}sim;
+
+    len = {\underline}XawLookupString({\dollar},(XKeyEvent *) event, (char*)buf,sizeof buf, {\ampersand}key{\underline}sim );
+    if (len {\langle}= 0) return;
+
+    insert{\underline}char{\underline}at{\underline}cursor({\dollar}, (char*)buf, len );
+    draw{\underline}line{\underline}from({\dollar}, {\dollar}rsel.x, {\dollar}rsel.y );
+    cursor{\underline}right({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{selection{\underline}clear}\Code
+void selection{\underline}clear({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    selection{\underline}clear{\underline}a({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{selection{\underline}set}\Code
+void selection{\underline}set({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    int y = event-{\rangle}xbutton.y;
+    int x = event-{\rangle}xbutton.x;
+    coordinate{\underline}to{\underline}text({\dollar},{\ampersand}x,{\ampersand}y);
+    {\dollar}rsel.x=x; {\dollar}rsel.width=1;
+    {\dollar}rsel.y=y; {\dollar}rsel.height=1;
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{highlight}\Code
+void highlight({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}locked ) return;
+{\rbrace}\endCode
+
+
+\Section
+\Action{reset}\Code
+void reset({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Action{notify}\Code
+void notify({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}locked ) return;
+  {\dollar}value = {\dollar}value +1;
+  XtVaSetValues({\dollar},"label", get{\underline}name({\dollar}), NULL );
+  XtCallCallbackList( {\dollar}, {\dollar}callback, (XtPointer) {\dollar}value );
+{\rbrace}\endCode
+
+
+\Section
+\Action{selection{\underline}end}\Code
+void selection{\underline}end({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    ulong t = (ulong ) event-{\rangle}xbutton.time;
+    if( {\dollar}rsel.width{\rangle}1 ) own{\underline}primary{\underline}selection({\dollar},t);
+{\rbrace}\endCode
+
+
+\Section
+\Action{motion{\underline}start}\Code
+void motion{\underline}start({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}locked ) return;
+
+  int y = event-{\rangle}xbutton.y;
+  int x = event-{\rangle}xbutton.x;
+  ulong t = (ulong ) event-{\rangle}xbutton.time;
+
+
+  int tx = x;
+  int ty = y;
+  coordinate{\underline}to{\underline}text({\dollar},{\ampersand}tx,{\ampersand}ty);
+
+  /* drag startete vor über einer sekunde, seitdem keine änderung */
+  /* darum: vergessen und neu starten */
+  if( {\dollar}drag{\underline}update + 1000 {\langle} t ) goto restart{\underline}drag;
+  {\dollar}drag{\underline}update = t;
+
+  if( selection{\underline}resize({\dollar},tx,ty) ) {\lbrace}
+      {\dollar}drag{\underline}last{\underline}x = x;
+      {\dollar}drag{\underline}last{\underline}y = y;
+      normalize{\underline}pos({\dollar});
+      selection{\underline}draw({\dollar});
+  {\rbrace}
+  return; /* drag in progress */
+
+  restart{\underline}drag:
+  {\dollar}drag{\underline}last{\underline}y = event-{\rangle}xbutton.y;
+  {\dollar}drag{\underline}last{\underline}x = event-{\rangle}xbutton.x;
+  {\dollar}drag{\underline}update = t;
+  selection{\underline}start({\dollar},tx,ty);
+  selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}stdint.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xaw/XawImP.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xatom.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Xmu.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+int  drag{\underline}last{\underline}y\endCode
+
+
+\Section
+\Code
+int  drag{\underline}last{\underline}x\endCode
+
+
+\Section
+\Code
+int  drag{\underline}update\endCode
+
+
+\Section
+\Code
+int  top{\underline}x\endCode
+
+
+\Section
+\Code
+int  top{\underline}y\endCode
+
+
+\Section
+\Code
+int  grid{\underline}pix{\underline}width\endCode
+
+
+\Section
+\Code
+int  grid{\underline}pix{\underline}height\endCode
+
+
+\Section
+\Code
+int  value\endCode
+
+
+\Section
+\Code
+Bool  do{\underline}init\endCode
+
+
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+Bool  selection\endCode
+
+
+\Section
+\Code
+Bool  selection{\underline}visible\endCode
+
+
+\Section
+\Code
+int  selectionText\endCode
+
+
+\Section
+\Code
+XRectangle  rsel\endCode
+
+
+\Section
+\Code
+XRectangle  rsel{\underline}old\endCode
+
+
+\Section
+\Code
+ debug\endCode
+
+
+\End\Classvars
+\Section
+\Code
+Atom  XA{\underline}UTF8{\underline}STRING = 0 \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    if(! {\dollar}XA{\underline}UTF8{\underline}STRING )
+        {\dollar}XA{\underline}UTF8{\underline}STRING = XInternAtom(XtDisplay({\dollar}), "UTF8{\underline}STRING", True);
+
+    if( {\dollar}lines == 0 ) {\dollar}lines = m{\underline}create(10,sizeof(char*));
+    {\dollar}selectionText = m{\underline}create(100,1);
+
+    {\dollar}do{\underline}init = 1;
+    {\dollar}top{\underline}x = {\dollar}top{\underline}y = 0;
+    {\dollar}rsel.x = 0;
+    {\dollar}rsel.y = 0;
+    {\dollar}rsel.width = 1;
+    {\dollar}rsel.height = 1;
+    {\dollar}rsel{\underline}old = {\dollar}rsel;
+    {\dollar}selection = True;
+    {\dollar}selection{\underline}visible = True;
+
+    int w = {\dollar}xftFont-{\rangle}ascent + {\dollar}xftFont-{\rangle}descent;
+    {\dollar}grid{\underline}pix{\underline}height  = w;
+    {\dollar}grid{\underline}pix{\underline}width = xft{\underline}textwidth(XtDisplay({\dollar}), {\dollar}xftFont, "w" );
+
+    if( {\dollar}height == 0 ) {\dollar}height = {\dollar}grid{\underline}pix{\underline}height * {\dollar}min{\underline}lines;
+    if( {\dollar}width == 0  ) {\dollar}width = 20;
+{\rbrace}\endCode
+
+
+\Section
+marker setzen damit das folgende expose das Window
+  neu zeichnen kann, resize wird beim initialisieren der application
+  vor realize aufgerufen daher die abfrage ob es sicher ist das
+  window zu bearbeiten.
+
+
+\Code
+resize({\dollar})
+{\lbrace}
+    /* if( XtIsRealized({\dollar}) ) reshape{\underline}widget({\dollar}); */
+    {\dollar}do{\underline}init=1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+    XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+    {\dollar}draw = XftDrawCreate(dpy, XtWindow({\dollar}),
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+        if( {\dollar}do{\underline}init ) {\lbrace}
+            if( {\dollar}auto{\underline}resize ) {\lbrace}
+              {\dollar}grid{\underline}width = {\dollar}width / {\dollar}grid{\underline}pix{\underline}width;
+              {\dollar}grid{\underline}height = {\dollar}height / {\dollar}grid{\underline}pix{\underline}height;
+            {\rbrace}
+            {\dollar}do{\underline}init=0;
+         {\rbrace}
+
+        XClearWindow(  XtDisplay({\dollar}), XtWindow({\dollar}) );
+        redraw{\underline}full({\dollar});
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+clip{\underline}rect({\dollar}, XRectangle * r)
+{\lbrace}
+    int x0,y0,x1,y1;
+    x0 = r-{\rangle}x;
+    y0 = r-{\rangle}y;
+    x1 = x0 + r-{\rangle}width;
+    y1 = y0 + r-{\rangle}height;
+
+    /* oben links ausserhalb */
+    if( x0 {\rangle}= {\dollar}grid{\underline}width {\bar}{\bar} y0 {\rangle}= {\dollar}grid{\underline}height ) goto empty{\underline}rect;
+
+    /* unten rechts ausserhalb */
+    if( y1 {\langle} 0 {\bar}{\bar} x1 {\langle} 0 ) goto empty{\underline}rect;
+
+    /* auf window zurechtschneiden */
+    if( x0 {\langle} 0 ) x0=0;
+    if( y0 {\langle} 0 ) y0=0;
+    if( x1 {\rangle} {\dollar}grid{\underline}width ) x1 = {\dollar}grid{\underline}width;
+    if( y1 {\rangle} {\dollar}grid{\underline}height) y1 = {\dollar}grid{\underline}height;
+
+    r-{\rangle}x = x0; r-{\rangle}y = y0;
+    r-{\rangle}width = x1-x0;
+    r-{\rangle}height = y1-y0;
+    return;
+
+ empty{\underline}rect:
+    memset(r, 0, sizeof(*r));
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}sel{\underline}rect({\dollar})
+{\lbrace}
+    int x,y,x1,y1;
+    XRectangle r1;
+    r1 = {\dollar}rsel; /* neu */
+    r1.x -= {\dollar}top{\underline}x;
+    r1.y -= {\dollar}top{\underline}y;
+    x1 = r1.x + r1.width;
+    y1 = r1.y + r1.height;
+
+    XRectangle r2;
+    r2 = {\dollar}rsel{\underline}old; /* alt */
+    r2.x -= {\dollar}top{\underline}x;
+    r2.y -= {\dollar}top{\underline}y;
+
+    /* neu */
+    for( x=r1.x; x {\langle} x1; x++ )
+        for( y=r1.y; y {\langle} y1; y++ ) {\lbrace}
+            if( rect{\underline}is{\underline}inside( {\ampersand}r2,x,y ) ) continue;
+            draw{\underline}glyph({\dollar},x,y);
+        {\rbrace}
+
+    /* alt */
+    x1 = r2.x + r2.width;
+    y1 = r2.y + r2.height;
+    for( x=r2.x; x {\langle} x1; x++ )
+        for( y=r2.y; y {\langle} y1; y++ ) {\lbrace}
+            if( rect{\underline}is{\underline}inside( {\ampersand}r1,x,y ) ) continue;
+            draw{\underline}glyph({\dollar},x,y);
+        {\rbrace}
+    return;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}rect({\dollar}, XRectangle * r)
+{\lbrace}
+    int x,x1 = r-{\rangle}x + r-{\rangle}width;
+    int y,y1 = r-{\rangle}y + r-{\rangle}height;
+    for( x=r-{\rangle}x; x {\langle} x1; x++ )
+        for( y=r-{\rangle}y; y {\langle} y1; y++ )
+            draw{\underline}glyph({\dollar},x,y);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+selection{\underline}draw({\dollar})
+{\lbrace}
+
+    if( {\dollar}selection{\underline}visible ) {\lbrace}
+        draw{\underline}sel{\underline}rect({\dollar});
+    {\rbrace} else {\lbrace}
+        {\dollar}selection{\underline}visible=True;
+        XRectangle r = {\dollar}rsel;
+        r.x -= {\dollar}top{\underline}x;
+        r.y -= {\dollar}top{\underline}y;
+        draw{\underline}rect({\dollar},{\ampersand}r);
+
+    {\rbrace}
+    {\dollar}rsel{\underline}old = {\dollar}rsel;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+selection{\underline}clear{\underline}a({\dollar})
+{\lbrace}
+    if( {\dollar}selection{\underline}visible ) {\lbrace}
+        {\dollar}selection{\underline}visible=False;
+        memset( {\ampersand} {\dollar}rsel, 0, sizeof( {\dollar}rsel ));
+        XRectangle r = {\dollar}rsel{\underline}old;
+        r.x -= {\dollar}top{\underline}x;
+        r.y -= {\dollar}top{\underline}y;
+        draw{\underline}rect({\dollar},{\ampersand}r);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+redraw{\underline}full({\dollar})
+{\lbrace}
+        int x; int y;
+        for( x=0; x {\langle} {\dollar}grid{\underline}width; x++ ) {\lbrace}
+            for(y=0; y {\langle} {\dollar}grid{\underline}height; y++ ) {\lbrace}
+                draw{\underline}glyph({\dollar},x,y );
+            {\rbrace}
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+uint32{\underline}t  find{\underline}charpos({\dollar}, int  x, int  y, int * ret{\underline}line, int * ret{\underline}charpos)
+{\lbrace}
+    int ln = {\dollar}top{\underline}y + y;
+    int len, p  = {\dollar}top{\underline}x + x;
+    int l;
+    uint8{\underline}t *string;
+    uint32{\underline}t ucs4;
+
+    *ret{\underline}line = -1;
+    *ret{\underline}charpos = -1;
+
+    if( ln {\rangle}= m{\underline}len({\dollar}lines) ) return 0;
+    if(ret{\underline}line) *ret{\underline}line = ln;
+    string = (uint8{\underline}t *)STR({\dollar}lines,ln);
+    len = strlen( (char*)string);
+    while(1) {\lbrace}
+            l = FcUtf8ToUcs4 (string, {\ampersand}ucs4, len);
+            if( l{\langle}= 0 {\bar}{\bar} len {\langle}=0 ) return 0;
+            if( p {\langle}=0 ) {\lbrace}
+                if( ret{\underline}charpos ) *ret{\underline}charpos = string - (uint8{\underline}t*)STR({\dollar}lines,ln);
+                return ucs4;
+            {\rbrace}
+
+            string += l;
+            len -= l;
+            p--;
+    {\rbrace}
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+uint32{\underline}t  get{\underline}ucs4({\dollar}, int  x, int  y)
+{\lbrace}
+
+    int d1,d2;
+    return find{\underline}charpos({\dollar},x,y,{\ampersand}d1,{\ampersand}d2);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}glyph({\dollar}, int  x, int  y)
+{\lbrace}
+    if( x {\langle} 0 {\bar}{\bar} x {\rangle}= {\dollar}grid{\underline}width ) return;
+    if( y {\langle} 0 {\bar}{\bar} y {\rangle}= {\dollar}grid{\underline}height ) return;
+
+    int fg = 0;
+    int bg = 3;
+    if( {\dollar}selection {\ampersand}{\ampersand} rect{\underline}is{\underline}inside( {\ampersand} {\dollar}rsel, x + {\dollar}top{\underline}x, y + {\dollar}top{\underline}y ) ) {\lbrace}
+        fg = 1;
+        bg = 4;
+    {\rbrace}
+
+    draw{\underline}glyph{\underline}color({\dollar},x,y,fg,bg);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}glyph{\underline}color({\dollar}, int  x, int  y, int  fg, int  bg)
+{\lbrace}
+    int x0,y0,w,h;
+    uint32{\underline}t ucs4, glyph;
+
+    x0 = x * {\dollar}grid{\underline}pix{\underline}width;
+    y0 = y * {\dollar}grid{\underline}pix{\underline}height;
+    w = {\dollar}grid{\underline}pix{\underline}width;
+    h = {\dollar}grid{\underline}pix{\underline}height;
+
+    XftDrawRect({\dollar}draw,{\dollar}xft{\underline}col+bg, x0,y0,w,h );
+    ucs4 = get{\underline}ucs4({\dollar}, x, y );
+    if( ucs4 == 0 {\bar}{\bar} ucs4 == 32 ) return;
+    glyph = XftCharIndex ( XtDisplay({\dollar}), {\dollar}xftFont, ucs4 );
+    XftDrawGlyphs ({\dollar}draw, {\dollar}xft{\underline}col+fg, {\dollar}xftFont,
+                   x0, y0+{\dollar}xftFont-{\rangle}ascent,
+                   {\ampersand}glyph, 1);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+String  get{\underline}name({\dollar})
+{\lbrace}
+          return "";
+{\rbrace}\endCode
+
+
+\Section
+\Code
+void  normalize{\underline}pos({\dollar})
+{\lbrace}
+        if( {\dollar}top{\underline}x {\langle} 0 ) {\dollar}top{\underline}x = 0;
+        if( {\dollar}top{\underline}y {\langle} 0 ) {\dollar}top{\underline}y = 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  coordinate{\underline}to{\underline}text({\dollar}, int * x, int * y)
+{\lbrace}
+    Bool ret = (*x {\rangle}= 0) {\ampersand}{\ampersand} (*x {\langle} {\dollar}width) {\ampersand}{\ampersand} (*y {\rangle} 0) {\ampersand}{\ampersand} (*y {\langle} {\dollar}height);
+
+    *x /= {\dollar}grid{\underline}pix{\underline}width;
+    *x += {\dollar}top{\underline}x;
+    *y /= {\dollar}grid{\underline}pix{\underline}height;
+    *y += {\dollar}top{\underline}y;
+
+    return ret;
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+selection{\underline}start({\dollar}, int  x, int  y)
+{\lbrace}
+    {\dollar}selection=True;
+    {\dollar}rsel.x = x; {\dollar}rsel.width=1;
+    {\dollar}rsel.y = y; {\dollar}rsel.height=1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  selection{\underline}resize({\dollar}, int  x, int  y)
+{\lbrace}
+    Bool changed = False;
+    int w = {\dollar}rsel.width;
+    int h = {\dollar}rsel.height;
+    int x0 = {\dollar}rsel.x;
+    int y0 = {\dollar}rsel.y;
+    int x1 = x0 + w -1;
+    int y1 = y0 + h -1;
+
+    if( x {\rangle} x0 ) x1 = x; else {\lbrace} x1 = x0; x0 = x; {\rbrace}
+    if( y {\rangle} y0 ) y1 = y; else {\lbrace} y1 = y0; y0 = y; {\rbrace}
+
+    w = x1 - x0 +1;
+    h = y1 - y0 +1;
+    if( {\dollar}rsel.width != w ) {\lbrace}
+        changed = True;
+        {\dollar}rsel.width = w;
+    {\rbrace}
+    if( {\dollar}rsel.height != h ) {\lbrace}
+        changed = True;
+        {\dollar}rsel.height = h;
+    {\rbrace}
+    if( {\dollar}rsel.x != x0 ) {\lbrace}
+        changed = True;
+        {\dollar}rsel.x = x0;
+    {\rbrace}
+    if( {\dollar}rsel.y != y0 ) {\lbrace}
+        changed = True;
+        {\dollar}rsel.y = y0;
+    {\rbrace}
+
+
+    return changed;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}line{\underline}from({\dollar}, int  x, int  y)
+{\lbrace}
+
+    x -= {\dollar}top{\underline}x;
+    y -= {\dollar}top{\underline}y;
+    while( x {\langle} {\dollar}grid{\underline}width ) {\lbrace}
+        draw{\underline}glyph({\dollar},x,y);
+        x++;
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  utf8{\underline}strlen(char * s)
+{\lbrace}
+    int n,w;
+    FcUtf8Len((uint8{\underline}t*)s,strlen(s), {\ampersand}n, {\ampersand}w );
+    return n;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+remove{\underline}char{\underline}at{\underline}cursor({\dollar})
+{\lbrace}
+    uint32{\underline}t ucs4;
+    int x,y,p,byte{\underline}len,byte{\underline}pos,w;
+    x={\dollar}rsel.x;
+    y={\dollar}rsel.y;
+    if( y {\rangle}= m{\underline}len({\dollar}lines) ) return;
+    char *s = STR({\dollar}lines,y);
+    if( x {\rangle}= utf8{\underline}strlen(s) ) return;
+
+    p=0;
+    byte{\underline}len = strlen(s) +1;
+    byte{\underline}pos = 0;
+    while(1) {\lbrace}
+        w = FcUtf8ToUcs4 ((uint8{\underline}t*)s + byte{\underline}pos, {\ampersand}ucs4, byte{\underline}len - byte{\underline}pos);
+        if( w {\langle}=0 ) return;
+        if( p {\rangle}= x ) break;
+        byte{\underline}pos+=w; p++;
+    {\rbrace}
+
+    memcpy( s+byte{\underline}pos, s+byte{\underline}pos + w, byte{\underline}len - byte{\underline}pos - w );
+    STR({\dollar}lines,y) = realloc(s, byte{\underline}len - w);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+insert{\underline}char{\underline}at{\underline}cursor({\dollar}, char * buf, int  len)
+{\lbrace}
+    uint32{\underline}t ucs4;
+    int p;
+    int x,y,w;
+    char *s;
+    int byte{\underline}len;
+    int utf8{\underline}len;
+    int byte{\underline}pos;
+
+    x={\dollar}rsel.x;
+    y={\dollar}rsel.y;
+
+    while( y {\rangle}= m{\underline}len({\dollar}lines) ) {\lbrace}
+        s=strdup("");
+        m{\underline}put( {\dollar}lines, {\ampersand}s );
+    {\rbrace}
+
+
+    s=STR({\dollar}lines,y);
+    byte{\underline}len = strlen(s);
+    utf8{\underline}len = utf8{\underline}strlen(s);
+
+    /* append data */
+    if( x {\rangle}= utf8{\underline}len ) {\lbrace}
+        /* fill byte{\underline}len .. x */
+        int n = x - utf8{\underline}len; /* append space */
+        s = realloc(s,byte{\underline}len+n+len+1);
+        while( n-- ) s[byte{\underline}len++] = 32;
+        memcpy( s+byte{\underline}len, buf, len );
+        s[byte{\underline}len+len] = 0;
+        STR({\dollar}lines,y) = s;
+        return;
+    {\rbrace}
+
+    /* insert data */
+    p=0;
+    byte{\underline}len = strlen(s) +1;
+    byte{\underline}pos = 0;
+    while( p {\langle} x ) {\lbrace}
+        w = FcUtf8ToUcs4 ((uint8{\underline}t*)s + byte{\underline}pos, {\ampersand}ucs4, byte{\underline}len - byte{\underline}pos);
+        if( w {\langle}=0 ) break;
+        byte{\underline}pos+=w; p++;
+    {\rbrace}
+    s = realloc(s, byte{\underline}len+len);
+    STR({\dollar}lines,y) = s;
+    memcpy( s + byte{\underline}pos + len, s+byte{\underline}pos, byte{\underline}len - byte{\underline}pos );
+    memcpy( s + byte{\underline}pos, buf, len );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+cursor{\underline}right({\dollar})
+{\lbrace}
+    {\dollar}rsel.x++;
+    if( {\dollar}rsel.x {\rangle}= {\dollar}grid{\underline}width ) {\lbrace}
+        {\dollar}top{\underline}x = {\dollar}rsel.x - {\dollar}grid{\underline}width + 1;
+        redraw{\underline}full({\dollar});
+    {\rbrace}
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  cursor{\underline}pos1({\dollar})
+{\lbrace}
+    Bool redraw;
+    redraw = ( {\dollar}top{\underline}x != 0 );
+    {\dollar}top{\underline}x = 0;
+    {\dollar}rsel.x=0;
+    return redraw;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  cursor{\underline}down({\dollar})
+{\lbrace}
+    Bool redraw;
+    {\dollar}rsel.y++;
+    if( (redraw={\dollar}rsel.y {\rangle}= {\dollar}grid{\underline}height) ) {\lbrace}
+        {\dollar}top{\underline}y = {\dollar}rsel.y - {\dollar}grid{\underline}height + 1;
+    {\rbrace}
+    return redraw;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  current{\underline}line{\underline}empty({\dollar})
+{\lbrace}
+    int ln = {\dollar}rsel.y;
+    if( ln {\rangle}= m{\underline}len({\dollar}lines) ) return True;
+    char *s = STR({\dollar}lines,ln);
+    return *s == 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  remove{\underline}current{\underline}line({\dollar})
+{\lbrace}
+    int ln = {\dollar}rsel.y;
+    if( ln {\rangle}= m{\underline}len({\dollar}lines) ) return False;
+    free( STR({\dollar}lines, ln) );
+    m{\underline}del({\dollar}lines,ln);
+    return True;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  insert{\underline}line({\dollar})
+{\lbrace}
+    char *s;
+    int y = {\dollar}rsel.y;
+    if( y {\langle} m{\underline}len({\dollar}lines) ) {\lbrace}
+        m{\underline}ins({\dollar}lines,y,1);
+        STR({\dollar}lines,y) = strdup("");
+    {\rbrace} else {\lbrace}
+        while( y {\rangle}= m{\underline}len({\dollar}lines) ) {\lbrace}
+            s=strdup("");
+            m{\underline}put( {\dollar}lines, {\ampersand}s );
+        {\rbrace}
+    {\rbrace}
+    return True;
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+char * utf8{\underline}skip(char * str, int  cnt)
+{\lbrace}
+    uint8{\underline}t *s = (uint8{\underline}t *) str;
+    while( cnt {\ampersand}{\ampersand} *s ) {\lbrace}
+        cnt--;
+        s++;
+        while( (*s {\ampersand} 0b11000000) == 0b10000000 ) s++; /* utf8 */
+    {\rbrace}
+    return (char*) s;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  split{\underline}line{\underline}at{\underline}cursor({\dollar})
+{\lbrace}
+    int ln = {\dollar}rsel.y;
+
+    if( ln {\rangle}= m{\underline}len({\dollar}lines) ) return False;     /* kein text */
+
+    char *s = STR({\dollar}lines,ln);
+    int utf8{\underline}len = utf8{\underline}strlen(s);
+    char *s2, *new{\underline}line;
+    int crsr{\underline}x = {\dollar}rsel.x;
+
+    if( {\dollar}rsel.x {\langle} utf8{\underline}len ) {\lbrace}     /* innerhalb einer zeile */
+        s2 = utf8{\underline}skip(s, crsr{\underline}x);
+        new{\underline}line = strdup(s2);
+        *s2 = 0;
+        s = realloc(s, s2-s +1 );
+        STR({\dollar}lines,ln) = s;
+    {\rbrace} else new{\underline}line = strdup("");  /* am ende einer zeile */
+
+    ln++;
+    m{\underline}ins({\dollar}lines,ln,1);
+    STR({\dollar}lines,ln) = new{\underline}line;
+    return True;
+{\rbrace}\endCode
+
+
+\Section
+callback function, called by XtGetSelectionValue()
+
+
+\Code
+RequestSelection({\dollar}, XtPointer  client, Atom * selection, Atom * type, XtPointer  value, unsigned  long * length, int * format)
+{\lbrace}
+    char *s = value;
+    int len = *length;
+    if( is{\underline}empty(s) {\bar}{\bar} len {\langle}= 0 ) return;
+    insert{\underline}char{\underline}at{\underline}cursor({\dollar},s,len);
+    while( utf8char({\ampersand}s) != -1 ) cursor{\underline}right({\dollar});
+    draw{\underline}line{\underline}from({\dollar}, {\dollar}rsel.x, {\dollar}rsel.y);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+utf8{\underline}copy{\underline}char(int  buf, char ** strp)
+{\lbrace}
+    char *s = *strp;
+    do {\lbrace}
+        m{\underline}putc(buf,*s++);
+    {\rbrace}
+    while( (*s {\ampersand} 0b11000000) == 0b10000000 ); /* utf8 */
+    *strp = s;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  ConvertSelection({\dollar}, Atom * selection, Atom * target, Atom * type, XtPointer * value, unsigned  long * length, int * format)
+{\lbrace}
+
+  XSelectionRequestEvent *req = XtGetSelectionRequest({\dollar}, *selection, NULL);
+
+  /* client ask for possible types */
+  if (*target == XA{\underline}TARGETS(XtDisplay({\dollar}))) {\lbrace}
+      Atom *targetP, *std{\underline}targets;
+      unsigned long std{\underline}length;
+
+      /* get possible targets */
+      XmuConvertStandardSelection({\dollar}, req-{\rangle}time, selection,
+                                  target, type, (XPointer *) {\ampersand} std{\underline}targets,
+                                  {\ampersand}std{\underline}length, format);
+
+      *value = XtMalloc((unsigned) sizeof(Atom) * (std{\underline}length + 1));
+      targetP = *(Atom **) value;
+
+      *length = std{\underline}length + 1;     /* list of standard types */
+      *targetP++ = {\dollar}XA{\underline}UTF8{\underline}STRING;  /* prefered target */
+      /* append standard targets */
+      memmove((char *) targetP, (char *) std{\underline}targets, sizeof(Atom) * std{\underline}length);
+      XtFree((char *) std{\underline}targets); /* remove original list */
+      *type = XA{\underline}ATOM;
+      *format = sizeof(Atom) * 8;
+      return True;
+  {\rbrace}
+  else if (*target == {\dollar}XA{\underline}UTF8{\underline}STRING) {\lbrace}
+      *length = (long) m{\underline}len({\dollar}selectionText);
+      if( *length ) *value = strdup(m{\underline}buf({\dollar}selectionText));
+      else *value = 0;
+      *type = {\dollar}XA{\underline}UTF8{\underline}STRING;
+      *format = 8;
+      return True;
+  {\rbrace}
+  return False;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+LoseSelection({\dollar}, Atom * selection)
+{\lbrace}
+  {\dollar}rsel.width=1;
+  {\dollar}rsel.height=1;
+  selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+own{\underline}primary{\underline}selection({\dollar}, ulong  time)
+{\lbrace}
+
+    int ln = {\dollar}rsel.y;
+    if( ln {\rangle}= m{\underline}len({\dollar}lines) ) return;     /* kein text */
+    char *s = STR({\dollar}lines,ln);
+    int utf8{\underline}len = utf8{\underline}strlen(s);
+    if( {\dollar}rsel.x {\rangle}= utf8{\underline}len ) return;     /* kein text */
+    int char{\underline}cnt = {\dollar}rsel.width;
+
+    /* clear buffer */
+    m{\underline}clear( {\dollar}selectionText );
+    /* ptr to start of selection */
+    s = utf8{\underline}skip(s, {\dollar}rsel.x );
+    /* copy selection */
+    while( char{\underline}cnt ) {\lbrace}
+        utf8{\underline}copy{\underline}char({\dollar}selectionText, {\ampersand}s);
+        char{\underline}cnt--;
+    {\rbrace}
+    m{\underline}putc({\dollar}selectionText,0);
+
+    XtOwnSelection({\dollar}, XA{\underline}PRIMARY, time,
+                   ConvertSelection, LoseSelection, NULL);
+    XChangeProperty(XtDisplay({\dollar}), DefaultRootWindow(XtDisplay({\dollar})),
+                    XA{\underline}CUT{\underline}BUFFER0, {\dollar}XA{\underline}UTF8{\underline}STRING, 8, PropModeReplace,
+                    (unsigned char *) m{\underline}buf({\dollar}selectionText),
+                    m{\underline}len({\dollar}selectionText));
+{\rbrace}\endCode
+
+
+\End\bye

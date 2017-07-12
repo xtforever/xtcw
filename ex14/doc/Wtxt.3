@@ -1,0 +1,205 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+Wtxt
+.SH DESCRIPTION
+Editor Widget
+
+
+
+
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Wtxt
+Name	Class	Type	Default
+XtNfontName	XtCFontName	String 	"Source Code Pro-22"
+XtNforeground	XtCForeground	Pixel 	XtDefaultForeground 
+XtNcursorColor	XtCCursorColor	Pixel 	XtDefaultForeground 
+XtNlineWidth	XtCLineWidth	int 	1 
+XtNcornerRoundPercent	XtCCornerRoundPercent	int 	20 
+XtNcallback	XtCCallback	Callback	NULL 
+XtNlabel	XtCLabel	String 	NULL 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNfontName"
+
+
+
+.TP
+.I "XtNforeground"
+
+
+
+.TP
+.I "XtNcursorColor"
+
+
+
+.TP
+.I "XtNlineWidth"
+
+
+
+.TP
+.I "XtNcornerRoundPercent"
+
+
+
+.TP
+.I "XtNcallback"
+
+
+
+.TP
+.I "XtNlabel"
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+
+.nf
+<Key>Right: forward_char() 
+.fi
+
+
+
+.nf
+<Key>Left: backward_char() 
+.fi
+
+
+
+.nf
+<Key>Delete: remove_char() 
+.fi
+
+
+
+.nf
+<Key>BackSpace: backward_char() remove_char() 
+.fi
+
+
+
+.nf
+<Ctrl>x: info() 
+.fi
+
+
+
+.nf
+<Ctrl>v: insert_selection() 
+.fi
+
+
+
+.nf
+<Btn1Down>: set_cursor() 
+.fi
+
+
+
+.nf
+<Key>Return: info() 
+.fi
+
+
+
+.nf
+<Key>: insert_char() 
+.fi
+
+
+.SS "Actions"
+
+
+.TP
+.I "info
+
+
+
+
+.TP
+.I "backward_char
+
+
+
+
+.TP
+.I "forward_char
+
+
+
+
+.TP
+.I "insert_char
+
+
+
+
+.TP
+.I "remove_char
+
+
+
+
+.TP
+.I "set_cursor
+
+
+
+
+.TP
+.I "insert_selection
+
+insert_selection(Widget aw, XEvent * event, String * params, Cardinal * num_params)
+
+
+
+
+

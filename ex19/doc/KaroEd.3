@@ -1,0 +1,307 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+KaroEd
+.SH DESCRIPTION
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+KaroEd
+Name	Class	Type	Default
+XtNlocked	XtCLocked	Bool 	0 
+XtNlines	XtCLines	StringMArray 	0 
+XtNmin_lines	XtCMin_lines	int 	1 
+XtNgrid_width	XtCGrid_width	int 	1 
+XtNgrid_height	XtCGrid_height	int 	1 
+XtNauto_resize	XtCAuto_resize	int 	1 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNlocked"
+
+
+
+.TP
+.I "XtNlines"
+
+
+
+.TP
+.I "XtNmin_lines"
+
+
+
+.TP
+.I "XtNgrid_width"
+
+
+
+.TP
+.I "XtNgrid_height"
+
+
+
+.TP
+.I "XtNauto_resize"
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Wheel
+Name	Class	Type	Default
+XtNxftFont	XtCXFtFont	XftFont	"Sans-22"
+XtNcallback	XtCCallback	Callback	NULL 
+XtNbg_norm	XtCBg_norm	Pixel	"lightblue"
+XtNbg_sel	XtCBg_sel	Pixel	"yellow"
+XtNbg_hi	XtCBg_hi	Pixel	"red"
+XtNfg_norm	XtCFg_norm	Pixel	"black"
+XtNfg_sel	XtCFg_sel	Pixel	"green"
+XtNfg_hi	XtCFg_hi	Pixel	"white"
+XtNuser_data	XtCUser_data	Int 	0 
+XtNfocus_group	XtCFocus_group	String 	""
+XtNstate	XtCState	Int 	0 
+XtNregister_focus_group	XtCRegister_focus_group	Boolean 	True 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+
+.nf
+<EnterWindow>: highlight() 
+.fi
+
+
+
+.nf
+<LeaveWindow>: reset() 
+.fi
+
+
+
+.nf
+<Btn2Down>: info() 
+.fi
+
+
+
+.nf
+<Btn1Down>: selection_set() 
+.fi
+
+
+
+.nf
+<Btn1Motion>: motion_start() 
+.fi
+
+
+
+.nf
+<Btn1Up>: selection_end() 
+.fi
+
+
+
+.nf
+<Key>Right: forward_char() 
+.fi
+
+
+
+.nf
+<Key>Left: backward_char() 
+.fi
+
+
+
+.nf
+<Key>Up: prev_line() 
+.fi
+
+
+
+.nf
+<Key>Down: next_line() 
+.fi
+
+
+
+.nf
+<Key>Delete: remove_char() 
+.fi
+
+
+
+.nf
+<Key>BackSpace: backward_char() remove_char() 
+.fi
+
+
+
+.nf
+<Key>Return: key_return() 
+.fi
+
+
+
+.nf
+<Ctrl>v: insert_selection() 
+.fi
+
+
+
+.nf
+<Key>: insert_char() 
+.fi
+
+
+.SS "Actions"
+
+
+.TP
+.I "copy_selection
+
+
+
+
+.TP
+.I "insert_selection
+
+
+
+
+.TP
+.I "key_return
+
+
+
+
+.TP
+.I "prev_line
+
+
+
+
+.TP
+.I "next_line
+
+
+
+
+.TP
+.I "backward_char
+
+
+
+
+.TP
+.I "forward_char
+
+
+
+
+.TP
+.I "info
+
+
+
+
+.TP
+.I "remove_char
+
+
+
+
+.TP
+.I "insert_char
+
+
+
+
+.TP
+.I "selection_clear
+
+
+
+
+.TP
+.I "selection_set
+
+
+
+
+.TP
+.I "highlight
+
+
+
+
+.TP
+.I "reset
+
+
+
+
+.TP
+.I "notify
+
+
+
+
+.TP
+.I "selection_end
+
+
+
+
+.TP
+.I "motion_start
+
+
+

@@ -1,0 +1,85 @@
+@class Wbatt ( Core )
+
+@public
+@var int status = 0
+@var int size = 50
+@var <XftColor> XftColor c0 = <String> "Darkgreen"
+@var <XftColor> XftColor c1 = <String> "White"
+@var <XftColor> XftColor c2 = <String> "White"
+@var <XftColor> XftColor c3 = <String> "Red"
+@var <XftColor> XftColor c4 = <String> "Red"
+
+
+@private
+@var XftFont *xftFont
+@var XftDraw *draw
+@var XftColor* col[5]
+
+@methods
+@proc class_initialize { converters_xft_init(); }
+
+@proc initialize
+{
+    FcChar32 bat = 0xf240;
+    XGlyphInfo extents;
+    Display *dpy = XtDisplay($);
+    font_load($,$size);
+    XftTextExtents32(dpy, $xftFont, &bat, 1, &extents);
+    $height = $xftFont->ascent + $xftFont->descent;
+    $width  = extents.width;
+    $draw=0;
+    $col[0] = & $c0;
+    $col[1] = & $c1;
+    $col[2] = & $c2;
+    $col[3] = & $c3;
+    $col[4] = & $c4;
+}
+
+@proc destroy
+{
+    if( $draw) XftDrawDestroy( $draw );
+    font_free($);
+}
+
+@proc set_values
+{
+    if( $old$size != $size ) { font_free($); font_load($,$size); }
+    return True; /* call expose */
+}
+
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    XClearWindow(dpy, XtWindow($));
+    if(!$draw )
+        $draw = XftDrawCreate(dpy, XtWindow($),
+                              DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    if($status > 4 ) $status=0;
+    FcChar32 bat = 0xf240 + $status;
+    XftDrawString32($draw, $col[$status],$xftFont,0,$xftFont->ascent,&bat,1);
+}
+
+@utilities
+@proc font_free($)
+{
+    Display *dpy = XtDisplay($);
+    if( $xftFont ) XftFontClose(dpy, $xftFont );
+    $xftFont=0;
+}
+@proc font_load($,int size)
+{
+    Display *dpy = XtDisplay($);
+    int screen = DefaultScreen(dpy);
+    char fontname[20];
+    sprintf(fontname, "FontAwesome-%d", $size );
+    font_free($);
+    $xftFont = XftFontOpenName(dpy,screen, fontname );
+}
+
+
+@imports
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"
+@incl "converters-xft.h"

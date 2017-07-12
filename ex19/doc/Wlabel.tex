@@ -1,0 +1,393 @@
+\input wbuildmac.tex
+\Class{Wlabel}\Publicvars
+\Table{Wlabel}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &0 \cr
+XtNdraw{\underline}override&XtCDraw{\underline}override&XtCallbackProc &NULL \cr
+XtNheightIncreasePercent&XtCHeightIncreasePercent&int &0 \cr
+XtNleftOffsetPercent&XtCLeftOffsetPercent&int &5 \cr
+XtNupdate&XtCUpdate&int &0 \cr
+\endTable
+\Section
+\Publicvar{XtNlabel}
+String  label = {\langle}String{\rangle}NULL 
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = 0 
+
+\Section
+\Publicvar{XtNdraw{\underline}override}
+XtCallbackProc  draw{\underline}override = NULL 
+
+\Section
+\Publicvar{XtNheightIncreasePercent}
+int  heightIncreasePercent = 0 
+
+\Section
+\Publicvar{XtNleftOffsetPercent}
+int  leftOffsetPercent = 5 
+
+\Section
+\Publicvar{XtNupdate}
+int  update = 0 
+
+\End\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters-xft.h"\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+String  label{\underline}cache\endCode
+
+
+\Section
+\Code
+Pixmap  pixmap\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}copy\endCode
+
+
+\Section
+\Code
+int  state{\underline}cache\endCode
+
+
+\Section
+\Code
+Bool  dirty\endCode
+
+
+\End\Classvars
+\Section
+\Code
+XtEnum  compress{\underline}exposure = TRUE \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  XGlyphInfo extents;
+  Display *dpy = XtDisplay({\dollar});
+  char *s = {\dollar}label;
+
+  if( ! s {\bar}{\bar} ! *s )
+    s={\dollar}name;
+
+  {\dollar}label = XtNewString(s);
+
+  if( {\dollar}width == 0 ) {\lbrace}
+    XftTextExtentsUtf8(dpy, {\dollar}xftFont, (FcChar8*)  s,
+                       strlen( s ), {\ampersand}extents);
+
+    {\dollar}width = increase{\underline}by{\underline}percent( extents.xOff, {\dollar}leftOffsetPercent );
+  {\rbrace}
+
+  if( {\dollar}height == 0 )
+    {\dollar}height = increase{\underline}by{\underline}percent( {\dollar}xftFont-{\rangle}height, {\dollar}heightIncreasePercent);
+
+  {\dollar}dirty=0;
+  {\dollar}label{\underline}cache = 0;
+  {\dollar}pixmap = 0;
+  {\dollar}draw = 0;
+  {\dollar}gc{\underline}copy =  XtGetGC({\dollar}, 0,0 );
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+        XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+        reshape{\underline}widget({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+    TRACE(3, "{\percent}s: resize: {\percent}dx{\percent}d", {\dollar}name, {\dollar}width, {\dollar}height );
+    if (XtIsRealized({\dollar})) reshape{\underline}widget({\dollar});
+    invalidate{\underline}cache({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  if( {\dollar}draw) XftDrawDestroy( {\dollar}draw );
+  XtFree({\dollar}label);
+  XtFree({\dollar}label{\underline}cache);
+  XtReleaseGC({\dollar},{\dollar}gc{\underline}copy);
+  XFreePixmap(XtDisplay({\dollar}),{\dollar}pixmap);
+{\rbrace}\endCode
+
+
+\Section
+ARGS: old, request, $, args, num_args_ptr
+
+
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  int do{\underline}expose = 0;
+
+  if ({\dollar}label != {\dollar}old{\dollar}label) {\lbrace}
+      XtFree({\dollar}old{\dollar}label);
+      if( {\dollar}label == 0) {\dollar}label="";
+      {\dollar}label = XtNewString({\dollar}label);
+      do{\underline}expose = 0;
+      {\dollar}dirty=1;
+      redraw({\dollar}); /* redraw only if neccessary */
+  {\rbrace}
+
+  if( {\dollar}state != {\dollar}old{\dollar}state) {\lbrace}
+      do{\underline}expose=0;
+      {\dollar}dirty=1;
+      redraw({\dollar}); /* redraw only if neccessary */
+  {\rbrace}
+
+  if( {\dollar}old{\dollar}update != {\dollar}update )
+  {\lbrace}
+      do{\underline}expose=0;
+      {\dollar}dirty=1;
+      redraw({\dollar}); /* redraw only if neccessary */
+  {\rbrace}
+
+  return do{\underline}expose;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+  TRACE(1,"{\percent}s", {\dollar}name );
+  redraw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+parameter list ($, int cmd, int val)
+
+
+\Code
+int  exec{\underline}command({\dollar}, int  cmd, int  val)
+{\lbrace}
+  return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  cache{\underline}hit({\dollar})
+{\lbrace}
+    Bool eq = {\dollar}label {\ampersand}{\ampersand} {\dollar}label{\underline}cache {\ampersand}{\ampersand} strcmp( {\dollar}label{\underline}cache, {\dollar}label ) == 0
+         {\ampersand}{\ampersand} {\dollar}state == {\dollar}state{\underline}cache ;
+    return eq;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+reshape{\underline}widget({\dollar})
+{\lbrace}
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+called by update cache if pixmap==0
+
+
+\Code
+alloc{\underline}pixmap({\dollar})
+{\lbrace}
+  TRACE(1,"{\percent}s", {\dollar}name );
+    Display *dpy = XtDisplay({\dollar});
+    {\dollar}pixmap = XCreatePixmap(dpy, XtWindow({\dollar}), {\dollar}width, {\dollar}height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    if( {\dollar}draw ) {\lbrace}
+        XftDrawChange({\dollar}draw, {\dollar}pixmap );
+    {\rbrace}
+    else {\lbrace}
+        {\dollar}draw = XftDrawCreate(dpy, {\dollar}pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+invalidate{\underline}cache({\dollar})
+{\lbrace}
+    if( {\dollar}label{\underline}cache ) {\lbrace}
+        free({\dollar}label{\underline}cache);
+        {\dollar}label{\underline}cache=0;
+    {\rbrace}
+
+    if( {\dollar}pixmap ) {\lbrace}
+        XFreePixmap( XtDisplay({\dollar}), {\dollar}pixmap );
+        {\dollar}pixmap=0;
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+redraws everything on pixmap cache
+
+
+\Code
+update{\underline}cache({\dollar})
+{\lbrace}
+    if( {\dollar}pixmap == 0 ) alloc{\underline}pixmap({\dollar});
+    char *s = {\dollar}label;
+    if( {\dollar}label{\underline}cache ) free({\dollar}label{\underline}cache);
+    {\dollar}label{\underline}cache = strdup({\dollar}label);
+    {\dollar}state{\underline}cache = {\dollar}state;
+
+    /* clear background */
+    XFillRectangle(XtDisplay({\dollar}),{\dollar}pixmap, {\dollar}gc[{\dollar}state], 0,0,{\dollar}width,{\dollar}height );
+
+
+    if( {\dollar}draw{\underline}override ) {\lbrace}
+        {\dollar}draw{\underline}override( {\dollar}, {\dollar}pixmap, {\dollar}draw );
+        return;
+    {\rbrace}
+
+    /* draw string centered */
+    TRACE(1,"draw string");
+    int w,h;
+    xft{\underline}calc{\underline}string{\underline}size({\dollar},{\dollar}xftFont, s, {\ampersand}w, {\ampersand}h );
+    int x,y;
+    x = ({\dollar}width - w) / 2;
+    if( x {\langle} 0 ) x=0;
+    y = ({\dollar}height - h) / 2;
+    if( y {\langle} 0 ) y=0;
+    TRACE(1,"{\percent}s draw string: {\percent}s ({\percent}dx{\percent}d)",{\dollar}name, s,x,y );
+    XftDrawStringUtf8({\dollar}draw, {\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                             x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+{\rbrace}\endCode
+
+
+\Section
+force redraw of window if dirty == 0
+    else redraw only if neccessary
+    $label_cache != 0 ==> $pixmap != 0
+
+
+\Code
+redraw({\dollar})
+{\lbrace}
+    if( !XtIsRealized({\dollar})) return;
+    TRACE(1,"{\percent}s dirty={\percent}d", {\dollar}name, {\dollar}dirty );
+    int called{\underline}by{\underline}set{\underline}values = {\dollar}dirty;
+    {\dollar}dirty = 0;
+    Bool eq = {\dollar}cache{\underline}hit({\dollar});
+
+    if( eq {\ampersand}{\ampersand} called{\underline}by{\underline}set{\underline}values ) return;
+    TRACE(1,"{\percent}s force update", {\dollar}name );
+    if( !eq ) update{\underline}cache({\dollar});
+    if( !{\dollar}pixmap ) return; /* should never happen */
+    TRACE(1,"{\percent}s draw pixmap: cache={\percent}s", {\dollar}name, {\dollar}label{\underline}cache );
+    XCopyArea(XtDisplay({\dollar}),{\dollar}pixmap, XtWindow({\dollar}), {\dollar}gc{\underline}copy,
+              0,0, {\dollar}width, {\dollar}height, /* source pixmap */
+              0,0 ); /* target window x,y */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+default{\underline}label{\underline}draw({\dollar}, void * a, void * b)
+{\lbrace}
+  int x,y;
+  XRectangle rect;
+  char *s = {\dollar}label;
+  Display *dpy = XtDisplay({\dollar});
+  TRACE(1,"{\percent}s", {\dollar}name );
+  XFillRectangle(dpy,XtWindow({\dollar}) , {\dollar}gc[{\dollar}state], 0,0,{\dollar}width,{\dollar}height );
+  if( s {\ampersand}{\ampersand} *s ) {\lbrace}
+    y = ({\dollar}height - {\dollar}xftFont-{\rangle}height)/2;
+    x = calc{\underline}percent( {\dollar}width, {\dollar}leftOffsetPercent ); x = (x+1) / 2;
+    rect.x = 0; rect.y=0; rect.width={\dollar}width; rect.height={\dollar}height;
+    XftDrawSetClipRectangles( {\dollar}draw,0,0,{\ampersand}rect, 1);
+    XftDrawStringUtf8({\dollar}draw, {\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                             x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+    XftDrawSetClip({\dollar}draw,0);
+  {\rbrace}
+{\rbrace}\endCode
+
+
+\End\bye

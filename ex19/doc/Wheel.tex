@@ -1,0 +1,331 @@
+\input wbuildmac.tex
+\Class{Wheel}simple Wheel Input widget
+
+
+
+\Publicvars
+\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Section
+\Publicvar{XtNxftFont}
+{\langle}XftFont{\rangle} XftFont * xftFont = {\langle}String{\rangle}"Sans-22"
+
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\Section
+\Publicvar{XtNbg{\underline}norm}
+{\langle}Pixel{\rangle} Pixel  bg{\underline}norm = {\langle}String{\rangle}"lightblue"
+
+\Section
+\Publicvar{XtNbg{\underline}sel}
+{\langle}Pixel{\rangle} Pixel  bg{\underline}sel = {\langle}String{\rangle}"yellow"
+
+\Section
+\Publicvar{XtNbg{\underline}hi}
+{\langle}Pixel{\rangle} Pixel  bg{\underline}hi = {\langle}String{\rangle}"red"
+
+\Section
+\Publicvar{XtNfg{\underline}norm}
+{\langle}Pixel{\rangle} Pixel  fg{\underline}norm = {\langle}String{\rangle}"black"
+
+\Section
+\Publicvar{XtNfg{\underline}sel}
+{\langle}Pixel{\rangle} Pixel  fg{\underline}sel = {\langle}String{\rangle}"green"
+
+\Section
+\Publicvar{XtNfg{\underline}hi}
+{\langle}Pixel{\rangle} Pixel  fg{\underline}hi = {\langle}String{\rangle}"white"
+
+\Section
+\Publicvar{XtNuser{\underline}data}
+int  user{\underline}data = 0 
+
+\Section
+\Publicvar{XtNfocus{\underline}group}
+String  focus{\underline}group = {\langle}String{\rangle}""
+
+\Section
+\Publicvar{XtNstate}
+int  state = 0 
+
+\Section
+\Publicvar{XtNregister{\underline}focus{\underline}group}
+Boolean  register{\underline}focus{\underline}group = True 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Exports
+\Section
+\Code
+{\type} wheel{\underline}state = enum {\lbrace}
+  STATE{\underline}NORMAL = 0,
+  STATE{\underline}SELECTED = 1,
+  STATE{\underline}ARMED = 2,
+  STATE{\underline}MAX = 3
+{\rbrace}\endCode
+
+
+\Section
+\Code
+{\type} wheel{\underline}cmd = enum {\lbrace}
+      WHEEL{\underline}NOCOMMAND,
+      WHEEL{\underline}LEFT,
+      WHEEL{\underline}RIGHT,
+      WHEEL{\underline}FIRE,
+      WHEEL{\underline}KEYPAD
+{\rbrace}\endCode
+
+
+\Section
+\Code
+{\type} wheel{\underline}colors = enum {\lbrace}
+ COLOR{\underline}FG{\underline}NORM, COLOR{\underline}FG{\underline}SEL, COLOR{\underline}FG{\underline}HI, COLOR{\underline}BG{\underline}NORM, COLOR{\underline}BG{\underline}SEL, COLOR{\underline}BG{\underline}HI
+{\rbrace}\endCode
+
+
+\Section
+\Macro
+COLOR{\underline}FG{\underline}MAX = 3 \endMacro
+
+
+\Section
+\Code
+{\type} wheel{\underline}gcs = enum {\lbrace}
+ GC{\underline}BG{\underline}NORM, GC{\underline}BG{\underline}SEL, GC{\underline}BG{\underline}HI
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  wheel{\underline}exec{\underline}command( {\dollar}, int  cmd, int  val)\endCode
+{\lbrace}
+  if( XtIsSubclass( {\dollar}, wheelWidgetClass) {\ampersand}{\ampersand} {\dollar}exec{\underline}command )
+    {\lbrace}
+      return {\dollar}exec{\underline}command({\dollar},cmd,val);
+    {\rbrace}
+
+  XtWarning( "Widget is not subclass of wheel" );
+  return 0;
+{\rbrace}
+
+\Section
+\Code
+int  wheel{\underline}sig{\underline}recv( {\dollar}, Widget  from, int  type, void * class, void * data)\endCode
+{\lbrace}
+  if( XtIsSubclass( {\dollar}, wheelWidgetClass) {\ampersand}{\ampersand} {\dollar}sig{\underline}recv )
+    {\lbrace}
+      return {\dollar}sig{\underline}recv({\dollar},from,type,class,data);
+    {\rbrace}
+
+  XtWarning( "Widget is not subclass of wheel" );
+  return 0;
+{\rbrace}
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters-xft.h"\endCode
+
+
+\Section
+\Code
+{\incl} "focus-group.h"\endCode
+
+
+\Section
+\Code
+{\incl} "apputil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+Das Widget {\tt KaroEd} kann zur Anzeige und zum Editieren von Texten
+  verwendet werden
+
+
+
+
+
+
+\End\Privatevars
+\Section
+vorderung und hintergrund farben
+
+
+\Code
+Pixel  pixel[6]\endCode
+
+
+\Section
+vorderung und hintergrund farben
+
+
+\Code
+XftColor  xft{\underline}col[6]\endCode
+
+
+\Section
+zum löschen des hintergrundes
+
+
+\Code
+GC  gc[3]\endCode
+
+
+\End\Methods
+\Section
+\Code
+class{\underline}initialize()
+{\lbrace} converters{\underline}xft{\underline}init(); {\rbrace}\endCode
+
+
+\Section
+\Code
+int  exec{\underline}command({\dollar}, int  cmd, int  val)
+{\lbrace}
+      XtWarning( "Wheel Widget needs exec{\underline}command to be redefined" );
+      return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  sig{\underline}recv({\dollar}, Widget  from, int  type, void * class, void * data)
+{\lbrace}
+  XtWarning( "Wheel Widget needs sig{\underline}recv to be redefined" );
+  return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    Bool t = False;
+    if( {\dollar}old{\dollar}fg{\underline}norm != {\dollar}fg{\underline}norm ) {\lbrace} t=True;
+        col{\underline}set({\dollar},COLOR{\underline}FG{\underline}NORM); {\rbrace}
+    if( {\dollar}old{\dollar}fg{\underline}sel != {\dollar}fg{\underline}sel ) {\lbrace} t=True;
+        col{\underline}set({\dollar},COLOR{\underline}FG{\underline}SEL); {\rbrace}
+    if( {\dollar}old{\dollar}fg{\underline}hi != {\dollar}fg{\underline}hi ) {\lbrace} t=True;
+        col{\underline}set({\dollar},COLOR{\underline}FG{\underline}HI); {\rbrace}
+    if( {\dollar}old{\dollar}bg{\underline}norm != {\dollar}bg{\underline}norm ) {\lbrace} t=True;
+        col{\underline}set({\dollar},COLOR{\underline}BG{\underline}NORM); {\rbrace}
+    if( {\dollar}old{\dollar}bg{\underline}sel != {\dollar}bg{\underline}sel ) {\lbrace} t=True;
+        col{\underline}set({\dollar},COLOR{\underline}BG{\underline}SEL); {\rbrace}
+    if( {\dollar}old{\dollar}bg{\underline}hi != {\dollar}bg{\underline}hi ) {\lbrace} t=True;
+        col{\underline}set({\dollar},COLOR{\underline}BG{\underline}HI ); {\rbrace}
+    if( {\dollar}old{\dollar}xftFont != {\dollar}xftFont ) {\lbrace} t=True;
+        XftFontClose(XtDisplay({\dollar}),{\dollar}old{\dollar}xftFont); {\rbrace}
+    return t;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  int i;
+  memset( {\dollar}gc, 0, sizeof( {\dollar}gc ));
+  memset( {\dollar}xft{\underline}col, 0, sizeof( {\dollar}xft{\underline}col));
+  for(i=0;i{\langle}6;i++)
+      col{\underline}set({\dollar},i);
+
+  {\dollar}state = STATE{\underline}NORMAL;
+  {\dollar}background{\underline}pixel = {\dollar}pixel[STATE{\underline}NORMAL+3];
+
+  if( ! STR{\underline}IS{\underline}EMPTY({\dollar}focus{\underline}group) {\ampersand}{\ampersand} {\dollar}register{\underline}focus{\underline}group ) {\lbrace}
+      focus{\underline}add2( {\dollar}, {\dollar}focus{\underline}group );
+  {\rbrace}
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  Display *dpy = XtDisplay({\dollar});
+
+  int i;
+  for(i=0;i{\langle}6;i++) {\lbrace}
+    XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+                 None, {\dollar}xft{\underline}col+i);
+    if( i {\langle} 3 ) XtReleaseGC({\dollar},{\dollar}gc[i]);
+  {\rbrace}
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+col{\underline}set({\dollar}, int  num)
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+    XGCValues     values;
+
+    switch( num ) {\lbrace}
+    case COLOR{\underline}FG{\underline}NORM: {\dollar}pixel[COLOR{\underline}FG{\underline}NORM]= {\dollar}fg{\underline}norm; break;
+    case COLOR{\underline}FG{\underline}SEL: {\dollar}pixel[COLOR{\underline}FG{\underline}SEL]= {\dollar}fg{\underline}sel; break;
+    case COLOR{\underline}FG{\underline}HI: {\dollar}pixel[COLOR{\underline}FG{\underline}HI]= {\dollar}fg{\underline}hi; break;
+    case COLOR{\underline}BG{\underline}NORM: {\dollar}pixel[COLOR{\underline}BG{\underline}NORM]= {\dollar}bg{\underline}norm; break;
+    case COLOR{\underline}BG{\underline}SEL: {\dollar}pixel[COLOR{\underline}BG{\underline}SEL]= {\dollar}bg{\underline}sel; break;
+    case COLOR{\underline}BG{\underline}HI: {\dollar}pixel[COLOR{\underline}BG{\underline}HI]= {\dollar}bg{\underline}hi; break;
+    {\rbrace}
+
+    /* !TODO! Check if Color is already alloced
+      if( {\dollar}xft{\underline}col[num] )
+        XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+                 None, {\dollar}xft{\underline}col+num);
+    */
+    xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}pixel[num], {\dollar}xft{\underline}col+num );
+
+    if( num {\rangle}= 3 ) {\lbrace}
+        values.foreground = {\dollar}pixel[num]; /* background color */
+        if( {\dollar}gc[num-3] ) XtReleaseGC({\dollar},{\dollar}gc[num-3]);
+        {\dollar}gc[num-3] = XtGetGC({\dollar}, GCForeground, {\ampersand}values);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\End\bye

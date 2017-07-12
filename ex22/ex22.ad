@@ -1,0 +1,33 @@
+ex22.wcChildren: gb1
+
+*weightx: 1
+*weighty: 1
+*fill: Both
+*Gridbox.background: Darkblue
+*background: Lightblue
+*foreground: black
+*cornerRoundPercent: 5
+*Wedit.cursorColor: Black
+*Wbutton.cornerRoundPercent: 20
+*Wbutton.borderWidth: 0
+*Wbutton.fg_norm: #0000FF
+*Wbutton.fg_sel: #0000FF
+*Wbutton.fg_hi: #0000FF
+*Wbutton.bg_sel: White
+*gb1.wcClass: gridbox
+*gb1.wcChildren: l1 b1 l2
+*xftFont: FontAwesome-20
+
+
+*l1.gridx: 0
+*l1.wcClass: Wbatt
+*l1.label: test
+
+*b1.gridx: 1
+*b1.wcClass: WButton
+*b1.label: test
+*b1.callback: quit_gui()
+
+*l2.gridx: 2
+*l2.wcClass: Wlabel
+*l2.label: 

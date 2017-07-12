@@ -1,0 +1,1284 @@
+\input wbuildmac.tex
+\Class{TermEd}\Publicvars
+\Table{TermEd}
+XtNgWidth&XtCGWidth&int &40 \cr
+XtNgHeight&XtCGHeight&int &25 \cr
+XtNsize&XtCSize&int &8 \cr
+XtNselTime&XtCSelTime&int &400 \cr
+XtNtext&XtCText&String &"Hello World{\backslash}nHow are you?"\cr
+XtNfg&XtCFg&XftColor&"White"\cr
+XtNbg&XtCBg&XftColor&"Darkgreen"\cr
+XtNcbg&XtCCbg&XftColor&"Red"\cr
+XtNcfg&XtCCfg&XftColor&"Green"\cr
+\endTable
+\Section
+\Publicvar{XtNgWidth}
+int  gWidth = 40 
+
+\Section
+\Publicvar{XtNgHeight}
+int  gHeight = 25 
+
+\Section
+\Publicvar{XtNsize}
+int  size = 8 
+
+\Section
+\Publicvar{XtNselTime}
+int  selTime = 400 
+
+\Section
+\Publicvar{XtNtext}
+String  text = {\langle}String{\rangle}"Hello World{\backslash}nHow are you?"
+
+\Section
+\Publicvar{XtNfg}
+{\langle}XftColor{\rangle} XftColor  fg = {\langle}String{\rangle}"White"
+
+\Section
+\Publicvar{XtNbg}
+{\langle}XftColor{\rangle} XftColor  bg = {\langle}String{\rangle}"Darkgreen"
+
+\Section
+\Publicvar{XtNcbg}
+{\langle}XftColor{\rangle} XftColor  cbg = {\langle}String{\rangle}"Red"
+
+\Section
+\Publicvar{XtNcfg}
+{\langle}XftColor{\rangle} XftColor  cfg = {\langle}String{\rangle}"Green"
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Translations
+\Section
+\Code
+{\langle}Key{\rangle}Right: forward{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Left: backward{\underline}char() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Up: prev{\underline}line() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Down: next{\underline}line() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Return: key{\underline}return() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Delete: key{\underline}del() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}BackSpace: key{\underline}backspace() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}Escape: kill{\underline}child() \endCode
+
+
+\Section
+\Code
+{\langle}Key{\rangle}: insert{\underline}char() \endCode
+
+
+\End\Actions
+\Section
+\Action{kill{\underline}child}\Code
+void kill{\underline}child({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    undraw{\underline}selection({\dollar});
+    te{\underline}writeln({\dollar}, "kill");
+    prog{\underline}kill({\dollar});
+
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{key{\underline}del}\Code
+void key{\underline}del({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    undraw{\underline}selection({\dollar});
+    te{\underline}del({\dollar});
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{key{\underline}backspace}\Code
+void key{\underline}backspace({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    undraw{\underline}selection({\dollar});
+    te{\underline}left({\dollar});
+    te{\underline}del({\dollar});
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{key{\underline}return}\Code
+void key{\underline}return({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    undraw{\underline}selection({\dollar});
+    exec{\underline}line({\dollar});
+    te{\underline}pos1({\dollar});
+    te{\underline}down({\dollar});
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{insert{\underline}char}\Code
+void insert{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    int len;
+    unsigned char buf[32];
+    KeySym key{\underline}sim;
+    uint32{\underline}t ucs4;
+
+    len = {\underline}XawLookupString({\dollar},(XKeyEvent *) event, (char*)buf,sizeof buf, {\ampersand}key{\underline}sim );
+    if (len {\langle}= 0) return;
+    FcUtf8ToUcs4 (buf, {\ampersand}ucs4, len);
+    undraw{\underline}selection({\dollar});
+    te{\underline}ins({\dollar});
+    te{\underline}putc({\dollar},ucs4);
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{prev{\underline}line}\Code
+void prev{\underline}line({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    if( {\dollar}rsel.y == 0 ) return;
+    {\dollar}rsel.y--;
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{next{\underline}line}\Code
+void next{\underline}line({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    undraw{\underline}selection({\dollar});
+    te{\underline}down({\dollar});
+    // if( {\dollar}rsel.y {\langle} ({\dollar}gHeight-1) )
+    // {\dollar}rsel.y++;
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{backward{\underline}char}\Code
+void backward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    if( {\dollar}rsel.x == 0 ) return;
+    {\dollar}rsel.x--;
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Action{forward{\underline}char}\Code
+void forward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    if( {\dollar}rsel.x {\langle} ({\dollar}gWidth-1) )
+        {\dollar}rsel.x ++;
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}stdint.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "micro{\underline}vars.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters-xft.h"\endCode
+
+
+\Section
+\Code
+{\incl} "subshell.h"\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xaw/XawImP.h{\rangle}\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+XtIntervalId  timerid\endCode
+
+
+\Section
+\Code
+Boolean  blink\endCode
+
+
+\Section
+\Code
+XftFont * xftFont\endCode
+
+
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+XftColor * col[4]\endCode
+
+
+\Section
+\Code
+uint32{\underline}t * scr\endCode
+
+
+\Section
+\Code
+int  grid{\underline}pix{\underline}width\endCode
+
+
+\Section
+\Code
+int  grid{\underline}pix{\underline}height\endCode
+
+
+\Section
+\Code
+Bool  selection{\underline}visible\endCode
+
+
+\Section
+\Code
+XRectangle  rsel\endCode
+
+
+\Section
+\Code
+XRectangle  rsel{\underline}old\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}copy\endCode
+
+
+\Section
+\Code
+uint8{\underline}t * cmd\endCode
+
+
+\Section
+\Code
+uint  cmd{\underline}len\endCode
+
+
+\Section
+\Code
+int  progm\endCode
+
+
+\Section
+\Code
+struct  fork2{\underline}info * child\endCode
+
+
+\Section
+\Code
+XtInputId  cid\endCode
+
+
+\Section
+\Code
+XtInputId  eid\endCode
+
+
+\End\Methods
+\Section
+\Code
+class{\underline}initialize()
+{\lbrace} converters{\underline}xft{\underline}init(); {\rbrace}\endCode
+
+
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    FcChar32 bat = 0x42;
+    XGlyphInfo extents;
+    Display *dpy = XtDisplay({\dollar});
+    font{\underline}load({\dollar},{\dollar}size);
+    XftTextExtents32(dpy, {\dollar}xftFont, {\ampersand}bat, 1, {\ampersand}extents);
+    {\dollar}height = ({\dollar}grid{\underline}pix{\underline}height = {\dollar}xftFont-{\rangle}ascent + {\dollar}xftFont-{\rangle}descent) * {\dollar}gHeight;
+    {\dollar}width  = ({\dollar}grid{\underline}pix{\underline}width = extents.width) * {\dollar}gWidth;
+    {\dollar}draw=0;
+    {\dollar}cmd=0;
+    {\dollar}scr=0;
+    {\dollar}child=0;
+    {\dollar}col[0] = {\ampersand} {\dollar}fg;
+    {\dollar}col[1] = {\ampersand} {\dollar}bg;
+    {\dollar}col[2] = {\ampersand} {\dollar}cfg;
+    {\dollar}col[3] = {\ampersand} {\dollar}cbg;
+    {\dollar}selection{\underline}visible = False;
+    {\dollar}timerid = 0;
+    {\dollar}gc{\underline}copy =  XtGetGC({\dollar}, 0,0 );
+    {\dollar}progm = m{\underline}create(100,sizeof(char*));
+    do{\underline}resize({\dollar});
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+    if( {\dollar}draw) XftDrawDestroy( {\dollar}draw );
+    {\dollar}draw=0;
+    font{\underline}free({\dollar});
+    if( {\dollar}scr ) {\lbrace} free({\dollar}scr); {\dollar}scr=0; {\rbrace}
+    if( {\dollar}cmd ) {\lbrace} free({\dollar}cmd); {\dollar}cmd=0; {\rbrace}
+    if( {\dollar}progm ) {\lbrace} m{\underline}free{\underline}strings( {\dollar}progm, 0); {\dollar}progm=0; {\rbrace}
+    if( {\dollar}child ) prog{\underline}kill({\dollar});
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    if( {\dollar}old{\dollar}size != {\dollar}size ) {\lbrace}
+        font{\underline}free({\dollar});
+        font{\underline}load({\dollar},{\dollar}size);
+        {\dollar}resize( {\dollar} );
+    {\rbrace}
+    return True; /* call expose */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+    {\dollar}gWidth  = {\dollar}width / {\dollar}grid{\underline}pix{\underline}width;
+    {\dollar}gHeight = {\dollar}height / {\dollar}grid{\underline}pix{\underline}height;
+    do{\underline}resize({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+    if(!{\dollar}draw )
+        {\dollar}draw = XftDrawCreate(dpy, XtWindow({\dollar}),
+                              DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    test{\underline}convert({\dollar});
+    full{\underline}draw({\dollar});
+    selection{\underline}draw({\dollar});
+    /*   FcChar32 bat = 0xf240 + {\dollar}status;
+        XftDrawString32({\dollar}draw, {\dollar}col[{\dollar}status],{\dollar}xftFont,0,{\dollar}xftFont-{\rangle}ascent,{\ampersand}bat,1);
+    */
+    printf("w WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}width, {\dollar}height );
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+font{\underline}free({\dollar})
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+    if( {\dollar}xftFont ) XftFontClose(dpy, {\dollar}xftFont );
+    {\dollar}xftFont=0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+font{\underline}load({\dollar}, int  size)
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+    int screen = DefaultScreen(dpy);
+    char fontname[30];
+    sprintf(fontname, "Source Code Pro-{\percent}d", {\dollar}size );
+    font{\underline}free({\dollar});
+    {\dollar}xftFont = XftFontOpenName(dpy,screen, fontname );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}glyph{\underline}color({\dollar}, int  x, int  y, int  fg, int  bg, uint32{\underline}t  ucs4)
+{\lbrace}
+    int x0,y0,w,h;
+    uint32{\underline}t glyph;
+
+    x0 = x * {\dollar}grid{\underline}pix{\underline}width;
+    y0 = y * {\dollar}grid{\underline}pix{\underline}height;
+    w = {\dollar}grid{\underline}pix{\underline}width;
+    h = {\dollar}grid{\underline}pix{\underline}height;
+
+    if( bg {\rangle}= 0 ) XftDrawRect({\dollar}draw,{\dollar}col[bg], x0,y0,w,h );
+    if( ucs4 == 0 {\bar}{\bar} ucs4 == 32 ) return;
+
+    glyph = XftCharIndex ( XtDisplay({\dollar}), {\dollar}xftFont, ucs4 );
+    XftDrawGlyphs ({\dollar}draw, {\dollar}col[fg], {\dollar}xftFont,
+                   x0, y0+{\dollar}xftFont-{\rangle}ascent,
+                   {\ampersand}glyph, 1);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+full{\underline}draw({\dollar})
+{\lbrace}
+    int x,y;
+    XftDrawRect({\dollar}draw,{\dollar}col[1], 0,0, {\dollar}width, {\dollar}height );
+    for(x=0;x{\langle}{\dollar}gWidth;x++) {\lbrace}
+        for(y=0;y{\langle}{\dollar}gHeight;y++) {\lbrace}
+            draw{\underline}glyph{\underline}color({\dollar},x,y,0,-1,{\dollar}scr[x + y * {\dollar}gWidth ] );
+        {\rbrace}
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+putcharat({\dollar}, int  x, int  y, uint32{\underline}t  ucs4)
+{\lbrace}
+    if( x {\langle} {\dollar}gWidth {\ampersand}{\ampersand} x {\rangle}= 0 {\ampersand}{\ampersand} y {\langle} {\dollar}gHeight {\ampersand}{\ampersand} y {\rangle}= 0 )
+        {\lbrace}
+            {\dollar}scr[x + y * {\dollar}gWidth ] = ucs4;
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+uint32{\underline}t  getcharat({\dollar}, int  x, int  y)
+{\lbrace}
+    if( x {\langle} {\dollar}gWidth {\ampersand}{\ampersand} x {\rangle}= 0 {\ampersand}{\ampersand} y {\langle} {\dollar}gHeight {\ampersand}{\ampersand} y {\rangle}= 0 )
+        {\lbrace}
+            return {\dollar}scr[x + y * {\dollar}gWidth ];
+        {\rbrace}
+
+    return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+drawcharat({\dollar}, int  x, int  y, int  fg, int  bg)
+{\lbrace}
+    if( x {\langle} {\dollar}gWidth {\ampersand}{\ampersand} x {\rangle}= 0 {\ampersand}{\ampersand} y {\langle} {\dollar}gHeight {\ampersand}{\ampersand} y {\rangle}= 0 )
+        {\lbrace}
+            draw{\underline}glyph{\underline}color({\dollar},x,y,fg,bg,{\dollar}scr[x + y * {\dollar}gWidth ] );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}string({\dollar}, int  x, int  y, char * str)
+{\lbrace}
+    int len,l;
+    unsigned char *string = (void*) str;
+    uint32{\underline}t ucs4;
+    len = strlen( (char*)string);
+    x=0; y=0;
+    while(1) {\lbrace}
+        l = FcUtf8ToUcs4 (string, {\ampersand}ucs4, len);
+        if( l{\langle}= 0 {\bar}{\bar} len {\langle}=0 ) return;
+        if( ucs4 == '{\backslash}n' ) {\lbrace} x=0; y++; {\rbrace}
+        if( x {\rangle}= {\dollar}gWidth ) {\lbrace} x=0; y++; {\rbrace}
+        if( y {\rangle}= {\dollar}gHeight ) {\lbrace} y=0; {\rbrace}
+        if( ucs4 {\rangle}=' ' ) {\lbrace}
+            putcharat({\dollar},x,y,ucs4);
+            x++;
+        {\rbrace}
+        string += l;
+        len -= l;
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+test{\underline}convert({\dollar})
+{\lbrace}
+    draw{\underline}string({\dollar}, 0, {\dollar}gHeight / 2, {\dollar}text );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+selection{\underline}timer({\dollar}, XtIntervalId * id)
+{\lbrace}
+    int nr = {\dollar}blink ? 2 : 0;
+    if( {\dollar}selection{\underline}visible ) {\lbrace}
+        drawcharat({\dollar}, {\dollar}rsel{\underline}old.x, {\dollar}rsel{\underline}old.y, nr, nr+1 );
+        {\dollar}blink = ! {\dollar}blink;
+        if( id==NULL {\ampersand}{\ampersand} {\dollar}timerid ) XtRemoveTimeOut({\dollar}timerid);
+        {\dollar}timerid = XtAppAddTimeOut(XtWidgetToApplicationContext({\dollar}), {\dollar}selTime,
+                        (void*)selection{\underline}timer, {\dollar} );
+    {\rbrace}
+    else {\dollar}timerid=0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+undraw{\underline}selection({\dollar})
+{\lbrace}
+    if( {\dollar}selection{\underline}visible ) {\lbrace}
+        drawcharat({\dollar}, {\dollar}rsel{\underline}old.x, {\dollar}rsel{\underline}old.y, 0,1 );
+        {\dollar}selection{\underline}visible = False;
+        if({\dollar}timerid) {\lbrace}
+            XtRemoveTimeOut({\dollar}timerid);
+            {\dollar}timerid=0;
+        {\rbrace}
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+selection{\underline}draw({\dollar})
+{\lbrace}
+    if( {\dollar}rsel.x {\rangle}= {\dollar}gWidth ) {\dollar}rsel.x = {\dollar}gWidth-1;
+    if( {\dollar}rsel.y {\rangle}= {\dollar}gHeight ) {\dollar}rsel.y = {\dollar}gHeight-1;
+    undraw{\underline}selection({\dollar});
+    {\dollar}selection{\underline}visible = True;
+    {\dollar}rsel{\underline}old = {\dollar}rsel;
+    {\dollar}blink = True; selection{\underline}timer({\dollar},0);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+scr{\underline}scroll{\underline}up({\dollar})
+{\lbrace}
+        memcpy( {\dollar}scr, {\dollar}scr + {\dollar}gWidth,
+                ({\dollar}gWidth*({\dollar}gHeight-1))*4 );
+        memset( {\dollar}scr + {\dollar}gWidth*({\dollar}gHeight-1), 0, {\dollar}gWidth*4 );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+pix{\underline}scroll{\underline}up({\dollar})
+{\lbrace}
+/*
+      XCopyArea(display, src, dest, gc, src{\underline}x, src{\underline}y, width, height,  dest{\underline}x, dest{\underline}y)
+      Display *display;
+      Drawable src, dest;
+      GC gc;
+      int src{\underline}x, src{\underline}y;
+      unsigned int width, height;
+      int dest{\underline}x, dest{\underline}y;
+*/
+    XCopyArea(XtDisplay({\dollar}), XtWindow({\dollar}), XtWindow({\dollar}), DefaultGC(XtDisplay({\dollar}),0),
+              0, {\dollar}grid{\underline}pix{\underline}height,
+              {\dollar}grid{\underline}pix{\underline}width * ({\dollar}gWidth),
+              {\dollar}grid{\underline}pix{\underline}height * ({\dollar}gHeight-1),
+              0,0 );
+
+    /* clear background */
+    XftDrawRect({\dollar}draw,{\dollar}col[1],
+    0,      {\dollar}grid{\underline}pix{\underline}height * ({\dollar}gHeight-1),
+    {\dollar}width, {\dollar}grid{\underline}pix{\underline}height );
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}pos1({\dollar})
+{\lbrace}
+    {\dollar}rsel.x = 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}tab({\dollar})
+{\lbrace}
+    int x = {\dollar}rsel.x;
+    x /= 8;
+    x ++;
+    x *= 8;
+    if( x {\langle} {\dollar}gWidth ) {\dollar}rsel.x = x;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}down({\dollar})
+{\lbrace}
+    if( {\dollar}rsel.y {\langle} ({\dollar}gHeight-1) ) {\lbrace}
+        {\dollar}rsel.y++;
+        return;
+    {\rbrace}
+
+    pix{\underline}scroll{\underline}up({\dollar});
+    scr{\underline}scroll{\underline}up({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  te{\underline}parse({\dollar}, uint32{\underline}t  ucs4)
+{\lbrace}
+    switch( ucs4 ) {\lbrace}
+    default: break;
+    case 10: te{\underline}pos1({\dollar}); te{\underline}down({\dollar}); return True;
+    case '{\backslash}t': te{\underline}tab({\dollar}); return True;
+    case 13: te{\underline}pos1({\dollar}); return True;
+    {\rbrace}
+    return False;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}right({\dollar})
+{\lbrace}
+    if( {\dollar}rsel.x {\langle} ({\dollar}gWidth-1) ) {\lbrace}
+        {\dollar}rsel.x++;
+        return;
+    {\rbrace}
+    te{\underline}pos1({\dollar});
+    te{\underline}down({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+pix{\underline}del({\dollar})
+{\lbrace}
+   int x0,y0,x1,y1,w,h,x,y;
+   x = {\dollar}rsel.x; y={\dollar}rsel.y;
+   /*-----------------------*/
+   /* destination           */
+   x0 = x;
+   y0 = y;
+   /*-----------------------*/
+   /* width, height         */
+   w = {\dollar}gWidth - (x+1);
+   h = 1;
+   /*-----------------------*/
+   /* source                */
+   x1 = x0+1;
+   y1 = y0;
+   /*-----------------------*/
+   /* transformation        */
+   w   *= {\dollar}grid{\underline}pix{\underline}width;
+   x0  *= {\dollar}grid{\underline}pix{\underline}width;
+   x1  *= {\dollar}grid{\underline}pix{\underline}width;
+   h   *= {\dollar}grid{\underline}pix{\underline}height;
+   y0  *= {\dollar}grid{\underline}pix{\underline}height;
+   y1  *= {\dollar}grid{\underline}pix{\underline}height;
+
+   XCopyArea(XtDisplay({\dollar}), XtWindow({\dollar}), XtWindow({\dollar}), DefaultGC(XtDisplay({\dollar}),0),
+             x1,y1,w,h, /* source */
+             x0,y0      /* destination */
+             );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+pix{\underline}ins({\dollar})
+{\lbrace}
+   int x0,y0,x1,y1,w,h,x,y;
+   x = {\dollar}rsel.x; y={\dollar}rsel.y;
+   /*-----------------------*/
+   /* destination           */
+   x0 = x+1;
+   y0 = y;
+   /*-----------------------*/
+   /* width, height         */
+   w = {\dollar}gWidth - (x+1);
+   h = 1;
+   /*-----------------------*/
+   /* source                */
+   x1 = x;
+   y1 = y;
+   /*-----------------------*/
+   /* transformation        */
+   w   *= {\dollar}grid{\underline}pix{\underline}width;
+   x0  *= {\dollar}grid{\underline}pix{\underline}width;
+   x1  *= {\dollar}grid{\underline}pix{\underline}width;
+   h   *= {\dollar}grid{\underline}pix{\underline}height;
+   y0  *= {\dollar}grid{\underline}pix{\underline}height;
+   y1  *= {\dollar}grid{\underline}pix{\underline}height;
+
+   XCopyArea(XtDisplay({\dollar}), XtWindow({\dollar}), XtWindow({\dollar}), DefaultGC(XtDisplay({\dollar}),0),
+             x1,y1,w,h, /* source */
+             x0,y0      /* destination */
+             );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}ins({\dollar})
+{\lbrace}
+   int i,x,y;
+   x = {\dollar}rsel.x; y={\dollar}rsel.y;
+   uint32{\underline}t *s = {\dollar}scr+y* {\dollar}gWidth;
+
+   /* letztes zeichen der zeile mit {\langle}null{\rangle} füllen */
+   if( x == {\dollar}gWidth -1 ) {\lbrace}
+      s[x] = 0;
+      return;
+   {\rbrace}
+
+   for(i={\dollar}gWidth-2; i{\rangle}=x ; i-- )
+              s[i+1] = s[i];
+   pix{\underline}ins({\dollar});
+   s[x] = 32;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}del({\dollar})
+{\lbrace}
+   uint16{\underline}t i,x,y;
+   x = {\dollar}rsel.x; y={\dollar}rsel.y;
+   uint32{\underline}t *s = {\dollar}scr+y* {\dollar}gWidth;
+
+   /* letztes zeichen der zeile mit {\langle}null{\rangle} füllen */
+   if( x == {\dollar}gWidth -1 ) {\lbrace}
+      s[x] = 0;
+      return;
+   {\rbrace}
+
+   for(i=x+1; i{\langle} {\dollar}gWidth; i++ )
+              s[i-1] = s[i];
+   pix{\underline}del({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}putc({\dollar}, uint32{\underline}t  ucs4)
+{\lbrace}
+    if( {\dollar}rsel.x {\rangle}= {\dollar}gWidth ) {\dollar}rsel.x = {\dollar}gWidth-1;
+    if( {\dollar}rsel.y {\rangle}= {\dollar}gHeight ) {\dollar}rsel.y = {\dollar}gHeight-1;
+    if( te{\underline}parse({\dollar},ucs4) ) return;
+    putcharat({\dollar}, {\dollar}rsel.x, {\dollar}rsel.y,ucs4);
+    drawcharat({\dollar}, {\dollar}rsel.x, {\dollar}rsel.y, 0,1 );
+    {\dollar}selection{\underline}visible = False;
+    te{\underline}right({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}left({\dollar})
+{\lbrace}
+    if( {\dollar}rsel.x == 0 ) return;
+    {\dollar}rsel.x--;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+exec{\underline}line({\dollar})
+{\lbrace}
+    int i,len, space{\underline}left;
+    unsigned char *dest;
+    // char *string = malloc( {\dollar}gWidth * 6 + 2 );
+    char *string = (void*){\dollar}cmd;
+    uint32{\underline}t *s = {\dollar}scr + {\dollar}rsel.y * {\dollar}gWidth;
+    dest = (void*)string;
+    space{\underline}left = {\dollar}cmd{\underline}len;
+    for( i=0; i{\langle} {\dollar}gWidth; i++ )
+        {\lbrace}
+            if( space{\underline}left {\langle} 7 ) break;
+            len = FcUcs4ToUtf8( *s++, dest );
+            dest+=len;
+            space{\underline}left -= len;
+        {\rbrace}
+    *dest = 0;
+    printf("str: {\percent}s{\backslash}n", string );
+
+    /* check if there is a line number prefix */
+    if(! prog{\underline}insert{\underline}line({\dollar}, string) ) return;
+
+    if( strncmp( string, "list", 4 ) == 0 ) prog{\underline}list({\dollar});
+    else if( strncmp( string, "save", 4 ) == 0 ) prog{\underline}save({\dollar});
+    else if( strncmp( string, "load", 4 ) == 0 ) prog{\underline}load({\dollar});
+    else if( strncmp( string, "run", 3 ) == 0 ) prog{\underline}run({\dollar});
+    else if( strncmp( string, "parse", 5 ) == 0 ) prog{\underline}parse({\dollar});
+    else if( {\dollar}child ) prog{\underline}interpret({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}interpret({\dollar})
+{\lbrace}
+    char *s = (void*){\dollar}cmd;
+    while(*s {\ampersand}{\ampersand} *s == '{\rangle}' ) s++;
+    dprintf( {\dollar}child-{\rangle}fd[3], "{\percent}s{\backslash}n", s );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}child{\underline}read({\dollar}, int * source, XtInputId * id)
+{\lbrace}
+    int ch;
+    if( ! {\dollar}child ) ERR("memory corruption");
+    if( fork2{\underline}read({\dollar}child) ) {\lbrace}
+        prog{\underline}kill({\dollar});
+        return;
+    {\rbrace}
+    undraw{\underline}selection({\dollar});
+    while( (ch=mrb{\underline}get({\dollar}child-{\rangle}buf)) {\rangle}= 0 )
+        te{\underline}putc( {\dollar}, ch );
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}child{\underline}err{\underline}read({\dollar}, int * source, XtInputId * id)
+{\lbrace}
+    int len, i;
+
+    if( ! {\dollar}child ) ERR("memory corruption");
+    char buf[1024];
+    len = read( *source, buf, sizeof(buf) );
+
+    undraw{\underline}selection({\dollar});
+    for(i=0;i{\langle}len;i++)
+        te{\underline}putc( {\dollar}, buf[i] );
+    selection{\underline}draw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}run({\dollar})
+{\lbrace}
+        if( {\dollar}child ) prog{\underline}kill({\dollar});
+        {\dollar}child = fork2{\underline}open( "lua5.3", "-i", NULL, "-e", "{\underline}PROMPT=''", NULL );
+        {\dollar}cid = XtAppAddInput( XtWidgetToApplicationContext({\dollar}),
+                       {\dollar}child-{\rangle}fd[0],
+                       (XtPointer)XtInputReadMask,
+                       (XtInputCallbackProc)prog{\underline}child{\underline}read,
+                       {\dollar} );
+
+        {\dollar}eid = XtAppAddInput( XtWidgetToApplicationContext({\dollar}),
+                       {\dollar}child-{\rangle}fd[4],
+                       (XtPointer)XtInputReadMask,
+                       (XtInputCallbackProc)prog{\underline}child{\underline}err{\underline}read,
+                       {\dollar} );
+
+
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+char * progm{\underline}alloc({\dollar}, uint32{\underline}t  ln, char * s)
+{\lbrace}
+        char *buf = malloc( 5 + strlen(s) );
+        *(uint32{\underline}t *)buf = ln;
+        while( isspace(*s) ) s++;
+        strcpy( buf +4, s );
+        return buf;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+progm{\underline}insert({\dollar}, int  i, uint32{\underline}t  arg, char * s)
+{\lbrace}
+        m{\underline}ins({\dollar}progm,i, 1);
+        STR({\dollar}progm, i) = progm{\underline}alloc({\dollar},arg,s);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+progm{\underline}overwrite({\dollar}, int  i, uint32{\underline}t  arg, char * s)
+{\lbrace}
+        free( STR({\dollar}progm,i));
+        STR({\dollar}progm, i) = progm{\underline}alloc({\dollar},arg,s);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+progm{\underline}append({\dollar}, uint32{\underline}t  arg, char * s)
+{\lbrace}
+        char *buf = progm{\underline}alloc({\dollar},arg,s);
+        m{\underline}put( {\dollar}progm, {\ampersand}buf );
+{\rbrace}\endCode
+
+
+\Section
+finde zeile {\tt num} im puffer
+  returns: match
+  {\tt *pos} == zeilennummer
+  match == 0 : gefunden
+  match <  0 : num größte zeile
+  match >  1 : *pos größer als {\tt num}
+
+
+\Code
+int  progm{\underline}find({\dollar}, uint32{\underline}t  num, int * pos)
+{\lbrace}
+        int i;
+        uint32{\underline}t n;
+        char *s;
+
+        for(i=0;i{\langle}m{\underline}len({\dollar}progm);i++) {\lbrace}
+          s= STR({\dollar}progm,i);
+          n = *(uint32{\underline}t *) s;
+          if( n == num ) {\lbrace} *pos=i; return 0; {\rbrace}
+          else if( n {\rangle} num ) {\lbrace} *pos=i; return 1; {\rbrace};
+        {\rbrace}
+        *pos = i;
+        return -1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+progm{\underline}put({\dollar}, uint32{\underline}t  arg, char * ln)
+{\lbrace}
+        int i;
+        uint32{\underline}t n;
+        char *s;
+
+        for(i=0;i{\langle}m{\underline}len({\dollar}progm);i++) {\lbrace}
+          s= STR({\dollar}progm,i);
+          n = *(uint32{\underline}t *) s;
+          if( n == arg ) {\lbrace} progm{\underline}overwrite( {\dollar}, i, arg, ln ); return; {\rbrace}
+          else if( n {\rangle} arg ) {\lbrace} progm{\underline}insert({\dollar}, i, arg, ln ); return; {\rbrace}
+        {\rbrace}
+        progm{\underline}append({\dollar},arg, ln );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  prog{\underline}insert{\underline}line({\dollar}, char * buf)
+{\lbrace}
+        char *s = (void*) buf;
+        char *endp;
+        int arg;
+
+        arg = strtol( s,{\ampersand}endp,10);
+        if( s == endp ) {\lbrace} return 1; {\rbrace}
+
+        progm{\underline}put({\dollar}, arg, endp );
+        return 0;
+{\rbrace}\endCode
+
+
+\Section
+load a program file to memory
+  syntax: load filename
+
+
+
+
+\Code
+prog{\underline}error({\dollar}, char * s)
+{\lbrace}
+        te{\underline}down({\dollar});
+        te{\underline}pos1({\dollar});
+        te{\underline}write({\dollar},s);
+        te{\underline}down({\dollar});
+        te{\underline}pos1({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}load({\dollar})
+{\lbrace}
+        char *s = (void*){\dollar}cmd+5;
+        int p = m{\underline}create(20,1);
+
+        while( *s {\ampersand}{\ampersand} ! isspace(*s) )
+               m{\underline}putc( p, *s++ );
+        m{\underline}putc(p,0);
+
+        FILE *fp = fopen( m{\underline}buf(p), "r" );
+        if( !fp ) {\lbrace} prog{\underline}error( {\dollar}, "file read error" ); goto leave; {\rbrace}
+        m{\underline}clear(p);
+
+
+        while( m{\underline}fscan2( p, '{\backslash}n', fp ) == '{\backslash}n' ) {\lbrace}
+                prog{\underline}insert{\underline}line({\dollar},m{\underline}buf(p));
+                m{\underline}clear(p);
+        {\rbrace}
+
+        fclose(fp);
+        leave: m{\underline}free(p);
+
+{\rbrace}\endCode
+
+
+\Section
+save a program file to filesystem
+  syntax: save filename
+
+
+\Code
+prog{\underline}save({\dollar})
+{\lbrace}
+        /* get two integer args */
+        char *s = (void*){\dollar}cmd+5;
+        int p = m{\underline}create(20,1);
+        int i;
+
+        while( *s {\ampersand}{\ampersand} ! isspace(*s) )
+               m{\underline}putc( p, *s++ );
+        m{\underline}putc(p,0);
+
+        FILE *fp = fopen( m{\underline}buf(p), "w" );
+        if( !fp ) {\lbrace} prog{\underline}error( {\dollar}, "file write error" ); goto leave; {\rbrace}
+
+        for(i=0;i{\langle}m{\underline}len({\dollar}progm);i++)
+        {\lbrace}
+                s = STR({\dollar}progm,i);
+                uint32{\underline}t n = *(uint32{\underline}t *)s; s+=4;
+                fprintf(fp,"{\percent}u {\percent}s{\backslash}n", n,s );
+        {\rbrace}
+
+        fclose(fp);
+        leave: m{\underline}free(p);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}parse({\dollar})
+{\lbrace}
+
+    if(! {\dollar}child ) {\lbrace}
+        prog{\underline}error({\dollar},"starting subshell with 'run'");
+        prog{\underline}run({\dollar});
+    {\rbrace}
+
+    int from,len;
+
+    from = 0;
+    len  = m{\underline}len({\dollar}progm);
+
+    /* get two integer args */
+    char *s = (void*){\dollar}cmd+6;
+    char *endp;
+    from = strtol( s,{\ampersand}endp,10);
+    if( s == endp ) {\lbrace} from=0; goto cont; {\rbrace}
+
+ cont:
+    prog{\underline}do{\underline}parse({\dollar}, from, len);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}list({\dollar})
+{\lbrace}
+        int arg,from,len;
+
+        from = 0;
+        len  = 10;
+
+        /* get two integer args */
+        char *s = (void*){\dollar}cmd+5;
+        char *endp;
+        arg = strtol( s,{\ampersand}endp,10);
+        if( s == endp ) {\lbrace} arg=0; goto cont; {\rbrace}
+
+        s=endp; if( *s == ',' ) s++;
+        from = arg;
+        arg = strtol( s,{\ampersand}endp,10);
+        if( s == endp ) {\lbrace} arg=0; goto cont; {\rbrace}
+        len = arg;
+
+        cont:
+        te{\underline}pos1({\dollar}); te{\underline}down({\dollar});
+        prog{\underline}do{\underline}list({\dollar}, from, len);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}write({\dollar}, char * str)
+{\lbrace}
+    int len,l;
+    unsigned char *string = (void*) str;
+    uint32{\underline}t ucs4;
+    len = strlen( (char*)string);
+
+    while(1) {\lbrace}
+        l = FcUtf8ToUcs4 (string, {\ampersand}ucs4, len);
+        if( l{\langle}= 0 {\bar}{\bar} len {\langle}=0 ) return;
+        te{\underline}putc({\dollar},ucs4);
+        string += l;
+        len -= l;
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+te{\underline}writeln({\dollar}, char * s)
+{\lbrace}
+        te{\underline}write({\dollar},s);
+        te{\underline}pos1({\dollar});
+        te{\underline}down({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}print({\dollar}, int  i)
+{\lbrace}
+        char buf[20];
+
+
+        char *s = STR({\dollar}progm,i);
+        uint32{\underline}t num = *(uint32{\underline}t *)s;
+        s+=4;
+
+        sprintf(buf,"{\percent}d", num);
+        te{\underline}write({\dollar},buf);
+        te{\underline}putc({\dollar},32);
+        te{\underline}write({\dollar},s);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}do{\underline}list({\dollar}, int  from, int  len)
+{\lbrace}
+        int i;
+        int line;
+
+        int match  = progm{\underline}find( {\dollar}, from, {\ampersand}line );
+        if( match {\langle} 0 ) return;
+
+        for(i=line;i{\langle}line+len;i++) {\lbrace}
+                if( i {\rangle}= m{\underline}len({\dollar}progm) ) break;
+                prog{\underline}print({\dollar},i);
+                te{\underline}pos1({\dollar});
+                te{\underline}down({\dollar});
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}do{\underline}parse({\dollar}, int  from, int  len)
+{\lbrace}
+        int i;
+        int line;
+
+        int match  = progm{\underline}find( {\dollar}, from, {\ampersand}line );
+        if( match {\langle} 0 ) return;
+
+        for(i=line;i{\langle}line+len;i++) {\lbrace}
+                if( i {\rangle}= m{\underline}len({\dollar}progm) ) break;
+                char *s = STR({\dollar}progm,i);
+                s+=4;
+                dprintf( {\dollar}child-{\rangle}fd[3], "{\percent}s{\backslash}n", s );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+prog{\underline}kill({\dollar})
+{\lbrace}
+        if( {\dollar}child ) {\lbrace}
+            fork2{\underline}close( {\dollar}child );
+            {\dollar}child=0;
+        {\rbrace}
+        if( {\dollar}cid ) {\lbrace} XtRemoveInput({\dollar}cid); {\dollar}cid=0; {\rbrace}
+        if( {\dollar}eid ) {\lbrace} XtRemoveInput({\dollar}eid); {\dollar}eid=0; {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+do{\underline}resize({\dollar})
+{\lbrace}
+    {\dollar}scr=realloc({\dollar}scr, {\dollar}gWidth * {\dollar}gHeight * 4 );
+    memset({\dollar}scr,0,{\dollar}gWidth * {\dollar}gHeight * 4 );
+    {\dollar}cmd=realloc({\dollar}cmd,{\dollar}cmd{\underline}len = ({\dollar}gWidth+2) * 6 );
+    printf("WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}gWidth, {\dollar}gHeight );
+    printf("pix WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}grid{\underline}pix{\underline}width, {\dollar}grid{\underline}pix{\underline}height );
+    printf("w WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}width, {\dollar}height );
+{\rbrace}\endCode
+
+
+\End\bye

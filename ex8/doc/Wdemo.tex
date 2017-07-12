@@ -1,0 +1,531 @@
+\input wbuildmac.tex
+\Class{Wdemo}Demo widget: draw lines and text and use a callback function
+
+
+
+\Publicvars
+\Table{Wdemo}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNforeground&XtCForeground&Pixel &XtDefaultForeground \cr
+XtNlineWidth&XtCLineWidth&int &1 \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &20 \cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNlabel&XtCLabel&String &NULL \cr
+XtNvalue&XtCValue&String &NULL \cr
+\endTable
+\Section
+\Publicvar{XtNxftFont}
+{\langle}XftFont{\rangle} XftFont * xftFont = {\langle}String{\rangle}"Sans-22"
+
+\Section
+\Publicvar{XtNforeground}
+Pixel  foreground = XtDefaultForeground 
+
+\Section
+\Publicvar{XtNlineWidth}
+int  lineWidth = 1 
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = 20 
+
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\Section
+\Publicvar{XtNlabel}
+String  label = NULL 
+
+\Section
+\Publicvar{XtNvalue}
+String  value = NULL 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}assert.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}stdint.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Intrinsic.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xregion.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+GC  gc[3]\endCode
+
+
+\Section
+\Code
+XftColor  xcol[2]\endCode
+
+
+\Section
+\Code
+Pixmap  pm\endCode
+
+
+\Section
+\Code
+uint32{\underline}t  changed\endCode
+
+
+\Section
+\Code
+ CHANGE{\underline}SIZE\endCode
+
+
+\Section
+\Code
+ CHANGE{\underline}COLOR\endCode
+
+
+\Section
+\Code
+ CHANGE{\underline}VALUE1\endCode
+
+
+\Section
+\Code
+ CHANGE{\underline}VALUE2\endCode
+
+
+\Section
+\Code
+ CHANGE{\underline}ALL\endCode
+
+
+\Section
+\Code
+ BG\endCode
+
+
+\Section
+\Code
+ FG\endCode
+
+
+\Section
+\Code
+ CP\endCode
+
+
+\End\Classvars
+\Section
+\Code
+compress{\underline}exposure = XtExposeCompressSeries \endCode
+
+
+\Section
+\Code
+visible{\underline}interest = True \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  int w,h;
+  {\dollar}draw=0;
+  {\dollar}pm=0;
+  {\dollar}changed=CHANGE{\underline}SIZE;
+  {\dollar}gc[0] = 0;
+  calculate{\underline}prefered{\underline}size({\dollar},{\ampersand}w,{\ampersand}h);
+  {\dollar}width = w; {\dollar}height = h;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        {\dollar}changed = 0;
+        int i, p = 0;
+        for(i=0;i{\langle}*num{\underline}args;i++) {\lbrace}
+           if( strcmp(args[i].name, "label" ) == 0 ) {\lbrace}
+               {\dollar}changed {\bar}= CHANGE{\underline}VALUE1;
+               p++;
+           {\rbrace} else if( strcmp(args[i].name, "value" ) == 0 ) {\lbrace}
+               {\dollar}changed {\bar}= CHANGE{\underline}VALUE2;
+               p++;
+           {\rbrace}
+        {\rbrace}
+
+        if( p != *num{\underline}args ) {\dollar}changed = CHANGE{\underline}COLOR;
+        update({\dollar});
+        return False; /* do NOT call expose() to update widget */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+        free{\underline}colors({\dollar});
+        if( {\dollar}draw ) XftDrawDestroy( {\dollar}draw );
+        if( {\dollar}pm ) XFreePixmap(XtDisplay({\dollar}),{\dollar}pm);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+        XTFUNC();
+        draw{\underline}parts({\dollar},region);
+        show{\underline}region(region);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+        XTFUNC();
+        XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+        reshape{\underline}widget({\dollar});
+        {\dollar}changed = CHANGE{\underline}SIZE;
+        update({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+    if (XtIsRealized({\dollar})) {\lbrace}
+       XTFUNC();
+       reshape{\underline}widget({\dollar});
+       {\dollar}changed = CHANGE{\underline}SIZE;
+       update({\dollar});
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+update({\dollar})
+{\lbrace}
+        int bg{\underline}clear = 0;
+        Region r = NULL;
+
+        if( {\dollar}changed == 0 ) return;
+
+        TRACE(1, "changed: {\percent}d", {\dollar}changed );
+
+        if( {\dollar}changed {\ampersand} CHANGE{\underline}SIZE ) {\lbrace}
+            {\dollar}changed = CHANGE{\underline}ALL;
+            alloc{\underline}pixmap({\dollar});
+        {\rbrace} else {\lbrace}
+          if( {\dollar}changed {\ampersand} CHANGE{\underline}COLOR ) {\lbrace}
+            realloc{\underline}colors({\dollar});
+            {\dollar}changed = CHANGE{\underline}ALL;
+          {\rbrace}
+        {\rbrace}
+
+        if( ({\dollar}changed {\ampersand} CHANGE{\underline}ALL) == CHANGE{\underline}ALL ) {\lbrace}
+          /* clear background */
+          XFillRectangle(XtDisplay({\dollar}),{\dollar}pm, {\dollar}gc[BG], 0,0, {\dollar}width,{\dollar}height );
+          bg{\underline}clear = 1;
+        {\rbrace}
+        else r = XCreateRegion();
+
+        if( {\dollar}changed {\ampersand} CHANGE{\underline}VALUE1 ) {\lbrace}
+            redraw{\underline}value1( {\dollar}, bg{\underline}clear, r );
+        {\rbrace}
+        if( {\dollar}changed {\ampersand} CHANGE{\underline}VALUE2 ) {\lbrace}
+            redraw{\underline}value2( {\dollar}, bg{\underline}clear, r );
+        {\rbrace}
+
+        draw{\underline}parts({\dollar},r);
+        {\dollar}changed = 0;
+{\rbrace}\endCode
+
+
+\Section
+ copy small region (with 1 rectangle) or complete region:
+   i think two requests are taking more time than
+   drawing some pixels
+
+
+\Code
+draw{\underline}parts({\dollar}, Region  r)
+{\lbrace}
+  if( ! {\dollar}visible ) return;
+  XTFUNC();
+  if( r != NULL )
+      copy{\underline}rectangles({\dollar},r);
+   else /* copy full pixmap */
+      XCopyArea(XtDisplay({\dollar}),{\dollar}pm, XtWindow({\dollar}), {\dollar}gc[0],
+              0,0,{\dollar}width,{\dollar}height,  /* source pixmap */
+              0,0 ); /* target window x,y */
+{\rbrace}\endCode
+
+
+\Section
+helper for draw_parts
+
+
+\Code
+copy{\underline}rectangles({\dollar}, Region  r)
+{\lbrace}
+   if( !r ) return;
+   XTFUNC();
+
+   Box *b={\ampersand}r-{\rangle}extents;
+   XCopyArea(XtDisplay({\dollar}),{\dollar}pm, XtWindow({\dollar}), {\dollar}gc[0],
+              b-{\rangle}x1, b-{\rangle}y1, b-{\rangle}x2, b-{\rangle}y2, /* source pixmap */
+              b-{\rangle}x1, b-{\rangle}y1 ); /* target window x,y */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+show{\underline}region(Region  tmp)
+{\lbrace}
+        if( !tmp ) return;
+        Box *b = tmp-{\rangle}rects;
+        int n = tmp-{\rangle}numRects;
+        printf("Num Rects: {\percent}d{\backslash}n", n );
+        while( n-- ) {\lbrace}
+               printf("{\percent}d,{\percent}d,{\percent}d,{\percent}d{\backslash}n", b-{\rangle}x1, b-{\rangle}y1, b-{\rangle}x2, b-{\rangle}y2 );
+               b++;
+        {\rbrace}
+        printf("Extents: ");
+        b={\ampersand}tmp-{\rangle}extents;
+        printf("{\percent}d,{\percent}d,{\percent}d,{\percent}d{\backslash}n", b-{\rangle}x1, b-{\rangle}y1, b-{\rangle}x2, b-{\rangle}y2 );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+redraw{\underline}value1({\dollar}, int  bg{\underline}clear, Region  r)
+{\lbrace}
+        XTFUNC();
+        if( ! bg{\underline}clear )
+          XFillRectangle(XtDisplay({\dollar}),{\dollar}pm, {\dollar}gc[BG], 0,0, {\dollar}width,{\dollar}height/2 );
+        paint1({\dollar});
+
+        if( r ) {\lbrace}
+            XRectangle rec;
+            rec.x = 0; rec.y   = 0;
+            rec.width = {\dollar}width; rec.height = {\dollar}height;
+            XUnionRectWithRegion({\ampersand}rec,r,r);
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+redraw{\underline}value2({\dollar}, int  bg{\underline}clear, Region  r)
+{\lbrace}
+        XTFUNC();
+        if( ! bg{\underline}clear )
+          XFillRectangle(XtDisplay({\dollar}),{\dollar}pm, {\dollar}gc[BG], 0,{\dollar}height/2, {\dollar}width,{\dollar}height/2 );
+
+        int x,y;
+        char *s = {\dollar}value;
+        if( is{\underline}empty(s) ) goto skip{\underline}draw;
+
+        x = {\dollar}width;
+        x -= xft{\underline}textwidth( XtDisplay({\dollar}), {\dollar}xftFont, s );
+        x /= 2;
+        y = 0.75 * {\dollar}height - {\dollar}xftFont-{\rangle}height / 2;
+        XftDrawStringUtf8({\dollar}draw, {\dollar}xcol + FG, {\dollar}xftFont,
+            x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+
+        skip{\underline}draw:
+          if( r ) {\lbrace}
+            XRectangle rec;
+            rec.x = 0; rec.y   = {\dollar}height/2;
+            rec.width = {\dollar}width; rec.height = {\dollar}height/2;
+            XUnionRectWithRegion({\ampersand}rec,r,r);
+          {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+reshape{\underline}widget({\dollar})
+{\lbrace}
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+paint1({\dollar})
+{\lbrace}
+        XTFUNC();
+        char *s = {\dollar}label;
+        int x,y,w,h;
+
+        /* center text */
+        h = {\dollar}xftFont-{\rangle}height;
+        w = xft{\underline}textwidth(XtDisplay({\dollar}), {\dollar}xftFont, s );
+        x = ({\dollar}width - w) / 2;
+        y = (({\dollar}height/2) -h) / 2;
+
+        XftDrawStringUtf8({\dollar}draw, {\dollar}xcol + FG, {\dollar}xftFont,
+                             x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+
+        y = {\dollar}height / 2 - {\dollar}lineWidth / 2;
+        XDrawLine(XtDisplay({\dollar}), {\dollar}pm, {\dollar}gc[FG], 0, y, {\dollar}width, y );
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}prefered{\underline}size({\dollar}, int * w, int * h)
+{\lbrace}
+  calculate{\underline}size({\dollar},w,h);
+  (*w) += 20;
+  (*h) += 20;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}size({\dollar}, int * w, int * h)
+{\lbrace}
+        xft{\underline}calc{\underline}string{\underline}size({\dollar}, {\dollar}xftFont, {\dollar}label, w, h );
+        (*h) *= 2.5;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+make{\underline}resize{\underline}request({\dollar}, int  w, int  h)
+{\lbrace}
+        Dimension w{\underline}out, h{\underline}out;
+        if( XtMakeResizeRequest({\dollar},w,h, {\ampersand}w{\underline}out, {\ampersand}h{\underline}out ) ==
+            XtGeometryAlmost ) XtMakeResizeRequest({\dollar},w{\underline}out,h{\underline}out,NULL,NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realloc{\underline}colors({\dollar})
+{\lbrace}
+  if( {\dollar}gc[0] != 0 ) free{\underline}colors({\dollar});
+
+  XGCValues     values = {\lbrace}
+                foreground: {\dollar}background{\underline}pixel,
+                graphics{\underline}exposures: False,
+                line{\underline}width: {\dollar}lineWidth {\rbrace};
+  uint          mask = GCForeground {\bar} GCGraphicsExposures {\bar}  GCLineWidth;
+  {\dollar}gc[BG] = XCreateGC(XtDisplay({\dollar}), {\dollar}pm, mask,{\ampersand}values);
+  values.foreground = {\dollar}foreground;
+  {\dollar}gc[FG] = XCreateGC(XtDisplay({\dollar}), {\dollar}pm, mask,{\ampersand}values);
+  {\dollar}gc[CP] = XCreateGC( XtDisplay({\dollar}), {\dollar}pm, 0,0 );
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}background{\underline}pixel, {\dollar}xcol+BG );
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}foreground,       {\dollar}xcol+FG );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+free{\underline}colors({\dollar})
+{\lbrace}
+        int i;
+        Display *dpy = XtDisplay({\dollar});
+        for(i=0;i{\langle}2;i++) {\lbrace}
+                XFreeGC(XtDisplay({\dollar}),{\dollar}gc[i]);
+                XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+                 None, {\dollar}xcol+i);
+        {\rbrace}
+        XFreeGC(XtDisplay({\dollar}), {\dollar}gc[CP] );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+alloc{\underline}pixmap({\dollar})
+{\lbrace}
+  Display *dpy = XtDisplay({\dollar});
+  if( {\dollar}pm ) XFreePixmap(dpy, {\dollar}pm);
+  {\dollar}pm = XCreatePixmap(dpy, XtWindow({\dollar}), {\dollar}width, {\dollar}height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+  if( {\dollar}draw )
+        XftDrawChange({\dollar}draw, {\dollar}pm );
+  else
+        {\dollar}draw = XftDrawCreate(dpy, {\dollar}pm,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+
+  realloc{\underline}colors({\dollar}); /* the drawable has changed, we need new gc's */
+{\rbrace}\endCode
+
+
+\End\bye

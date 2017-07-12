@@ -1,0 +1,453 @@
+\input wbuildmac.tex
+\Class{Wmvar}\Publicvars
+\Table{Wmvar}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &0 \cr
+XtNinnerBorder&XtCInnerBorder&int &0 \cr
+XtNupdate&XtCUpdate&int &0 \cr
+\endTable
+\Section
+\Publicvar{XtNlabel}
+String  label = {\langle}String{\rangle}NULL 
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = 0 
+
+\Section
+\Publicvar{XtNinnerBorder}
+int  innerBorder = 0 
+
+\Section
+\Publicvar{XtNupdate}
+int  update = 0 
+
+\End\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}X11/Xregion.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters-xft.h"\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+int  pm{\underline}w\endCode
+
+
+\Section
+\Code
+int  pm{\underline}h\endCode
+
+
+\Section
+\Code
+Pixmap  pixmap\endCode
+
+
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}copy\endCode
+
+
+\Section
+\Code
+XRectangle  r{\underline}label\endCode
+
+
+\Section
+\Code
+Bool  do{\underline}init\endCode
+
+
+\Section
+\Code
+ debug\endCode
+
+
+\End\Classvars
+\Section
+\Code
+compress{\underline}exposure = XtExposeCompressSeries \endCode
+
+
+\Section
+\Code
+visible{\underline}interest = True \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        {\dollar}do{\underline}init = 1;
+        {\dollar}pixmap = 0;
+        {\dollar}draw = 0;
+        {\dollar}gc{\underline}copy =  XtGetGC({\dollar}, 0,0 );
+        if( is{\underline}empty({\dollar}label) ) {\dollar}label = {\dollar}name;
+
+        int w, h;
+        prefered{\underline}size( {\dollar}, {\ampersand}w, {\ampersand}h );
+        if( {\dollar}width == 0 ) {\dollar}width = w;
+        if( {\dollar}height == 0 ) {\dollar}height = h;
+{\rbrace}\endCode
+
+
+\Section
+falls noch keine initialisierung stattgefunden hat,
+  alles initialisieren und neu zeichnen.
+  sonst nur den angegebenen ausschnitt neu zeichnen,
+  falls uns der XServer keinen bereich angiebt
+  wird das ganze fenster neu gezeichnet
+
+
+
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+  TRACE(debug,"{\percent}s", {\dollar}name );
+
+  if( {\dollar}do{\underline}init ) {\lbrace}
+      alloc{\underline}pixmap({\dollar});
+      clear{\underline}pixmap({\dollar});
+      draw{\underline}text({\dollar});
+      copy{\underline}pixmap{\underline}to{\underline}window({\dollar});
+      {\dollar}do{\underline}init = 0;
+      return;
+  {\rbrace}
+
+  copy{\underline}region{\underline}to{\underline}window({\dollar},region);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+     TRACE(debug, "{\percent}s: {\percent}dx{\percent}d", {\dollar}name, {\dollar}width, {\dollar}height );
+     XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+     reshape{\underline}widget({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+marker setzen damit das folgende expose das Window
+  neu zeichnen kann, resize wird beim initialisieren der application
+  vor realize aufgerufen daher die abfrage ob es sicher ist das
+  window zu bearbeiten.
+
+
+\Code
+resize({\dollar})
+{\lbrace}
+    if( XtIsRealized({\dollar}) ) reshape{\underline}widget({\dollar});
+    {\dollar}do{\underline}init=1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  if( {\dollar}draw) XftDrawDestroy( {\dollar}draw );
+  XtReleaseGC({\dollar},{\dollar}gc{\underline}copy);
+  free{\underline}pixmap({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+ARGS: old, request, $, args, num_args_ptr
+
+
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    /* window erst neu zeichnen wenn es sichtbar geworden ist */
+    if( !{\dollar}visible ) {\lbrace} {\dollar}do{\underline}init = 1; return 0; {\rbrace}
+
+    /* falls das widget noch nicht initialisiert ist
+       oder ein resize stattgefunden hat wird bei
+       expose alles neu gezeichnet. daher keine
+       aktion notwendig */
+  if( {\dollar}do{\underline}init ) return 1; /* call expose */
+
+
+
+  if( ({\dollar}label != {\dollar}old{\dollar}label) {\bar}{\bar} !strcmp({\dollar}label,{\dollar}old{\dollar}label) ) {\lbrace}
+      if( {\dollar}label == 0) {\dollar}label="";
+      clear{\underline}old{\underline}text({\dollar});
+      draw{\underline}text({\dollar});
+      copy{\underline}pixmap{\underline}to{\underline}window({\dollar});
+      return 0;
+  {\rbrace}
+
+  if( ({\dollar}state != {\dollar}old{\dollar}state) ) {\lbrace}
+      clear{\underline}pixmap({\dollar});
+      draw{\underline}text({\dollar});
+      copy{\underline}pixmap{\underline}to{\underline}window({\dollar});
+      return 0;
+  {\rbrace}
+
+  if( {\dollar}old{\dollar}update != {\dollar}update )
+  {\lbrace}
+      copy{\underline}pixmap{\underline}to{\underline}window({\dollar});
+      return 0;
+  {\rbrace}
+
+  return 0;
+{\rbrace}\endCode
+
+
+\Section
+parameter list ($, int cmd, int val)
+
+
+\Code
+int  exec{\underline}command({\dollar}, int  cmd, int  val)
+{\lbrace}
+  return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  cache{\underline}hit({\dollar})
+{\lbrace}
+    return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+void  minimal{\underline}size({\dollar}, int * w0, int * h0)
+{\lbrace}
+        XGlyphInfo extents;
+        Display *dpy = XtDisplay({\dollar});
+        int w,h;
+        XftTextExtentsUtf8(dpy, {\dollar}xftFont, (FcChar8*)  {\dollar}label,
+                       strlen( {\dollar}label ), {\ampersand}extents);
+        w = extents.xOff;
+        h = {\dollar}xftFont-{\rangle}ascent + {\dollar}xftFont-{\rangle}descent;
+        if( w0 ) *w0 = w;
+        if( h0 ) *h0 = h;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+void  prefered{\underline}size({\dollar}, int * w0, int * h0)
+{\lbrace}
+    minimal{\underline}size({\dollar},w0,h0);
+    if( w0 ) *w0 +=2 * {\dollar}innerBorder;
+    if( h0 ) *h0 +=2 * {\dollar}innerBorder;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+clear{\underline}pixmap({\dollar})
+{\lbrace}
+  XFillRectangle(XtDisplay({\dollar}),{\dollar}pixmap, {\dollar}gc[{\dollar}state], 0,0,{\dollar}width,{\dollar}height);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+copy{\underline}pixmap{\underline}to{\underline}window({\dollar})
+{\lbrace}
+    if( {\dollar}visible )
+       XCopyArea(XtDisplay({\dollar}),{\dollar}pixmap, XtWindow({\dollar}), {\dollar}gc{\underline}copy,
+            0,0, {\dollar}width,{\dollar}height,  /* source pixmap */
+            0,0  ); /* target window x,y */
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+copy{\underline}region{\underline}to{\underline}window({\dollar}, Region  region)
+{\lbrace}
+    TRACE(debug,"{\percent}s", {\dollar}name );
+    int x=0,y=0,w,h;
+    if( region ) {\lbrace}
+          Box *b = {\ampersand} region-{\rangle}extents;
+
+          w = b-{\rangle}x2 - b-{\rangle}x1 +1;
+          h = b-{\rangle}y2 - b-{\rangle}y1 +1;
+          x = b-{\rangle}x1;
+          y = b-{\rangle}y1;
+  {\rbrace} else {\lbrace}
+          w = {\dollar}width;
+          h = {\dollar}height;
+  {\rbrace}
+
+  TRACE(debug, "{\percent}s: copy extents {\percent}dx{\percent}d,{\percent}dx{\percent}d",
+        {\dollar}name, x,y,w,h );
+
+  XCopyArea(XtDisplay({\dollar}),{\dollar}pixmap, XtWindow({\dollar}), {\dollar}gc{\underline}copy,
+            x,y, w,h,  /* source pixmap */
+            x,y  ); /* target window x,y */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}text({\dollar})
+{\lbrace}
+    TRACE(debug,"{\percent}s", {\dollar}name );
+
+    int w,h;
+    minimal{\underline}size( {\dollar}, {\ampersand}w, {\ampersand}h );
+    if( w {\rangle} {\dollar}width ) w={\dollar}width;
+    if( h {\rangle} {\dollar}height ) h={\dollar}height;
+
+    int x,y;
+    char *s={\dollar}label;
+    x = ({\dollar}width - w) / 2;
+    y = ({\dollar}height -h) / 2;
+    XftDrawStringUtf8({\dollar}draw, {\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                             x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+    {\dollar}r{\underline}label.x = x;
+    {\dollar}r{\underline}label.y = y;
+    {\dollar}r{\underline}label.width  = w;
+    {\dollar}r{\underline}label.height = h;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+join{\underline}text{\underline}with{\underline}region({\dollar}, Region  region)
+{\lbrace}
+    XUnionRectWithRegion({\ampersand}{\dollar}r{\underline}label, region, region);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+clear{\underline}old{\underline}text({\dollar})
+{\lbrace}
+        Display *dpy = XtDisplay({\dollar});
+        XFillRectangle(dpy,{\dollar}pixmap, {\dollar}gc[{\dollar}state],
+                       {\dollar}r{\underline}label.x,{\dollar}r{\underline}label.y, {\dollar}r{\underline}label.width, {\dollar}r{\underline}label.height );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+reshape{\underline}widget({\dollar})
+{\lbrace}
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+create a pixmap and update or create
+  Xft $draw Context.
+
+
+\Code
+alloc{\underline}pixmap({\dollar})
+{\lbrace}
+    Display *dpy = XtDisplay({\dollar});
+
+    /* falls eine pixmap mit ausreichender größe vorhanden ist,
+       keine neue pixmap erzeugen, sondern alte weiterverwenden */
+    if( {\dollar}pixmap {\ampersand}{\ampersand}  ({\dollar}pm{\underline}w {\rangle}= {\dollar}width) {\ampersand}{\ampersand} ({\dollar}pm{\underline}h {\rangle}= {\dollar}height) )
+        return;
+
+    TRACE(debug,"{\percent}s", {\dollar}name );
+
+    if( {\dollar}pixmap ) XFreePixmap(dpy,{\dollar}pixmap);
+
+    {\dollar}pixmap = XCreatePixmap(dpy, XtWindow({\dollar}), {\dollar}width, {\dollar}height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    {\dollar}pm{\underline}w = {\dollar}width; {\dollar}pm{\underline}h = {\dollar}height;
+
+    if( {\dollar}draw ) {\lbrace}
+        XftDrawChange({\dollar}draw, {\dollar}pixmap );
+    {\rbrace}
+    else {\lbrace}
+        {\dollar}draw = XftDrawCreate(dpy, {\dollar}pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+free{\underline}pixmap({\dollar})
+{\lbrace}
+        if( !{\dollar}pixmap ) return;
+        Display *dpy = XtDisplay({\dollar});
+        XFreePixmap(dpy,{\dollar}pixmap);
+        {\dollar}pixmap = 0;
+    {\rbrace}\endCode
+
+
+\End\bye

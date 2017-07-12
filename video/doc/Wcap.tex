@@ -1,0 +1,243 @@
+\input wbuildmac.tex
+\Class{Wcap}\Publicvars
+\Table{Wcap}
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNgrab&XtCGrab&int &0 \cr
+\endTable
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\Section
+\Publicvar{XtNgrab}
+int  grab = 0 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}X11/extensions/XShm.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}sys/ipc.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}sys/shm.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}mls.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "xv4l2.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xshm-util.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+Bool  cap\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}copy\endCode
+
+
+\Section
+\Code
+int  pic{\underline}w\endCode
+
+
+\Section
+\Code
+int  pic{\underline}h\endCode
+
+
+\Section
+\Code
+shimg{\underline}t * im\endCode
+
+
+\Section
+\Code
+XtIntervalId  autoupd{\underline}id\endCode
+
+
+\End\Classvars
+\Section
+\Code
+XtEnum  compress{\underline}exposure = TRUE \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  {\dollar}pic{\underline}w = 320;
+  {\dollar}pic{\underline}h = 240;
+  {\dollar}width = {\dollar}pic{\underline}w;
+  {\dollar}height = {\dollar}pic{\underline}h;
+  {\dollar}gc{\underline}copy = XtGetGC({\dollar},0,NULL);
+  {\dollar}cap=0;
+  {\dollar}im = shm{\underline}create({\dollar}, {\dollar}pic{\underline}w, {\dollar}pic{\underline}h );
+  xv4l2{\underline}init{\underline}grab();
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  XtReleaseGC({\dollar},{\dollar}gc{\underline}copy);
+  shm{\underline}destroy({\dollar}im);
+  xv4l2{\underline}destroy();
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        capture{\underline}update({\dollar});
+        return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+        capture{\underline}update({\dollar});
+        paint({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+  XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+          (Visual *) CopyFromParent, *mask, attributes);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+XtGeometryResult  query{\underline}geometry({\dollar}, XtWidgetGeometry * request, XtWidgetGeometry * reply)
+{\lbrace}
+    reply-{\rangle}request{\underline}mode = CWX {\bar} CWY {\bar} CWWidth {\bar} CWHeight;
+    reply-{\rangle}x=0; reply-{\rangle}y=0;
+    reply-{\rangle}width =  {\dollar}pic{\underline}w;
+    reply-{\rangle}height = {\dollar}pic{\underline}h;
+    return XtGeometryAlmost;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+paint({\dollar})
+{\lbrace}
+        if(! {\dollar}im ) return;
+
+        Display *d = XtDisplay({\dollar});
+        Window   w = XtWindow({\dollar});
+        if(!XShmPutImage(d,w,{\dollar}gc{\underline}copy,{\dollar}im-{\rangle}img,
+                0,0, /* source x,y */
+                0,0, /* dest x,y */
+                {\dollar}pic{\underline}w,{\dollar}pic{\underline}h,
+                False))
+          ERR("ShmPutImage error");
+{\rbrace}\endCode
+
+
+\Section
+\Code
+grab({\dollar})
+{\lbrace}
+        XImage *img = {\dollar}im-{\rangle}img;
+        xv4l2{\underline}grab( (void*)img-{\rangle}data,
+                    img-{\rangle}width, img-{\rangle}height,
+                    img-{\rangle}bytes{\underline}per{\underline}line );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+autoupd{\underline}cb(XtPointer  self, XtIntervalId * id)
+{\lbrace}
+        if(! {\dollar}grab ) return;
+        grab({\dollar}); paint({\dollar});
+        XtAppContext ctx = XtWidgetToApplicationContext({\dollar});
+        {\dollar}autoupd{\underline}id =
+                XtAppAddTimeOut( ctx,
+                                 1000/25,
+                                 autoupd{\underline}cb, {\dollar} );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+capture{\underline}update({\dollar})
+{\lbrace}
+        if( {\dollar}grab {\ampersand}{\ampersand} !{\dollar}cap ) {\lbrace}
+            start{\underline}capture({\dollar}); {\dollar}cap=1;
+            autoupd{\underline}cb({\dollar},NULL);
+            return;
+        {\rbrace}
+
+        if( {\dollar}cap {\ampersand}{\ampersand} !{\dollar}grab ) {\lbrace}
+            stop{\underline}capture({\dollar}); {\dollar}cap=0;
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+start{\underline}capture({\dollar})
+{\lbrace}
+        xv4l2{\underline}start{\underline}capture();
+{\rbrace}\endCode
+
+
+\Section
+\Code
+stop{\underline}capture({\dollar})
+{\lbrace}
+        xv4l2{\underline}stop{\underline}capture();
+{\rbrace}\endCode
+
+
+\End\bye

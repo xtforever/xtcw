@@ -1,10 +1,17 @@
 xtcalib written by jens harms <au1064 at google mail>
 Simply type "make" to build, or "make debug=1" to get additional info.
 To rebuild the Calib widget you'll need wbuild.
+xtcal will try to go fullscreen, if this doesn't work you need to run with:
+xtcal -geometry <Width>x<Height>
 
-Start with "xtcalib" and you get the "coordinate transformation matrix" on stdout.
-use xinput to apply the matrix:
-xinput set-prop 'my touch' 'Coordinate Transformation Matrix' a b c d e f g h i
+1) start "xtcal" and you get a list of attached devices, search for your touchscreen.
 
-xtcalib will try to go fullscreen, if this doesn't work you need to run with:
-xtcalib -geometry <Width>x<Height>
+2) start "xtcal -deviceName "my touch screen" and you get a red cross.
+   (if not try: xtcal -deviceName "my touch screen" -geometry 1280x1024 or whatever your
+    screen resolution is.)
+   click on the center of the cross
+
+3) you see 9 numbers - this is your coordinate transformation matrix
+
+4) on boot apply the matrix with:
+   xtcal -deviceName "my touch screen" -geometry 1280x102 -matrix "1 0 0 0 1 0 0 0 1"

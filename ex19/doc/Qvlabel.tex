@@ -1,0 +1,112 @@
+\input wbuildmac.tex
+\Class{Qvlabel}\Publicvars
+\Table{Qvlabel}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNvar&XtCVar&QVar &0 \cr
+XtNenable&XtCEnable&QVar &0 \cr
+\endTable
+\Section
+\Publicvar{XtNlabel}
+String  label = {\langle}String{\rangle}NULL 
+
+\Section
+\Publicvar{XtNvar}
+QVar  var = 0 
+
+\Section
+\Publicvar{XtNenable}
+QVar  enable = 0 
+
+\End\Table{Gridbox}
+XtNdefaultDistance&XtCDefaultDistance&Int &4 \cr
+\endTable
+\Table{Composite}
+XtNchildren&XtCChildren&WidgetList &NULL \cr
+insertPosition&XtCInsertPosition&XTOrderProc &NULL \cr
+numChildren&XtCNumChildren&Cardinal &0 \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "micro{\underline}vars.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xtcw/WviewQV.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xtcw/Wlab.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xtcw/Gridbox.h"\endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        if( {\dollar}label == NULL ) {\dollar}label={\dollar}name;
+        XtVaCreateManagedWidget( {\dollar}label,
+         wlabWidgetClass, {\dollar},
+          XtNgridx,0,
+          XtNgridy,0,
+          XtNfill,0,
+          XtNweightx,0,
+          XtNweighty,0,
+          NULL );
+
+        XtVaCreateManagedWidget( "value",
+          wviewQVWidgetClass, {\dollar},
+          XtNgridx,1,
+          XtNgridy,0,
+          XtNfill,0,
+          XtNweightx,0,
+          XtNweighty,0,
+          "var", {\dollar}var,
+          "enable", {\dollar}enable,
+          NULL );
+{\rbrace}\endCode
+
+
+\End\bye
