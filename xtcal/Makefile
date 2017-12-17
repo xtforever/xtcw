@@ -3,7 +3,7 @@ WBUILD=../wbuild/wbuild
 CFLAGS +=-Wall -std=gnu99
 CPPFLAGS+=-I. -D_GNU_SOURCE
 WFLAGS= -d doc -c src -i xtcw --include-prefix=xtcw $(wb_install)/tex.w $(wb_install)/nroff.w
-LOADLIBES=-lX11 -lXaw -lXft -lXt -lXext -lXmu -lXi -lXxf86vm
+LOADLIBES=-lX11 -lXaw -lXft -lXt -lXext -lXmu -lXi
 
 ifeq ($(debug),1)
 CFLAGS+=-g -O0 -DDEBUG
@@ -22,7 +22,7 @@ xtcw/Calib.h src/Calib.c: Calib.widget
 
 src/Calib.o: src/Calib.c xtcw/Calib.h
 
-xtcal: src/Calib.o xborderless.o solver.o xinput-util.o xfullscreen.o
+xtcal: src/Calib.o xborderless.o solver.o xinput-util.o 
 
 clean:
 	-${RM} -r *.o xtcal

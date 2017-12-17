@@ -18,6 +18,7 @@ struct mrb {
     int rd,wr;
     int size;
     unsigned char buf[0];
+    int read_error;
 };
 
 int mrb_bytesused(struct mrb *b);
@@ -30,5 +31,7 @@ void *mrb_maxsize(struct mrb *b, int *bytes );
 void *mrb_alloc(struct mrb *b, int bytes );
 void mrb_free( struct mrb *b, int bytes );
 void mrb_destroy(struct mrb *m);
+int mrb_sock_read(struct mrb *q, int fd );
+int mrb_get_line(struct mrb *q, int line );
 
 #endif

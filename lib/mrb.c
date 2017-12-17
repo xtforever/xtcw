@@ -1,5 +1,8 @@
 #include "mrb.h"
 
+
+#include <sys/errno.h>
+
 /* RINGBUFFER
    rd=-1      : Buffer empty, wr=0
    rd == wr   : Buffer full
@@ -133,3 +136,63 @@ void mrb_free( struct mrb *b, int bytes )
 
     read_inc(b,bytes);
 }
+
+int mrb_get_line(struct mrb *q, int line )
+{
+    int ch, found = 0;
+    while( (ch=mrb_get(q)) != -1 )
+        if( ch == 10 ) {
+            m_putc(line,0);
+            found = 1;
+            break;
+        } else m_putc(line,ch);
+
+    return found;
+}
+
+
+
+#define MRB_MAX_ERROR 10
+
+static void mrb_error_clear(struct mrb *q)
+{
+    q->read_error=0;
+}
+
+static int mrb_error(struct mrb *q)
+{
+    if(q->read_error > MRB_MAX_ERROR ) return -1;
+    q->read_error++;
+    return 0;
+}
+
+
+/* returns -1 on broken communication */
+int mrb_sock_read(struct mrb *q, int fd )
+{
+    
+    int free_space;
+    char *buf  = mrb_maxsize(q, &free_space);
+    if( free_space <= 0 ) return 0;
+
+    int nread = read( fd, buf, free_space );
+    if( nread > 0 )  {
+        mrb_alloc( q, nread );
+	mrb_error_clear(q);
+	return 0;
+    }
+
+    if( (errno == EINTR) || (errno == EAGAIN)
+        || (errno == EWOULDBLOCK) )
+        {
+	    TRACE(1,"read error %d %d", nread, errno );
+	    if( mrb_error(q) ) return -1; /* too many errors */
+            return 0; /* kein fehler */
+        }
+
+    perror("mrb_sock_read failed");
+    WARN("SOCKET %d READ ERROR", fd);
+    return -1;
+}
+
+

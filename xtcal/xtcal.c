@@ -248,16 +248,13 @@ int main ( int argc, char **argv )
     if( CONF.screenSize && *CONF.screenSize ) {
         parse_screen_size( CONF.screenSize, &x_width, &x_height );
     } else  {
-        make_borderless_window(appShell);
 
-        if( xfullscreen(appShell, &x_width, &x_height) ) {
-            Dimension xw,xh;
-            XtVaGetValues(appShell, "height", &xh, "width", &xw, NULL );
-            x_width = xw; x_height = xh;
-        }
+	fprintf(stderr, "error: use -screenSize option\n" );
+	exit(1);
 
     }
-
+    
+    make_borderless_window(appShell);
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);
     return EXIT_SUCCESS;

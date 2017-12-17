@@ -29,6 +29,8 @@ XftColor  fg;
 XftColor  bg;
 XftColor  cbg;
 XftColor  cfg;
+String  host;
+String  port;
 /* private state */
 XtIntervalId  timerid;
 Boolean  blink;
@@ -48,6 +50,8 @@ int  progm;
 struct  fork2_info * child;
 XtInputId  cid;
 XtInputId  eid;
+Bool  INTERACTIVE;
+int  server_id;
 } TermEdPart;
 
 typedef struct _TermEdRec {

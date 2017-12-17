@@ -3,70 +3,74 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 919 "TermEd.widget"
+#line 976 "TermEd.widget"
 #include <stdint.h>
-#line 920 "TermEd.widget"
+#line 977 "TermEd.widget"
 #include "mls.h"
-#line 921 "TermEd.widget"
+#line 978 "TermEd.widget"
 #include "xutil.h"
-#line 922 "TermEd.widget"
+#line 979 "TermEd.widget"
 #include "micro_vars.h"
-#line 923 "TermEd.widget"
+#line 980 "TermEd.widget"
 #include "converters-xft.h"
-#line 924 "TermEd.widget"
+#line 981 "TermEd.widget"
 #include "subshell.h"
-#line 926 "TermEd.widget"
+#line 982 "TermEd.widget"
+#include "srvconnection.h"
+#line 983 "TermEd.widget"
+#include "command-parser.h"
+#line 984 "TermEd.widget"
 #include <X11/Xaw/XawImP.h>
 #include <xtcw/TermEdP.h>
-#line 832 "TermEd.widget"
+#line 882 "TermEd.widget"
 static void kill_child(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 841 "TermEd.widget"
+#line 891 "TermEd.widget"
 static void key_del(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 848 "TermEd.widget"
+#line 898 "TermEd.widget"
 static void key_backspace(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 857 "TermEd.widget"
+#line 907 "TermEd.widget"
 static void key_return(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 867 "TermEd.widget"
+#line 917 "TermEd.widget"
 static void insert_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 885 "TermEd.widget"
+#line 942 "TermEd.widget"
 static void prev_line(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 892 "TermEd.widget"
+#line 949 "TermEd.widget"
 static void next_line(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 901 "TermEd.widget"
+#line 958 "TermEd.widget"
 static void backward_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 908 "TermEd.widget"
+#line 965 "TermEd.widget"
 static void forward_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -101,361 +105,385 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 35 "TermEd.widget"
+#line 40 "TermEd.widget"
 static void class_initialize(
 #if NeedFunctionPrototypes
 void
 #endif
 );
-#line 37 "TermEd.widget"
+#line 42 "TermEd.widget"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 62 "TermEd.widget"
+#line 75 "TermEd.widget"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 74 "TermEd.widget"
+#line 89 "TermEd.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 84 "TermEd.widget"
+#line 99 "TermEd.widget"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 91 "TermEd.widget"
+#line 106 "TermEd.widget"
 static void expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 108 "TermEd.widget"
+#line 123 "TermEd.widget"
 static void font_free(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 115 "TermEd.widget"
+#line 130 "TermEd.widget"
 static void font_load(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 125 "TermEd.widget"
+#line 140 "TermEd.widget"
 static void draw_glyph_color(
 #if NeedFunctionPrototypes
 Widget,int ,int ,int ,int ,uint32_t 
 #endif
 );
-#line 144 "TermEd.widget"
+#line 159 "TermEd.widget"
 static void full_draw(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 155 "TermEd.widget"
+#line 170 "TermEd.widget"
 static void putcharat(
 #if NeedFunctionPrototypes
 Widget,int ,int ,uint32_t 
 #endif
 );
-#line 163 "TermEd.widget"
+#line 178 "TermEd.widget"
 static uint32_t  getcharat(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 173 "TermEd.widget"
+#line 188 "TermEd.widget"
 static void drawcharat(
 #if NeedFunctionPrototypes
 Widget,int ,int ,int ,int 
 #endif
 );
-#line 181 "TermEd.widget"
+#line 196 "TermEd.widget"
 static void draw_string(
 #if NeedFunctionPrototypes
 Widget,int ,int ,char *
 #endif
 );
-#line 203 "TermEd.widget"
+#line 218 "TermEd.widget"
 static void test_convert(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 208 "TermEd.widget"
+#line 223 "TermEd.widget"
 static void selection_timer(
 #if NeedFunctionPrototypes
 Widget,XtIntervalId *
 #endif
 );
-#line 221 "TermEd.widget"
+#line 236 "TermEd.widget"
 static void undraw_selection(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 233 "TermEd.widget"
+#line 248 "TermEd.widget"
 static void selection_draw(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 243 "TermEd.widget"
+#line 258 "TermEd.widget"
 static void scr_scroll_up(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 250 "TermEd.widget"
+#line 265 "TermEd.widget"
 static void pix_scroll_up(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 275 "TermEd.widget"
+#line 290 "TermEd.widget"
 static void te_pos1(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 280 "TermEd.widget"
+#line 295 "TermEd.widget"
 static void te_tab(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 289 "TermEd.widget"
+#line 304 "TermEd.widget"
 static void te_down(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 301 "TermEd.widget"
+#line 316 "TermEd.widget"
 static Bool  te_parse(
 #if NeedFunctionPrototypes
 Widget,uint32_t 
 #endif
 );
-#line 312 "TermEd.widget"
+#line 327 "TermEd.widget"
 static void te_right(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 323 "TermEd.widget"
+#line 338 "TermEd.widget"
 static void pix_del(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 354 "TermEd.widget"
+#line 369 "TermEd.widget"
 static void pix_ins(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 385 "TermEd.widget"
+#line 400 "TermEd.widget"
 static void te_ins(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 404 "TermEd.widget"
+#line 419 "TermEd.widget"
 static void te_del(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 422 "TermEd.widget"
+#line 437 "TermEd.widget"
 static void te_putc(
 #if NeedFunctionPrototypes
 Widget,uint32_t 
 #endif
 );
-#line 434 "TermEd.widget"
+#line 449 "TermEd.widget"
 static void te_left(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 441 "TermEd.widget"
+#line 456 "TermEd.widget"
 static void exec_line(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 471 "TermEd.widget"
+#line 486 "TermEd.widget"
 static void prog_interpret(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 479 "TermEd.widget"
-static void prog_child_read(
+#line 494 "TermEd.widget"
+static void prog_child_pipe_read(
+#if NeedFunctionPrototypes
+Widget,int 
+#endif
+);
+#line 524 "TermEd.widget"
+static void prog_child_read_stdout(
 #if NeedFunctionPrototypes
 Widget,int *,XtInputId *
 #endif
 );
-#line 493 "TermEd.widget"
-static void prog_child_err_read(
+#line 529 "TermEd.widget"
+static void prog_child_read_stderr(
 #if NeedFunctionPrototypes
 Widget,int *,XtInputId *
 #endif
 );
-#line 508 "TermEd.widget"
+#line 535 "TermEd.widget"
 static void prog_run(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 529 "TermEd.widget"
+#line 555 "TermEd.widget"
 static char * progm_alloc(
 #if NeedFunctionPrototypes
 Widget,uint32_t ,char *
 #endif
 );
-#line 538 "TermEd.widget"
+#line 564 "TermEd.widget"
 static void progm_insert(
 #if NeedFunctionPrototypes
 Widget,int ,uint32_t ,char *
 #endif
 );
-#line 544 "TermEd.widget"
+#line 570 "TermEd.widget"
 static void progm_overwrite(
 #if NeedFunctionPrototypes
 Widget,int ,uint32_t ,char *
 #endif
 );
-#line 550 "TermEd.widget"
+#line 576 "TermEd.widget"
 static void progm_append(
 #if NeedFunctionPrototypes
 Widget,uint32_t ,char *
 #endif
 );
-#line 563 "TermEd.widget"
+#line 589 "TermEd.widget"
 static int  progm_find(
 #if NeedFunctionPrototypes
 Widget,uint32_t ,int *
 #endif
 );
-#line 580 "TermEd.widget"
+#line 606 "TermEd.widget"
 static void progm_put(
 #if NeedFunctionPrototypes
 Widget,uint32_t ,char *
 #endif
 );
-#line 596 "TermEd.widget"
+#line 622 "TermEd.widget"
 static Bool  prog_insert_line(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 614 "TermEd.widget"
+#line 640 "TermEd.widget"
 static void prog_error(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 624 "TermEd.widget"
+#line 650 "TermEd.widget"
 static void prog_load(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 651 "TermEd.widget"
+#line 677 "TermEd.widget"
 static void prog_save(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 676 "TermEd.widget"
+#line 702 "TermEd.widget"
 static void prog_parse(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 699 "TermEd.widget"
+#line 725 "TermEd.widget"
 static void prog_list(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 724 "TermEd.widget"
+#line 750 "TermEd.widget"
 static void te_write(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 740 "TermEd.widget"
+#line 766 "TermEd.widget"
 static void te_writeln(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 748 "TermEd.widget"
+#line 774 "TermEd.widget"
 static void prog_print(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 763 "TermEd.widget"
+#line 789 "TermEd.widget"
 static void prog_do_list(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 779 "TermEd.widget"
+#line 805 "TermEd.widget"
 static void prog_do_parse(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 797 "TermEd.widget"
+#line 823 "TermEd.widget"
 static void prog_kill(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 807 "TermEd.widget"
+#line 834 "TermEd.widget"
 static void do_resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 108 "TermEd.widget"
+#line 845 "TermEd.widget"
+static void comm_exit_cb(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#line 851 "TermEd.widget"
+static void comm_run_cb(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#line 857 "TermEd.widget"
+static void comm_recv_cb(
+#if NeedFunctionPrototypes
+Widget,void *,void *
+#endif
+);
+#line 123 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 108 "TermEd.widget"
+#line 123 "TermEd.widget"
 static void font_free(Widget self)
 #else
-#line 108 "TermEd.widget"
+#line 123 "TermEd.widget"
 static void font_free(self)Widget self;
 #endif
-#line 109 "TermEd.widget"
+#line 124 "TermEd.widget"
 {
     Display *dpy = XtDisplay(self);
     if( ((TermEdWidget)self)->termEd.xftFont ) XftFontClose(dpy, ((TermEdWidget)self)->termEd.xftFont );
     ((TermEdWidget)self)->termEd.xftFont=0;
 }
-#line 115 "TermEd.widget"
+#line 130 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 115 "TermEd.widget"
+#line 130 "TermEd.widget"
 static void font_load(Widget self,int  size)
 #else
-#line 115 "TermEd.widget"
+#line 130 "TermEd.widget"
 static void font_load(self,size)Widget self;int  size;
 #endif
-#line 116 "TermEd.widget"
+#line 131 "TermEd.widget"
 {
     Display *dpy = XtDisplay(self);
     int screen = DefaultScreen(dpy);
@@ -464,16 +492,16 @@ static void font_load(self,size)Widget self;int  size;
     font_free(self);
     ((TermEdWidget)self)->termEd.xftFont = XftFontOpenName(dpy,screen, fontname );
 }
-#line 125 "TermEd.widget"
+#line 140 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 125 "TermEd.widget"
+#line 140 "TermEd.widget"
 static void draw_glyph_color(Widget self,int  x,int  y,int  fg,int  bg,uint32_t  ucs4)
 #else
-#line 125 "TermEd.widget"
+#line 140 "TermEd.widget"
 static void draw_glyph_color(self,x,y,fg,bg,ucs4)Widget self;int  x;int  y;int  fg;int  bg;uint32_t  ucs4;
 #endif
-#line 126 "TermEd.widget"
+#line 141 "TermEd.widget"
 {
     int x0,y0,w,h;
     uint32_t glyph;
@@ -491,16 +519,16 @@ static void draw_glyph_color(self,x,y,fg,bg,ucs4)Widget self;int  x;int  y;int  
                    x0, y0+((TermEdWidget)self)->termEd.xftFont->ascent,
                    &glyph, 1);
 }
-#line 144 "TermEd.widget"
+#line 159 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 144 "TermEd.widget"
+#line 159 "TermEd.widget"
 static void full_draw(Widget self)
 #else
-#line 144 "TermEd.widget"
+#line 159 "TermEd.widget"
 static void full_draw(self)Widget self;
 #endif
-#line 145 "TermEd.widget"
+#line 160 "TermEd.widget"
 {
     int x,y;
     XftDrawRect(((TermEdWidget)self)->termEd.draw,((TermEdWidget)self)->termEd.col[1], 0,0, ((TermEdWidget)self)->core.width, ((TermEdWidget)self)->core.height );
@@ -510,32 +538,32 @@ static void full_draw(self)Widget self;
         }
     }
 }
-#line 155 "TermEd.widget"
+#line 170 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 155 "TermEd.widget"
+#line 170 "TermEd.widget"
 static void putcharat(Widget self,int  x,int  y,uint32_t  ucs4)
 #else
-#line 155 "TermEd.widget"
+#line 170 "TermEd.widget"
 static void putcharat(self,x,y,ucs4)Widget self;int  x;int  y;uint32_t  ucs4;
 #endif
-#line 156 "TermEd.widget"
+#line 171 "TermEd.widget"
 {
     if( x < ((TermEdWidget)self)->termEd.gWidth && x >= 0 && y < ((TermEdWidget)self)->termEd.gHeight && y >= 0 )
         {
             ((TermEdWidget)self)->termEd.scr[x + y * ((TermEdWidget)self)->termEd.gWidth ] = ucs4;
         }
 }
-#line 163 "TermEd.widget"
+#line 178 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 163 "TermEd.widget"
+#line 178 "TermEd.widget"
 static uint32_t  getcharat(Widget self,int  x,int  y)
 #else
-#line 163 "TermEd.widget"
+#line 178 "TermEd.widget"
 static uint32_t  getcharat(self,x,y)Widget self;int  x;int  y;
 #endif
-#line 164 "TermEd.widget"
+#line 179 "TermEd.widget"
 {
     if( x < ((TermEdWidget)self)->termEd.gWidth && x >= 0 && y < ((TermEdWidget)self)->termEd.gHeight && y >= 0 )
         {
@@ -544,32 +572,32 @@ static uint32_t  getcharat(self,x,y)Widget self;int  x;int  y;
 
     return 0;
 }
-#line 173 "TermEd.widget"
+#line 188 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 173 "TermEd.widget"
+#line 188 "TermEd.widget"
 static void drawcharat(Widget self,int  x,int  y,int  fg,int  bg)
 #else
-#line 173 "TermEd.widget"
+#line 188 "TermEd.widget"
 static void drawcharat(self,x,y,fg,bg)Widget self;int  x;int  y;int  fg;int  bg;
 #endif
-#line 174 "TermEd.widget"
+#line 189 "TermEd.widget"
 {
     if( x < ((TermEdWidget)self)->termEd.gWidth && x >= 0 && y < ((TermEdWidget)self)->termEd.gHeight && y >= 0 )
         {
             draw_glyph_color(self,x,y,fg,bg,((TermEdWidget)self)->termEd.scr[x + y * ((TermEdWidget)self)->termEd.gWidth ] );
         }
 }
-#line 181 "TermEd.widget"
+#line 196 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 181 "TermEd.widget"
+#line 196 "TermEd.widget"
 static void draw_string(Widget self,int  x,int  y,char * str)
 #else
-#line 181 "TermEd.widget"
+#line 196 "TermEd.widget"
 static void draw_string(self,x,y,str)Widget self;int  x;int  y;char * str;
 #endif
-#line 182 "TermEd.widget"
+#line 197 "TermEd.widget"
 {
     int len,l;
     unsigned char *string = (void*) str;
@@ -590,29 +618,29 @@ static void draw_string(self,x,y,str)Widget self;int  x;int  y;char * str;
         len -= l;
     }
 }
-#line 203 "TermEd.widget"
+#line 218 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 203 "TermEd.widget"
+#line 218 "TermEd.widget"
 static void test_convert(Widget self)
 #else
-#line 203 "TermEd.widget"
+#line 218 "TermEd.widget"
 static void test_convert(self)Widget self;
 #endif
-#line 204 "TermEd.widget"
+#line 219 "TermEd.widget"
 {
     draw_string(self, 0, ((TermEdWidget)self)->termEd.gHeight / 2, ((TermEdWidget)self)->termEd.text );
 }
-#line 208 "TermEd.widget"
+#line 223 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 208 "TermEd.widget"
+#line 223 "TermEd.widget"
 static void selection_timer(Widget self,XtIntervalId * id)
 #else
-#line 208 "TermEd.widget"
+#line 223 "TermEd.widget"
 static void selection_timer(self,id)Widget self;XtIntervalId * id;
 #endif
-#line 209 "TermEd.widget"
+#line 224 "TermEd.widget"
 {
     int nr = ((TermEdWidget)self)->termEd.blink ? 2 : 0;
     if( ((TermEdWidget)self)->termEd.selection_visible ) {
@@ -624,16 +652,16 @@ static void selection_timer(self,id)Widget self;XtIntervalId * id;
     }
     else ((TermEdWidget)self)->termEd.timerid=0;
 }
-#line 221 "TermEd.widget"
+#line 236 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 221 "TermEd.widget"
+#line 236 "TermEd.widget"
 static void undraw_selection(Widget self)
 #else
-#line 221 "TermEd.widget"
+#line 236 "TermEd.widget"
 static void undraw_selection(self)Widget self;
 #endif
-#line 222 "TermEd.widget"
+#line 237 "TermEd.widget"
 {
     if( ((TermEdWidget)self)->termEd.selection_visible ) {
         drawcharat(self, ((TermEdWidget)self)->termEd.rsel_old.x, ((TermEdWidget)self)->termEd.rsel_old.y, 0,1 );
@@ -644,16 +672,16 @@ static void undraw_selection(self)Widget self;
         }
     }
 }
-#line 233 "TermEd.widget"
+#line 248 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 233 "TermEd.widget"
+#line 248 "TermEd.widget"
 static void selection_draw(Widget self)
 #else
-#line 233 "TermEd.widget"
+#line 248 "TermEd.widget"
 static void selection_draw(self)Widget self;
 #endif
-#line 234 "TermEd.widget"
+#line 249 "TermEd.widget"
 {
     if( ((TermEdWidget)self)->termEd.rsel.x >= ((TermEdWidget)self)->termEd.gWidth ) ((TermEdWidget)self)->termEd.rsel.x = ((TermEdWidget)self)->termEd.gWidth-1;
     if( ((TermEdWidget)self)->termEd.rsel.y >= ((TermEdWidget)self)->termEd.gHeight ) ((TermEdWidget)self)->termEd.rsel.y = ((TermEdWidget)self)->termEd.gHeight-1;
@@ -662,31 +690,31 @@ static void selection_draw(self)Widget self;
     ((TermEdWidget)self)->termEd.rsel_old = ((TermEdWidget)self)->termEd.rsel;
     ((TermEdWidget)self)->termEd.blink = True; selection_timer(self,0);
 }
-#line 243 "TermEd.widget"
+#line 258 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 243 "TermEd.widget"
+#line 258 "TermEd.widget"
 static void scr_scroll_up(Widget self)
 #else
-#line 243 "TermEd.widget"
+#line 258 "TermEd.widget"
 static void scr_scroll_up(self)Widget self;
 #endif
-#line 244 "TermEd.widget"
+#line 259 "TermEd.widget"
 {
         memcpy( ((TermEdWidget)self)->termEd.scr, ((TermEdWidget)self)->termEd.scr + ((TermEdWidget)self)->termEd.gWidth,
                 (((TermEdWidget)self)->termEd.gWidth*(((TermEdWidget)self)->termEd.gHeight-1))*4 );
         memset( ((TermEdWidget)self)->termEd.scr + ((TermEdWidget)self)->termEd.gWidth*(((TermEdWidget)self)->termEd.gHeight-1), 0, ((TermEdWidget)self)->termEd.gWidth*4 );
 }
-#line 250 "TermEd.widget"
+#line 265 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 250 "TermEd.widget"
+#line 265 "TermEd.widget"
 static void pix_scroll_up(Widget self)
 #else
-#line 250 "TermEd.widget"
+#line 265 "TermEd.widget"
 static void pix_scroll_up(self)Widget self;
 #endif
-#line 251 "TermEd.widget"
+#line 266 "TermEd.widget"
 {
 /*
       XCopyArea(display, src, dest, gc, src_x, src_y, width, height,  dest_x, dest_y)
@@ -709,29 +737,29 @@ static void pix_scroll_up(self)Widget self;
     ((TermEdWidget)self)->core.width, ((TermEdWidget)self)->termEd.grid_pix_height );
 
 }
-#line 275 "TermEd.widget"
+#line 290 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 275 "TermEd.widget"
+#line 290 "TermEd.widget"
 static void te_pos1(Widget self)
 #else
-#line 275 "TermEd.widget"
+#line 290 "TermEd.widget"
 static void te_pos1(self)Widget self;
 #endif
-#line 276 "TermEd.widget"
+#line 291 "TermEd.widget"
 {
     ((TermEdWidget)self)->termEd.rsel.x = 0;
 }
-#line 280 "TermEd.widget"
+#line 295 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 280 "TermEd.widget"
+#line 295 "TermEd.widget"
 static void te_tab(Widget self)
 #else
-#line 280 "TermEd.widget"
+#line 295 "TermEd.widget"
 static void te_tab(self)Widget self;
 #endif
-#line 281 "TermEd.widget"
+#line 296 "TermEd.widget"
 {
     int x = ((TermEdWidget)self)->termEd.rsel.x;
     x /= 8;
@@ -739,16 +767,16 @@ static void te_tab(self)Widget self;
     x *= 8;
     if( x < ((TermEdWidget)self)->termEd.gWidth ) ((TermEdWidget)self)->termEd.rsel.x = x;
 }
-#line 289 "TermEd.widget"
+#line 304 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 289 "TermEd.widget"
+#line 304 "TermEd.widget"
 static void te_down(Widget self)
 #else
-#line 289 "TermEd.widget"
+#line 304 "TermEd.widget"
 static void te_down(self)Widget self;
 #endif
-#line 290 "TermEd.widget"
+#line 305 "TermEd.widget"
 {
     if( ((TermEdWidget)self)->termEd.rsel.y < (((TermEdWidget)self)->termEd.gHeight-1) ) {
         ((TermEdWidget)self)->termEd.rsel.y++;
@@ -758,16 +786,16 @@ static void te_down(self)Widget self;
     pix_scroll_up(self);
     scr_scroll_up(self);
 }
-#line 301 "TermEd.widget"
+#line 316 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 301 "TermEd.widget"
+#line 316 "TermEd.widget"
 static Bool  te_parse(Widget self,uint32_t  ucs4)
 #else
-#line 301 "TermEd.widget"
+#line 316 "TermEd.widget"
 static Bool  te_parse(self,ucs4)Widget self;uint32_t  ucs4;
 #endif
-#line 302 "TermEd.widget"
+#line 317 "TermEd.widget"
 {
     switch( ucs4 ) {
     default: break;
@@ -777,16 +805,16 @@ static Bool  te_parse(self,ucs4)Widget self;uint32_t  ucs4;
     }
     return False;
 }
-#line 312 "TermEd.widget"
+#line 327 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 312 "TermEd.widget"
+#line 327 "TermEd.widget"
 static void te_right(Widget self)
 #else
-#line 312 "TermEd.widget"
+#line 327 "TermEd.widget"
 static void te_right(self)Widget self;
 #endif
-#line 313 "TermEd.widget"
+#line 328 "TermEd.widget"
 {
     if( ((TermEdWidget)self)->termEd.rsel.x < (((TermEdWidget)self)->termEd.gWidth-1) ) {
         ((TermEdWidget)self)->termEd.rsel.x++;
@@ -795,16 +823,16 @@ static void te_right(self)Widget self;
     te_pos1(self);
     te_down(self);
 }
-#line 323 "TermEd.widget"
+#line 338 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 323 "TermEd.widget"
+#line 338 "TermEd.widget"
 static void pix_del(Widget self)
 #else
-#line 323 "TermEd.widget"
+#line 338 "TermEd.widget"
 static void pix_del(self)Widget self;
 #endif
-#line 324 "TermEd.widget"
+#line 339 "TermEd.widget"
 {
    int x0,y0,x1,y1,w,h,x,y;
    x = ((TermEdWidget)self)->termEd.rsel.x; y=((TermEdWidget)self)->termEd.rsel.y;
@@ -834,16 +862,16 @@ static void pix_del(self)Widget self;
              x0,y0      /* destination */
              );
 }
-#line 354 "TermEd.widget"
+#line 369 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 354 "TermEd.widget"
+#line 369 "TermEd.widget"
 static void pix_ins(Widget self)
 #else
-#line 354 "TermEd.widget"
+#line 369 "TermEd.widget"
 static void pix_ins(self)Widget self;
 #endif
-#line 355 "TermEd.widget"
+#line 370 "TermEd.widget"
 {
    int x0,y0,x1,y1,w,h,x,y;
    x = ((TermEdWidget)self)->termEd.rsel.x; y=((TermEdWidget)self)->termEd.rsel.y;
@@ -873,16 +901,16 @@ static void pix_ins(self)Widget self;
              x0,y0      /* destination */
              );
 }
-#line 385 "TermEd.widget"
+#line 400 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 385 "TermEd.widget"
+#line 400 "TermEd.widget"
 static void te_ins(Widget self)
 #else
-#line 385 "TermEd.widget"
+#line 400 "TermEd.widget"
 static void te_ins(self)Widget self;
 #endif
-#line 386 "TermEd.widget"
+#line 401 "TermEd.widget"
 {
    int i,x,y;
    x = ((TermEdWidget)self)->termEd.rsel.x; y=((TermEdWidget)self)->termEd.rsel.y;
@@ -899,16 +927,16 @@ static void te_ins(self)Widget self;
    pix_ins(self);
    s[x] = 32;
 }
-#line 404 "TermEd.widget"
+#line 419 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 404 "TermEd.widget"
+#line 419 "TermEd.widget"
 static void te_del(Widget self)
 #else
-#line 404 "TermEd.widget"
+#line 419 "TermEd.widget"
 static void te_del(self)Widget self;
 #endif
-#line 405 "TermEd.widget"
+#line 420 "TermEd.widget"
 {
    uint16_t i,x,y;
    x = ((TermEdWidget)self)->termEd.rsel.x; y=((TermEdWidget)self)->termEd.rsel.y;
@@ -924,16 +952,16 @@ static void te_del(self)Widget self;
               s[i-1] = s[i];
    pix_del(self);
 }
-#line 422 "TermEd.widget"
+#line 437 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 422 "TermEd.widget"
+#line 437 "TermEd.widget"
 static void te_putc(Widget self,uint32_t  ucs4)
 #else
-#line 422 "TermEd.widget"
+#line 437 "TermEd.widget"
 static void te_putc(self,ucs4)Widget self;uint32_t  ucs4;
 #endif
-#line 423 "TermEd.widget"
+#line 438 "TermEd.widget"
 {
     if( ((TermEdWidget)self)->termEd.rsel.x >= ((TermEdWidget)self)->termEd.gWidth ) ((TermEdWidget)self)->termEd.rsel.x = ((TermEdWidget)self)->termEd.gWidth-1;
     if( ((TermEdWidget)self)->termEd.rsel.y >= ((TermEdWidget)self)->termEd.gHeight ) ((TermEdWidget)self)->termEd.rsel.y = ((TermEdWidget)self)->termEd.gHeight-1;
@@ -943,30 +971,30 @@ static void te_putc(self,ucs4)Widget self;uint32_t  ucs4;
     ((TermEdWidget)self)->termEd.selection_visible = False;
     te_right(self);
 }
-#line 434 "TermEd.widget"
+#line 449 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 434 "TermEd.widget"
+#line 449 "TermEd.widget"
 static void te_left(Widget self)
 #else
-#line 434 "TermEd.widget"
+#line 449 "TermEd.widget"
 static void te_left(self)Widget self;
 #endif
-#line 435 "TermEd.widget"
+#line 450 "TermEd.widget"
 {
     if( ((TermEdWidget)self)->termEd.rsel.x == 0 ) return;
     ((TermEdWidget)self)->termEd.rsel.x--;
 }
-#line 441 "TermEd.widget"
+#line 456 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 441 "TermEd.widget"
+#line 456 "TermEd.widget"
 static void exec_line(Widget self)
 #else
-#line 441 "TermEd.widget"
+#line 456 "TermEd.widget"
 static void exec_line(self)Widget self;
 #endif
-#line 442 "TermEd.widget"
+#line 457 "TermEd.widget"
 {
     int i,len, space_left;
     unsigned char *dest;
@@ -995,103 +1023,122 @@ static void exec_line(self)Widget self;
     else if( strncmp( string, "parse", 5 ) == 0 ) prog_parse(self);
     else if( ((TermEdWidget)self)->termEd.child ) prog_interpret(self);
 }
-#line 471 "TermEd.widget"
+#line 486 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 471 "TermEd.widget"
+#line 486 "TermEd.widget"
 static void prog_interpret(Widget self)
 #else
-#line 471 "TermEd.widget"
+#line 486 "TermEd.widget"
 static void prog_interpret(self)Widget self;
 #endif
-#line 472 "TermEd.widget"
+#line 487 "TermEd.widget"
 {
     char *s = (void*)((TermEdWidget)self)->termEd.cmd;
     while(*s && *s == '>' ) s++;
     dprintf( ((TermEdWidget)self)->termEd.child->fd[3], "%s\n", s );
 }
-#line 479 "TermEd.widget"
-/*ARGSUSED*/
-#if NeedFunctionPrototypes
-#line 479 "TermEd.widget"
-static void prog_child_read(Widget self,int * source,XtInputId * id)
-#else
-#line 479 "TermEd.widget"
-static void prog_child_read(self,source,id)Widget self;int * source;XtInputId * id;
-#endif
-#line 480 "TermEd.widget"
-{
-    int ch;
-    if( ! ((TermEdWidget)self)->termEd.child ) ERR("memory corruption");
-    if( fork2_read(((TermEdWidget)self)->termEd.child) ) {
-        prog_kill(self);
-        return;
-    }
-    undraw_selection(self);
-    while( (ch=mrb_get(((TermEdWidget)self)->termEd.child->buf)) >= 0 )
-        te_putc( self, ch );
-    selection_draw(self);
-}
-#line 493 "TermEd.widget"
-/*ARGSUSED*/
-#if NeedFunctionPrototypes
-#line 493 "TermEd.widget"
-static void prog_child_err_read(Widget self,int * source,XtInputId * id)
-#else
-#line 493 "TermEd.widget"
-static void prog_child_err_read(self,source,id)Widget self;int * source;XtInputId * id;
-#endif
 #line 494 "TermEd.widget"
-{
-    int len, i;
-
-    if( ! ((TermEdWidget)self)->termEd.child ) ERR("memory corruption");
-    char buf[1024];
-    len = read( *source, buf, sizeof(buf) );
-
-    undraw_selection(self);
-    for(i=0;i<len;i++)
-        te_putc( self, buf[i] );
-    selection_draw(self);
-}
-#line 508 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 508 "TermEd.widget"
+#line 494 "TermEd.widget"
+static void prog_child_pipe_read(Widget self,int  pipe)
+#else
+#line 494 "TermEd.widget"
+static void prog_child_pipe_read(self,pipe)Widget self;int  pipe;
+#endif
+#line 495 "TermEd.widget"
+{
+   if( ! ((TermEdWidget)self)->termEd.child ) ERR("memory corruption");
+
+   if( fork2_read(((TermEdWidget)self)->termEd.child, pipe) ) {	
+        prog_kill(self);
+ 	return;
+   }
+
+   int buf = m_create(50,1);	
+
+   undraw_selection(self);
+   
+   while(! fork2_getline(((TermEdWidget)self)->termEd.child, pipe, buf ) ) {
+
+      te_writeln(self, m_buf(buf));
+      
+      if( strncmp(m_buf(buf),"RUN",3)==0 ) {
+      	  ((TermEdWidget)self)->termEd.INTERACTIVE=0;
+	  fprintf(stderr, "interactive mode off\n" );
+      }
+      else if( strncmp(m_buf(buf),"EXIT",4)==0 ) {
+      	  fprintf(stderr, "interactive mode ON\n" );
+      	  ((TermEdWidget)self)->termEd.INTERACTIVE=1;
+      }
+   }
+   selection_draw(self);
+
+}
+#line 524 "TermEd.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 524 "TermEd.widget"
+static void prog_child_read_stdout(Widget self,int * source,XtInputId * id)
+#else
+#line 524 "TermEd.widget"
+static void prog_child_read_stdout(self,source,id)Widget self;int * source;XtInputId * id;
+#endif
+#line 525 "TermEd.widget"
+{
+    prog_child_pipe_read(self, CHILD_STDOUT_RD );
+}
+#line 529 "TermEd.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 529 "TermEd.widget"
+static void prog_child_read_stderr(Widget self,int * source,XtInputId * id)
+#else
+#line 529 "TermEd.widget"
+static void prog_child_read_stderr(self,source,id)Widget self;int * source;XtInputId * id;
+#endif
+#line 530 "TermEd.widget"
+{
+    prog_child_pipe_read(self, CHILD_STDERR_RD );
+}
+#line 535 "TermEd.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 535 "TermEd.widget"
 static void prog_run(Widget self)
 #else
-#line 508 "TermEd.widget"
+#line 535 "TermEd.widget"
 static void prog_run(self)Widget self;
 #endif
-#line 509 "TermEd.widget"
+#line 536 "TermEd.widget"
 {
         if( ((TermEdWidget)self)->termEd.child ) prog_kill(self);
-        ((TermEdWidget)self)->termEd.child = fork2_open( "lua5.3", "-i", NULL, "-e", "_PROMPT=''", NULL );
+        ((TermEdWidget)self)->termEd.child = fork2_open( "./interpreter.sh", "-i", NULL, "-e", "_PROMPT=''", NULL );
         ((TermEdWidget)self)->termEd.cid = XtAppAddInput( XtWidgetToApplicationContext(self),
-                       ((TermEdWidget)self)->termEd.child->fd[0],
+                       ((TermEdWidget)self)->termEd.child->fd[CHILD_STDOUT_RD],
                        (XtPointer)XtInputReadMask,
-                       (XtInputCallbackProc)prog_child_read,
+                       (XtInputCallbackProc)prog_child_read_stdout,
                        self );
 
         ((TermEdWidget)self)->termEd.eid = XtAppAddInput( XtWidgetToApplicationContext(self),
-                       ((TermEdWidget)self)->termEd.child->fd[4],
+                       ((TermEdWidget)self)->termEd.child->fd[CHILD_STDERR_RD],
                        (XtPointer)XtInputReadMask,
-                       (XtInputCallbackProc)prog_child_err_read,
+                       (XtInputCallbackProc)prog_child_read_stderr,
                        self );
 
-
-
+         if( ((TermEdWidget)self)->termEd.child ) fork2_write(((TermEdWidget)self)->termEd.child, "hello world\n");
 }
-#line 529 "TermEd.widget"
+#line 555 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 529 "TermEd.widget"
+#line 555 "TermEd.widget"
 static char * progm_alloc(Widget self,uint32_t  ln,char * s)
 #else
-#line 529 "TermEd.widget"
+#line 555 "TermEd.widget"
 static char * progm_alloc(self,ln,s)Widget self;uint32_t  ln;char * s;
 #endif
-#line 530 "TermEd.widget"
+#line 556 "TermEd.widget"
 {
         char *buf = malloc( 5 + strlen(s) );
         *(uint32_t *)buf = ln;
@@ -1099,58 +1146,58 @@ static char * progm_alloc(self,ln,s)Widget self;uint32_t  ln;char * s;
         strcpy( buf +4, s );
         return buf;
 }
-#line 538 "TermEd.widget"
+#line 564 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 538 "TermEd.widget"
+#line 564 "TermEd.widget"
 static void progm_insert(Widget self,int  i,uint32_t  arg,char * s)
 #else
-#line 538 "TermEd.widget"
+#line 564 "TermEd.widget"
 static void progm_insert(self,i,arg,s)Widget self;int  i;uint32_t  arg;char * s;
 #endif
-#line 539 "TermEd.widget"
+#line 565 "TermEd.widget"
 {
         m_ins(((TermEdWidget)self)->termEd.progm,i, 1);
         STR(((TermEdWidget)self)->termEd.progm, i) = progm_alloc(self,arg,s);
 }
-#line 544 "TermEd.widget"
+#line 570 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 544 "TermEd.widget"
+#line 570 "TermEd.widget"
 static void progm_overwrite(Widget self,int  i,uint32_t  arg,char * s)
 #else
-#line 544 "TermEd.widget"
+#line 570 "TermEd.widget"
 static void progm_overwrite(self,i,arg,s)Widget self;int  i;uint32_t  arg;char * s;
 #endif
-#line 545 "TermEd.widget"
+#line 571 "TermEd.widget"
 {
         free( STR(((TermEdWidget)self)->termEd.progm,i));
         STR(((TermEdWidget)self)->termEd.progm, i) = progm_alloc(self,arg,s);
 }
-#line 550 "TermEd.widget"
+#line 576 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 550 "TermEd.widget"
+#line 576 "TermEd.widget"
 static void progm_append(Widget self,uint32_t  arg,char * s)
 #else
-#line 550 "TermEd.widget"
+#line 576 "TermEd.widget"
 static void progm_append(self,arg,s)Widget self;uint32_t  arg;char * s;
 #endif
-#line 551 "TermEd.widget"
+#line 577 "TermEd.widget"
 {
         char *buf = progm_alloc(self,arg,s);
         m_put( ((TermEdWidget)self)->termEd.progm, &buf );
 }
-#line 563 "TermEd.widget"
+#line 589 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 563 "TermEd.widget"
+#line 589 "TermEd.widget"
 static int  progm_find(Widget self,uint32_t  num,int * pos)
 #else
-#line 563 "TermEd.widget"
+#line 589 "TermEd.widget"
 static int  progm_find(self,num,pos)Widget self;uint32_t  num;int * pos;
 #endif
-#line 564 "TermEd.widget"
+#line 590 "TermEd.widget"
 {
         int i;
         uint32_t n;
@@ -1165,16 +1212,16 @@ static int  progm_find(self,num,pos)Widget self;uint32_t  num;int * pos;
         *pos = i;
         return -1;
 }
-#line 580 "TermEd.widget"
+#line 606 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 580 "TermEd.widget"
+#line 606 "TermEd.widget"
 static void progm_put(Widget self,uint32_t  arg,char * ln)
 #else
-#line 580 "TermEd.widget"
+#line 606 "TermEd.widget"
 static void progm_put(self,arg,ln)Widget self;uint32_t  arg;char * ln;
 #endif
-#line 581 "TermEd.widget"
+#line 607 "TermEd.widget"
 {
         int i;
         uint32_t n;
@@ -1188,16 +1235,16 @@ static void progm_put(self,arg,ln)Widget self;uint32_t  arg;char * ln;
         }
         progm_append(self,arg, ln );
 }
-#line 596 "TermEd.widget"
+#line 622 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 596 "TermEd.widget"
+#line 622 "TermEd.widget"
 static Bool  prog_insert_line(Widget self,char * buf)
 #else
-#line 596 "TermEd.widget"
+#line 622 "TermEd.widget"
 static Bool  prog_insert_line(self,buf)Widget self;char * buf;
 #endif
-#line 597 "TermEd.widget"
+#line 623 "TermEd.widget"
 {
         char *s = (void*) buf;
         char *endp;
@@ -1209,16 +1256,16 @@ static Bool  prog_insert_line(self,buf)Widget self;char * buf;
         progm_put(self, arg, endp );
         return 0;
 }
-#line 614 "TermEd.widget"
+#line 640 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 614 "TermEd.widget"
+#line 640 "TermEd.widget"
 static void prog_error(Widget self,char * s)
 #else
-#line 614 "TermEd.widget"
+#line 640 "TermEd.widget"
 static void prog_error(self,s)Widget self;char * s;
 #endif
-#line 615 "TermEd.widget"
+#line 641 "TermEd.widget"
 {
         te_down(self);
         te_pos1(self);
@@ -1226,16 +1273,16 @@ static void prog_error(self,s)Widget self;char * s;
         te_down(self);
         te_pos1(self);
 }
-#line 624 "TermEd.widget"
+#line 650 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 624 "TermEd.widget"
+#line 650 "TermEd.widget"
 static void prog_load(Widget self)
 #else
-#line 624 "TermEd.widget"
+#line 650 "TermEd.widget"
 static void prog_load(self)Widget self;
 #endif
-#line 625 "TermEd.widget"
+#line 651 "TermEd.widget"
 {
         char *s = (void*)((TermEdWidget)self)->termEd.cmd+5;
         int p = m_create(20,1);
@@ -1258,16 +1305,16 @@ static void prog_load(self)Widget self;
         leave: m_free(p);
 
 }
-#line 651 "TermEd.widget"
+#line 677 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 651 "TermEd.widget"
+#line 677 "TermEd.widget"
 static void prog_save(Widget self)
 #else
-#line 651 "TermEd.widget"
+#line 677 "TermEd.widget"
 static void prog_save(self)Widget self;
 #endif
-#line 652 "TermEd.widget"
+#line 678 "TermEd.widget"
 {
         /* get two integer args */
         char *s = (void*)((TermEdWidget)self)->termEd.cmd+5;
@@ -1291,16 +1338,16 @@ static void prog_save(self)Widget self;
         fclose(fp);
         leave: m_free(p);
 }
-#line 676 "TermEd.widget"
+#line 702 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 676 "TermEd.widget"
+#line 702 "TermEd.widget"
 static void prog_parse(Widget self)
 #else
-#line 676 "TermEd.widget"
+#line 702 "TermEd.widget"
 static void prog_parse(self)Widget self;
 #endif
-#line 677 "TermEd.widget"
+#line 703 "TermEd.widget"
 {
 
     if(! ((TermEdWidget)self)->termEd.child ) {
@@ -1322,16 +1369,16 @@ static void prog_parse(self)Widget self;
  cont:
     prog_do_parse(self, from, len);
 }
-#line 699 "TermEd.widget"
+#line 725 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 699 "TermEd.widget"
+#line 725 "TermEd.widget"
 static void prog_list(Widget self)
 #else
-#line 699 "TermEd.widget"
+#line 725 "TermEd.widget"
 static void prog_list(self)Widget self;
 #endif
-#line 700 "TermEd.widget"
+#line 726 "TermEd.widget"
 {
         int arg,from,len;
 
@@ -1354,16 +1401,16 @@ static void prog_list(self)Widget self;
         te_pos1(self); te_down(self);
         prog_do_list(self, from, len);
 }
-#line 724 "TermEd.widget"
+#line 750 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 724 "TermEd.widget"
+#line 750 "TermEd.widget"
 static void te_write(Widget self,char * str)
 #else
-#line 724 "TermEd.widget"
+#line 750 "TermEd.widget"
 static void te_write(self,str)Widget self;char * str;
 #endif
-#line 725 "TermEd.widget"
+#line 751 "TermEd.widget"
 {
     int len,l;
     unsigned char *string = (void*) str;
@@ -1378,31 +1425,31 @@ static void te_write(self,str)Widget self;char * str;
         len -= l;
     }
 }
-#line 740 "TermEd.widget"
+#line 766 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 740 "TermEd.widget"
+#line 766 "TermEd.widget"
 static void te_writeln(Widget self,char * s)
 #else
-#line 740 "TermEd.widget"
+#line 766 "TermEd.widget"
 static void te_writeln(self,s)Widget self;char * s;
 #endif
-#line 741 "TermEd.widget"
+#line 767 "TermEd.widget"
 {
         te_write(self,s);
         te_pos1(self);
         te_down(self);
 }
-#line 748 "TermEd.widget"
+#line 774 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 748 "TermEd.widget"
+#line 774 "TermEd.widget"
 static void prog_print(Widget self,int  i)
 #else
-#line 748 "TermEd.widget"
+#line 774 "TermEd.widget"
 static void prog_print(self,i)Widget self;int  i;
 #endif
-#line 749 "TermEd.widget"
+#line 775 "TermEd.widget"
 {
         char buf[20];
 
@@ -1416,16 +1463,16 @@ static void prog_print(self,i)Widget self;int  i;
         te_putc(self,32);
         te_write(self,s);
 }
-#line 763 "TermEd.widget"
+#line 789 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 763 "TermEd.widget"
+#line 789 "TermEd.widget"
 static void prog_do_list(Widget self,int  from,int  len)
 #else
-#line 763 "TermEd.widget"
+#line 789 "TermEd.widget"
 static void prog_do_list(self,from,len)Widget self;int  from;int  len;
 #endif
-#line 764 "TermEd.widget"
+#line 790 "TermEd.widget"
 {
         int i;
         int line;
@@ -1440,16 +1487,16 @@ static void prog_do_list(self,from,len)Widget self;int  from;int  len;
                 te_down(self);
         }
 }
-#line 779 "TermEd.widget"
+#line 805 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 779 "TermEd.widget"
+#line 805 "TermEd.widget"
 static void prog_do_parse(Widget self,int  from,int  len)
 #else
-#line 779 "TermEd.widget"
+#line 805 "TermEd.widget"
 static void prog_do_parse(self,from,len)Widget self;int  from;int  len;
 #endif
-#line 780 "TermEd.widget"
+#line 806 "TermEd.widget"
 {
         int i;
         int line;
@@ -1464,16 +1511,16 @@ static void prog_do_parse(self,from,len)Widget self;int  from;int  len;
                 dprintf( ((TermEdWidget)self)->termEd.child->fd[3], "%s\n", s );
         }
 }
-#line 797 "TermEd.widget"
+#line 823 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 797 "TermEd.widget"
+#line 823 "TermEd.widget"
 static void prog_kill(Widget self)
 #else
-#line 797 "TermEd.widget"
+#line 823 "TermEd.widget"
 static void prog_kill(self)Widget self;
 #endif
-#line 798 "TermEd.widget"
+#line 824 "TermEd.widget"
 {
         if( ((TermEdWidget)self)->termEd.child ) {
             fork2_close( ((TermEdWidget)self)->termEd.child );
@@ -1481,17 +1528,18 @@ static void prog_kill(self)Widget self;
         }
         if( ((TermEdWidget)self)->termEd.cid ) { XtRemoveInput(((TermEdWidget)self)->termEd.cid); ((TermEdWidget)self)->termEd.cid=0; }
         if( ((TermEdWidget)self)->termEd.eid ) { XtRemoveInput(((TermEdWidget)self)->termEd.eid); ((TermEdWidget)self)->termEd.eid=0; }
+	((TermEdWidget)self)->termEd.INTERACTIVE=1;
 }
-#line 807 "TermEd.widget"
+#line 834 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 807 "TermEd.widget"
+#line 834 "TermEd.widget"
 static void do_resize(Widget self)
 #else
-#line 807 "TermEd.widget"
+#line 834 "TermEd.widget"
 static void do_resize(self)Widget self;
 #endif
-#line 808 "TermEd.widget"
+#line 835 "TermEd.widget"
 {
     ((TermEdWidget)self)->termEd.scr=realloc(((TermEdWidget)self)->termEd.scr, ((TermEdWidget)self)->termEd.gWidth * ((TermEdWidget)self)->termEd.gHeight * 4 );
     memset(((TermEdWidget)self)->termEd.scr,0,((TermEdWidget)self)->termEd.gWidth * ((TermEdWidget)self)->termEd.gHeight * 4 );
@@ -1499,6 +1547,51 @@ static void do_resize(self)Widget self;
     printf("WxH=%dx%d\n",((TermEdWidget)self)->termEd.gWidth, ((TermEdWidget)self)->termEd.gHeight );
     printf("pix WxH=%dx%d\n",((TermEdWidget)self)->termEd.grid_pix_width, ((TermEdWidget)self)->termEd.grid_pix_height );
     printf("w WxH=%dx%d\n",((TermEdWidget)self)->core.width, ((TermEdWidget)self)->core.height );
+}
+#line 845 "TermEd.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 845 "TermEd.widget"
+static void comm_exit_cb(Widget self)
+#else
+#line 845 "TermEd.widget"
+static void comm_exit_cb(self)Widget self;
+#endif
+#line 846 "TermEd.widget"
+{
+	TRACE(2,"exit");
+	((TermEdWidget)self)->termEd.INTERACTIVE=0;
+}
+#line 851 "TermEd.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 851 "TermEd.widget"
+static void comm_run_cb(Widget self)
+#else
+#line 851 "TermEd.widget"
+static void comm_run_cb(self)Widget self;
+#endif
+#line 852 "TermEd.widget"
+{
+	TRACE(2,"run");
+	((TermEdWidget)self)->termEd.INTERACTIVE=1;
+}
+#line 857 "TermEd.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 857 "TermEd.widget"
+static void comm_recv_cb(Widget self,void * u,void * d)
+#else
+#line 857 "TermEd.widget"
+static void comm_recv_cb(self,u,d)Widget self;void * u;void * d;
+#endif
+#line 858 "TermEd.widget"
+{
+    TRACE(2,"read line");	
+    int line = (intptr_t) d;
+    if( line < 1 ) return;
+    cp_func_t func = cp_lookup(line);
+    if( func ) func(self);
 }
 
 static XtResource resources[] = {
@@ -1520,6 +1613,10 @@ static XtResource resources[] = {
 {XtNcbg,XtCCbg,XtRXftColor,sizeof(((TermEdRec*)NULL)->termEd.cbg),XtOffsetOf(TermEdRec,termEd.cbg),XtRString,(XtPointer)"Red"},
 #line 12 "TermEd.widget"
 {XtNcfg,XtCCfg,XtRXftColor,sizeof(((TermEdRec*)NULL)->termEd.cfg),XtOffsetOf(TermEdRec,termEd.cfg),XtRString,(XtPointer)"Green"},
+#line 13 "TermEd.widget"
+{XtNhost,XtCHost,XtRString,sizeof(((TermEdRec*)NULL)->termEd.host),XtOffsetOf(TermEdRec,termEd.host),XtRString,(XtPointer)"localhost"},
+#line 14 "TermEd.widget"
+{XtNport,XtCPort,XtRString,sizeof(((TermEdRec*)NULL)->termEd.port),XtOffsetOf(TermEdRec,termEd.port),XtRString,(XtPointer)"10002"},
 };
 
 TermEdClassRec termEdClassRec = {
@@ -1536,7 +1633,7 @@ TermEdClassRec termEdClassRec = {
 /* actions      	*/  actionsList,
 /* num_actions  	*/  9,
 /* resources    	*/  resources,
-/* num_resources 	*/  9,
+/* num_resources 	*/  11,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  False ,
 /* compress_exposure 	*/  FALSE ,
@@ -1563,7 +1660,7 @@ TermEdClassRec termEdClassRec = {
 };
 WidgetClass termEdWidgetClass = (WidgetClass) &termEdClassRec;
 /*ARGSUSED*/
-#line 832 "TermEd.widget"
+#line 882 "TermEd.widget"
 static void kill_child(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     undraw_selection(self);
@@ -1574,7 +1671,7 @@ static void kill_child(self,event,params,num_params)Widget self;XEvent*event;Str
 }
 
 /*ARGSUSED*/
-#line 841 "TermEd.widget"
+#line 891 "TermEd.widget"
 static void key_del(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     undraw_selection(self);
@@ -1583,7 +1680,7 @@ static void key_del(self,event,params,num_params)Widget self;XEvent*event;String
 }
 
 /*ARGSUSED*/
-#line 848 "TermEd.widget"
+#line 898 "TermEd.widget"
 static void key_backspace(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     undraw_selection(self);
@@ -1593,7 +1690,7 @@ static void key_backspace(self,event,params,num_params)Widget self;XEvent*event;
 }
 
 /*ARGSUSED*/
-#line 857 "TermEd.widget"
+#line 907 "TermEd.widget"
 static void key_return(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     undraw_selection(self);
@@ -1604,7 +1701,7 @@ static void key_return(self,event,params,num_params)Widget self;XEvent*event;Str
 }
 
 /*ARGSUSED*/
-#line 867 "TermEd.widget"
+#line 917 "TermEd.widget"
 static void insert_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     int len;
@@ -1614,6 +1711,13 @@ static void insert_char(self,event,params,num_params)Widget self;XEvent*event;St
 
     len = _XawLookupString(self,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
     if (len <= 0) return;
+
+    if(! ((TermEdWidget)self)->termEd.INTERACTIVE && ((TermEdWidget)self)->termEd.child ) {
+    	     dprintf(((TermEdWidget)self)->termEd.child->fd[CHILD_STDIN_WR],"KEY: %*s\n",len,buf);	
+             return;
+    }
+    
+
     FcUtf8ToUcs4 (buf, &ucs4, len);
     undraw_selection(self);
     te_ins(self);
@@ -1622,7 +1726,7 @@ static void insert_char(self,event,params,num_params)Widget self;XEvent*event;St
 }
 
 /*ARGSUSED*/
-#line 885 "TermEd.widget"
+#line 942 "TermEd.widget"
 static void prev_line(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if( ((TermEdWidget)self)->termEd.rsel.y == 0 ) return;
@@ -1631,7 +1735,7 @@ static void prev_line(self,event,params,num_params)Widget self;XEvent*event;Stri
 }
 
 /*ARGSUSED*/
-#line 892 "TermEd.widget"
+#line 949 "TermEd.widget"
 static void next_line(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     undraw_selection(self);
@@ -1642,7 +1746,7 @@ static void next_line(self,event,params,num_params)Widget self;XEvent*event;Stri
 }
 
 /*ARGSUSED*/
-#line 901 "TermEd.widget"
+#line 958 "TermEd.widget"
 static void backward_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if( ((TermEdWidget)self)->termEd.rsel.x == 0 ) return;
@@ -1651,7 +1755,7 @@ static void backward_char(self,event,params,num_params)Widget self;XEvent*event;
 }
 
 /*ARGSUSED*/
-#line 908 "TermEd.widget"
+#line 965 "TermEd.widget"
 static void forward_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if( ((TermEdWidget)self)->termEd.rsel.x < (((TermEdWidget)self)->termEd.gWidth-1) )
@@ -1667,27 +1771,27 @@ WidgetClass class;
   if (class == termEdWidgetClass) return;
   super = (TermEdWidgetClass)class->core_class.superclass;
 }
-#line 35 "TermEd.widget"
+#line 40 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 35 "TermEd.widget"
+#line 40 "TermEd.widget"
 static void class_initialize(void)
 #else
-#line 35 "TermEd.widget"
+#line 40 "TermEd.widget"
 static void class_initialize()
 #endif
-#line 36 "TermEd.widget"
+#line 41 "TermEd.widget"
 { converters_xft_init(); }
-#line 37 "TermEd.widget"
+#line 42 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 37 "TermEd.widget"
+#line 42 "TermEd.widget"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 37 "TermEd.widget"
+#line 42 "TermEd.widget"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 38 "TermEd.widget"
+#line 43 "TermEd.widget"
 {
     FcChar32 bat = 0x42;
     XGlyphInfo extents;
@@ -1709,19 +1813,28 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((TermEdWidget)self)->termEd.gc_copy =  XtGetGC(self, 0,0 );
     ((TermEdWidget)self)->termEd.progm = m_create(100,sizeof(char*));
     do_resize(self);
+    ((TermEdWidget)self)->termEd.INTERACTIVE=1;
 
+
+    cp_init();
+    cp_add( "EXIT", comm_exit_cb );
+    cp_add( "RUN", comm_run_cb );
+    
+    ((TermEdWidget)self)->termEd.server_id = srvc_connect(self,((TermEdWidget)self)->termEd.host,((TermEdWidget)self)->termEd.port, comm_recv_cb, self);
 }
-#line 62 "TermEd.widget"
+#line 75 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 62 "TermEd.widget"
+#line 75 "TermEd.widget"
 static void destroy(Widget self)
 #else
-#line 62 "TermEd.widget"
+#line 75 "TermEd.widget"
 static void destroy(self)Widget self;
 #endif
-#line 63 "TermEd.widget"
+#line 76 "TermEd.widget"
 {
+	cp_destroy();
+	
     if( ((TermEdWidget)self)->termEd.draw) XftDrawDestroy( ((TermEdWidget)self)->termEd.draw );
     ((TermEdWidget)self)->termEd.draw=0;
     font_free(self);
@@ -1731,16 +1844,16 @@ static void destroy(self)Widget self;
     if( ((TermEdWidget)self)->termEd.child ) prog_kill(self);
 
 }
-#line 74 "TermEd.widget"
+#line 89 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 74 "TermEd.widget"
+#line 89 "TermEd.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 74 "TermEd.widget"
+#line 89 "TermEd.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 75 "TermEd.widget"
+#line 90 "TermEd.widget"
 {
     if( ((TermEdWidget)old)->termEd.size != ((TermEdWidget)self)->termEd.size ) {
         font_free(self);
@@ -1749,31 +1862,31 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     }
     return True; /* call expose */
 }
-#line 84 "TermEd.widget"
+#line 99 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 84 "TermEd.widget"
+#line 99 "TermEd.widget"
 static void resize(Widget self)
 #else
-#line 84 "TermEd.widget"
+#line 99 "TermEd.widget"
 static void resize(self)Widget self;
 #endif
-#line 85 "TermEd.widget"
+#line 100 "TermEd.widget"
 {
     ((TermEdWidget)self)->termEd.gWidth  = ((TermEdWidget)self)->core.width / ((TermEdWidget)self)->termEd.grid_pix_width;
     ((TermEdWidget)self)->termEd.gHeight = ((TermEdWidget)self)->core.height / ((TermEdWidget)self)->termEd.grid_pix_height;
     do_resize(self);
 }
-#line 91 "TermEd.widget"
+#line 106 "TermEd.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 91 "TermEd.widget"
+#line 106 "TermEd.widget"
 static void expose(Widget self,XEvent * event,Region  region)
 #else
-#line 91 "TermEd.widget"
+#line 106 "TermEd.widget"
 static void expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 92 "TermEd.widget"
+#line 107 "TermEd.widget"
 {
     Display *dpy = XtDisplay(self);
     if(!((TermEdWidget)self)->termEd.draw )

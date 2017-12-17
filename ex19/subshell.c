@@ -24,10 +24,18 @@ static void xclose( int *fd )
 
 
 
-/** create a child process and connect a pipe
-    to child stdout
+/** create a child process and connect a 3 pipes
+    to child 
 
     create some pipes:
+    
+    0 R                READ from child STDOUT
+    1 W     closed
+    2 R     closed
+    3 W                WRITE to child  STDIN
+    4 R                READ from child STDERR
+    5 W     closed            
+
     0: read <--- pipe < stdout
     1: write --> pipe > stdin
     2: read <--- pipe < stderr
@@ -45,9 +53,12 @@ static void fork2_exec(struct fork2_info *child, char *filename, char **args )
     if (cpid == 0) {            /* Child reads from pipe */
         dup2(child->fd[1],1);   /* make STDOUT==1 same as WRITE-TO==1 end
                                    of pipe-A  */
-        dup2(child->fd[2],0);   /* make STDIN==0 same as READ-FROM==0 end
+
+	dup2(child->fd[2],0);   /* make STDIN==0 same as READ-FROM==0 end
                                    of pipe-B */
-        dup2(child->fd[5], 2);  /* stderr = write-end of pipe c */
+
+	/* stdin = read-end of pipe a */
+	dup2(child->fd[5], 2);  /* stderr = write-end of pipe c */
 
         xclose(child->fd+0);    /* Close unused read end pipe-A */
         xclose(child->fd+3);    /* Close unused write end pipe-B */
@@ -79,7 +90,8 @@ struct fork2_info *fork2_open(char *filename, ...)
     char *name;
     va_list ap;
     struct fork2_info *child = calloc(1,sizeof (struct fork2_info));
-    child->buf = mrb_create(MRB_BUFSIZE);
+    child->pipe_buf[0] = mrb_create(MRB_BUFSIZE);
+    child->pipe_buf[1] = mrb_create(MRB_BUFSIZE);
 
     int args = m_create(10,sizeof(char*));
     name = strdup(filename);
@@ -133,9 +145,11 @@ void fork2_close( struct fork2_info *child )
         child->stat = 0;
     }
 
-    free(child->buf);
-    xclose( child->fd+0 );
-    xclose( child->fd+1 );
+    free(child->pipe_buf[0]);
+    free(child->pipe_buf[1]);
+    xclose( child->fd+CHILD_STDOUT_RD );
+    xclose( child->fd+CHILD_STDERR_RD );
+    xclose( child->fd+CHILD_STDIN_WR );
     free(child);
 }
 
@@ -190,9 +204,15 @@ static int  mrb_getline(struct mrb *c, int m, int *pos)
     return m_len(m);
 }
 
-int fork2_read(struct fork2_info *child )
+int fork2_read(struct fork2_info *child, int pipe )
 {
-    if( mrb_read( child->fd[0], child->buf ) <=0 )
+    int fd = CHILD_STDOUT_RD;
+    if( pipe ) {
+	pipe = 1;
+	fd = CHILD_STDERR_RD;
+    }
+    
+    if( mrb_read( child->fd[fd], child->pipe_buf[pipe] ) <=0 )
         {
             TRACE(trace_child, "error reading from child" );
             return -1;
@@ -200,11 +220,26 @@ int fork2_read(struct fork2_info *child )
     return 0; /* OK */
 }
 
+
+
+int fork2_getchar(struct fork2_info *child, int pipe )
+{
+    if( pipe ) pipe = 1;
+    return mrb_get(child->pipe_buf[pipe]);
+}
+
 /* nächste zeile aus dem eingabe-puffer holen
    m - marray of char, wird immer gelöscht
    returns 1: keine weiteren zeilen im puffer, sonst 0
 */
-int fork2_getline( struct fork2_info *child, int lnbuf )
+int fork2_getline( struct fork2_info *child, int pipe, int lnbuf )
 {
-    return mrb_getline(child->buf, lnbuf, & child->scan_pos) == 0;
+    if( pipe ) pipe = 1;
+    return mrb_getline(child->pipe_buf[pipe], lnbuf, child->scan_pos+pipe) == 0;
+}
+
+int fork2_write( struct fork2_info *child, char *s )
+{
+    dprintf(child->fd[CHILD_STDIN_WR],"%s", s);
+    return 0;
 }

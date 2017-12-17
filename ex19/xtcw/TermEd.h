@@ -95,6 +95,26 @@ _XFUNCPROTOBEGIN
 #define XtRXftColor "XftColor"
 #endif
 
+#ifndef XtNhost
+#define XtNhost "host"
+#endif
+#ifndef XtCHost
+#define XtCHost "Host"
+#endif
+#ifndef XtRString
+#define XtRString "String"
+#endif
+
+#ifndef XtNport
+#define XtNport "port"
+#endif
+#ifndef XtCPort
+#define XtCPort "Port"
+#endif
+#ifndef XtRString
+#define XtRString "String"
+#endif
+
 typedef struct _TermEdClassRec *TermEdWidgetClass;
 typedef struct _TermEdRec *TermEdWidget;
 externalref WidgetClass termEdWidgetClass;

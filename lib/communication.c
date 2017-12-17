@@ -64,6 +64,20 @@ int sock_create_and_bind (char *port)
 /** returns: 0 if successfull */
 int sock_make_socket_non_blocking (int sfd)
 {
+    return sock_enable_blocking(sfd, 0);
+}
+
+/** returns: 0 if successfull */
+int sock_make_socket_blocking (int sfd)
+{
+    return sock_enable_blocking(sfd, 1);
+}
+
+
+
+/** returns: 0 if successfull */
+int sock_enable_blocking (int sfd, int enable )
+{
   int flags, s;
 
   flags = fcntl (sfd, F_GETFL, 0);
@@ -73,7 +87,7 @@ int sock_make_socket_non_blocking (int sfd)
       return -1;
     }
 
-  flags |= O_NONBLOCK;
+  if( enable ) flags &= ~ O_NONBLOCK; else flags |= O_NONBLOCK;
   s = fcntl (sfd, F_SETFL, flags);
   if (s == -1)
     {
@@ -240,14 +254,15 @@ int sock_connect(char *server_ip, int portno )
          server->h_length);
     serv_addr.sin_port = htons(portno);
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
-      int err = errno;
-      system_error( "ERROR %s\ncould connect to port %d\n",
-              strerror(errno), portno );
+	int err = errno;
+	if( err == EINPROGRESS )
+	    return sockfd;
 
-      if( err == EINPROGRESS )
-        return sockfd;
-      close(sockfd);
-      return -1;
+	system_error( "ERROR %s\ncould not connect to port %d\n",
+		      strerror(errno), portno );
+
+	close(sockfd);
+	return -1;
     }
 
     return sockfd;

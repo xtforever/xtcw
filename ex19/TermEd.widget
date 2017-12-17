@@ -10,6 +10,9 @@
 @var <XftColor> XftColor bg = <String> "Darkgreen"
 @var <XftColor> XftColor cbg = <String> "Red"
 @var <XftColor> XftColor cfg = <String> "Green"
+@var String host = <String> "localhost"
+@var String port = <String> "10002"
+
 
 @PRIVATE
 @var XtIntervalId timerid
@@ -30,6 +33,8 @@
 @var struct fork2_info *child
 @var XtInputId cid
 @var XtInputId eid
+@var Bool INTERACTIVE
+@var int server_id;
 
 @methods
 @proc class_initialize { converters_xft_init(); }
@@ -56,11 +61,21 @@
     $gc_copy =  XtGetGC($, 0,0 );
     $progm = m_create(100,sizeof(char*));
     do_resize($);
+    $INTERACTIVE=1;
 
+
+    cp_init();
+    cp_add( "EXIT", comm_exit_cb );
+    cp_add( "RUN", comm_run_cb );
+    
+    $server_id = srvc_connect($,$host,$port, comm_recv_cb, $);
 }
+
 
 @proc destroy
 {
+	cp_destroy();
+	
     if( $draw) XftDrawDestroy( $draw );
     $draw=0;
     font_free($);
@@ -476,53 +491,64 @@
 }
 
 
-@proc prog_child_read($, int *source, XtInputId *id)
+@proc prog_child_pipe_read($, int pipe)
 {
-    int ch;
-    if( ! $child ) ERR("memory corruption");
-    if( fork2_read($child) ) {
+   if( ! $child ) ERR("memory corruption");
+
+   if( fork2_read($child, pipe) ) {	
         prog_kill($);
-        return;
-    }
-    undraw_selection($);
-    while( (ch=mrb_get($child->buf)) >= 0 )
-        te_putc( $, ch );
-    selection_draw($);
+ 	return;
+   }
+
+   int buf = m_create(50,1);	
+
+   undraw_selection($);
+   
+   while(! fork2_getline($child, pipe, buf ) ) {
+
+      te_writeln($, m_buf(buf));
+      
+      if( strncmp(m_buf(buf),"RUN",3)==0 ) {
+      	  $INTERACTIVE=0;
+	  fprintf(stderr, "interactive mode off\n" );
+      }
+      else if( strncmp(m_buf(buf),"EXIT",4)==0 ) {
+      	  fprintf(stderr, "interactive mode ON\n" );
+      	  $INTERACTIVE=1;
+      }
+   }
+   selection_draw($);
+
 }
 
-@proc prog_child_err_read($, int *source, XtInputId *id)
+@proc prog_child_read_stdout($, int *source, XtInputId *id)
 {
-    int len, i;
+    prog_child_pipe_read($, CHILD_STDOUT_RD );
+}
 
-    if( ! $child ) ERR("memory corruption");
-    char buf[1024];
-    len = read( *source, buf, sizeof(buf) );
-
-    undraw_selection($);
-    for(i=0;i<len;i++)
-        te_putc( $, buf[i] );
-    selection_draw($);
+@proc prog_child_read_stderr($, int *source, XtInputId *id)
+{
+    prog_child_pipe_read($, CHILD_STDERR_RD );
 }
 
 
 @proc prog_run($)
 {
         if( $child ) prog_kill($);
-        $child = fork2_open( "lua5.3", "-i", NULL, "-e", "_PROMPT=''", NULL );
+        $child = fork2_open( "./interpreter.sh", "-i", NULL, "-e", "_PROMPT=''", NULL );
         $cid = XtAppAddInput( XtWidgetToApplicationContext($),
-                       $child->fd[0],
+                       $child->fd[CHILD_STDOUT_RD],
                        (XtPointer)XtInputReadMask,
-                       (XtInputCallbackProc)prog_child_read,
+                       (XtInputCallbackProc)prog_child_read_stdout,
                        $ );
 
         $eid = XtAppAddInput( XtWidgetToApplicationContext($),
-                       $child->fd[4],
+                       $child->fd[CHILD_STDERR_RD],
                        (XtPointer)XtInputReadMask,
-                       (XtInputCallbackProc)prog_child_err_read,
+                       (XtInputCallbackProc)prog_child_read_stderr,
                        $ );
 
-
-
+         if( $child ) fork2_write($child, "hello world\n");
 }
 
 
@@ -802,6 +828,7 @@
         }
         if( $cid ) { XtRemoveInput($cid); $cid=0; }
         if( $eid ) { XtRemoveInput($eid); $eid=0; }
+	$INTERACTIVE=1;
 }
 
 @proc do_resize($)
@@ -813,6 +840,29 @@
     printf("pix WxH=%dx%d\n",$grid_pix_width, $grid_pix_height );
     printf("w WxH=%dx%d\n",$width, $height );
 }
+
+
+@proc comm_exit_cb($)
+{
+	TRACE(2,"exit");
+	$INTERACTIVE=0;
+}
+
+@proc comm_run_cb($)
+{
+	TRACE(2,"run");
+	$INTERACTIVE=1;
+}
+
+@proc comm_recv_cb($, void *u, void *d)
+{
+    TRACE(2,"read line");	
+    int line = (intptr_t) d;
+    if( line < 1 ) return;
+    cp_func_t func = cp_lookup(line);
+    if( func ) func($);
+}
+
 
 
 @TRANSLATIONS
@@ -873,6 +923,13 @@
 
     len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
     if (len <= 0) return;
+
+    if(! $INTERACTIVE && $child ) {
+    	     dprintf($child->fd[CHILD_STDIN_WR],"KEY: %*s\n",len,buf);	
+             return;
+    }
+    
+
     FcUtf8ToUcs4 (buf, &ucs4, len);
     undraw_selection($);
     te_ins($);
@@ -922,5 +979,6 @@
 @incl "micro_vars.h"
 @incl "converters-xft.h"
 @incl "subshell.h"
-
+@incl "srvconnection.h"
+@incl "command-parser.h"
 @incl <X11/Xaw/XawImP.h>

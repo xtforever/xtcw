@@ -11,9 +11,9 @@ src/%.c vexmo/%.h: %.widget
 
 all: ex14
 
-ex14: src/Wtxt.o $(M)/wcl/libxtcw.a font.c xt_cairo.c
+ex14: $(M)/wcl/libxtcw.a font.c xt_cairo.c
 
-src/Wtxt.o: Wtxt.widget
+## src/Wtxt.o: Wtxt.widget
 
 clean:
 	${RM} -rf ex14 *.o src doc vexmo *~

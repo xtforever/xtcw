@@ -1,3 +1,4 @@
+
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
@@ -10,6 +11,8 @@ int sock_connect_service(char *server_ip, char *port );
 /* new interface */
 int sock_listen_on_port(char *port);
 int sock_make_socket_non_blocking (int sfd);
+int sock_make_socket_blocking (int sfd);
+int sock_enable_blocking (int sfd, int enable );
 int sock_create_and_bind (char *port);
 int sock_accept_incomming_connection(int sfd);
 

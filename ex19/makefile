@@ -7,7 +7,7 @@ CPPFLAGS+=-I$(M)/lib -I$(M) -I$(M)/wcl -I$(OUTPUT)/include
 VPATH=$(M)/lib src
 
 LOADLIBES+=$(shell pkg-config taglib_c --libs) -lcairo
-CFLAGS+=$(shell pkg-config taglib_c --cflags)
+CFLAGS+=$(shell pkg-config taglib_c --cflags) -std=gnu99
 WFLAGS= -d doc -c src -i xtcw --include-prefix=xtcw $(wb_install)/tex.w $(wb_install)/nroff.w
 
 xtcw/%.h src/%.c: %.widget
@@ -24,7 +24,7 @@ xtcw/TermEd.h src/TermEd.c: TermEd.widget
 xtcw/Radio2.h src/Radio2.c: Radio2.widget
 xtcw/Qvlabel.h src/Qvlabel.c: Qvlabel.widget
 
-$(TARGET):  src/Qvlabel.c src/Radio2.c src/TermEd.o src/KaroEd.o src/Wsel2.o src/Wsel.o src/Wmvar.o src/WviewQV.o src/Wlab.o src/DigTab.o $(M)/wcl/libxtcw.a xt_cairo.o mrb.o subshell.o
+$(TARGET):  src/Qvlabel.c src/Radio2.c src/TermEd.o src/KaroEd.o src/Wsel2.o src/Wsel.o src/Wmvar.o src/WviewQV.o src/Wlab.o src/DigTab.o $(M)/wcl/libxtcw.a xt_cairo.o mrb.o subshell.o srvconnection.o command-parser.o
 
 
 clean:

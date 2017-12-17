@@ -1,5 +1,5 @@
 /* most important define,
-   check APPNAME.ad !
+   check APP_NAME.ad !
 */
 #define APP_NAME "batt-test"
 
@@ -13,7 +13,7 @@
 #include "mrb.h"
 #include "micro_vars.h"
 
-
+#include <pth.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -153,6 +153,29 @@ static void RegisterApplication ( Widget top )
     RCB( top, inc_rst );
 }
 
+
+
+static void* t2_func(void *arg)
+{
+    int i;
+    long val;
+    for (i = 0; i < 10; i++) {
+        val += 100;
+        printf("t2_func: loop=%i\n", i );
+        pth_usleep(1000*1000); 
+    }
+    return NULL;
+}
+
+static char workproc(void *arg)
+{
+    
+    pth_yield(NULL);
+    return 0;
+    
+}
+
+
 /*  init application functions and structures and widgets
     All widgets are created, but not visible.
     functions can now communicate with widgets
@@ -163,7 +186,13 @@ static void InitializeApplication( Widget top )
     SETTINGS.filelist = m_create(100, sizeof(char*));
     SETTINGS.vset = v_init();
     quarks_init();
+    pth_init();
+    pth_spawn(PTH_ATTR_DEFAULT, t2_func, (void *)0);
+    XtAppAddWorkProc(XtWidgetToApplicationContext(top), workproc, NULL );
+    
 }
+
+
 
 
 static void quarks_init(void)

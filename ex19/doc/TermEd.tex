@@ -10,6 +10,8 @@ XtNfg&XtCFg&XftColor&"White"\cr
 XtNbg&XtCBg&XftColor&"Darkgreen"\cr
 XtNcbg&XtCCbg&XftColor&"Red"\cr
 XtNcfg&XtCCfg&XftColor&"Green"\cr
+XtNhost&XtCHost&String &"localhost"\cr
+XtNport&XtCPort&String &"10002"\cr
 \endTable
 \Section
 \Publicvar{XtNgWidth}
@@ -46,6 +48,14 @@ String  text = {\langle}String{\rangle}"Hello World{\backslash}nHow are you?"
 \Section
 \Publicvar{XtNcfg}
 {\langle}XftColor{\rangle} XftColor  cfg = {\langle}String{\rangle}"Green"
+
+\Section
+\Publicvar{XtNhost}
+String  host = {\langle}String{\rangle}"localhost"
+
+\Section
+\Publicvar{XtNport}
+String  port = {\langle}String{\rangle}"10002"
 
 \End\Table{Core}
 XtNx&XtCX&Position &0 \cr
@@ -170,6 +180,13 @@ void insert{\underline}char({\dollar}, XEvent* event, String* params, Cardinal* 
 
     len = {\underline}XawLookupString({\dollar},(XKeyEvent *) event, (char*)buf,sizeof buf, {\ampersand}key{\underline}sim );
     if (len {\langle}= 0) return;
+
+    if(! {\dollar}INTERACTIVE {\ampersand}{\ampersand} {\dollar}child ) {\lbrace}
+             dprintf({\dollar}child-{\rangle}fd[CHILD{\underline}STDIN{\underline}WR],"KEY: {\percent}*s{\backslash}n",len,buf);  
+             return;
+    {\rbrace}
+    
+
     FcUtf8ToUcs4 (buf, {\ampersand}ucs4, len);
     undraw{\underline}selection({\dollar});
     te{\underline}ins({\dollar});
@@ -249,6 +266,16 @@ void forward{\underline}char({\dollar}, XEvent* event, String* params, Cardinal*
 \Section
 \Code
 {\incl} "subshell.h"\endCode
+
+
+\Section
+\Code
+{\incl} "srvconnection.h"\endCode
+
+
+\Section
+\Code
+{\incl} "command-parser.h"\endCode
 
 
 \Section
@@ -347,6 +374,16 @@ XtInputId  cid\endCode
 XtInputId  eid\endCode
 
 
+\Section
+\Code
+Bool  INTERACTIVE\endCode
+
+
+\Section
+\Code
+int  server{\underline}id\endCode
+
+
 \End\Methods
 \Section
 \Code
@@ -378,7 +415,14 @@ initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}
     {\dollar}gc{\underline}copy =  XtGetGC({\dollar}, 0,0 );
     {\dollar}progm = m{\underline}create(100,sizeof(char*));
     do{\underline}resize({\dollar});
+    {\dollar}INTERACTIVE=1;
 
+
+    cp{\underline}init();
+    cp{\underline}add( "EXIT", comm{\underline}exit{\underline}cb );
+    cp{\underline}add( "RUN", comm{\underline}run{\underline}cb );
+    
+    {\dollar}server{\underline}id = srvc{\underline}connect({\dollar},{\dollar}host,{\dollar}port, comm{\underline}recv{\underline}cb, {\dollar});
 {\rbrace}\endCode
 
 
@@ -386,6 +430,8 @@ initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}
 \Code
 destroy({\dollar})
 {\lbrace}
+        cp{\underline}destroy();
+        
     if( {\dollar}draw) XftDrawDestroy( {\dollar}draw );
     {\dollar}draw=0;
     font{\underline}free({\dollar});
@@ -885,35 +931,50 @@ prog{\underline}interpret({\dollar})
 
 \Section
 \Code
-prog{\underline}child{\underline}read({\dollar}, int * source, XtInputId * id)
+prog{\underline}child{\underline}pipe{\underline}read({\dollar}, int  pipe)
 {\lbrace}
-    int ch;
-    if( ! {\dollar}child ) ERR("memory corruption");
-    if( fork2{\underline}read({\dollar}child) ) {\lbrace}
+   if( ! {\dollar}child ) ERR("memory corruption");
+
+   if( fork2{\underline}read({\dollar}child, pipe) ) {\lbrace}     
         prog{\underline}kill({\dollar});
         return;
-    {\rbrace}
-    undraw{\underline}selection({\dollar});
-    while( (ch=mrb{\underline}get({\dollar}child-{\rangle}buf)) {\rangle}= 0 )
-        te{\underline}putc( {\dollar}, ch );
-    selection{\underline}draw({\dollar});
+   {\rbrace}
+
+   int buf = m{\underline}create(50,1);    
+
+   undraw{\underline}selection({\dollar});
+   
+   while(! fork2{\underline}getline({\dollar}child, pipe, buf ) ) {\lbrace}
+
+      te{\underline}writeln({\dollar}, m{\underline}buf(buf));
+      
+      if( strncmp(m{\underline}buf(buf),"RUN",3)==0 ) {\lbrace}
+          {\dollar}INTERACTIVE=0;
+          fprintf(stderr, "interactive mode off{\backslash}n" );
+      {\rbrace}
+      else if( strncmp(m{\underline}buf(buf),"EXIT",4)==0 ) {\lbrace}
+          fprintf(stderr, "interactive mode ON{\backslash}n" );
+          {\dollar}INTERACTIVE=1;
+      {\rbrace}
+   {\rbrace}
+   selection{\underline}draw({\dollar});
+
 {\rbrace}\endCode
 
 
 \Section
 \Code
-prog{\underline}child{\underline}err{\underline}read({\dollar}, int * source, XtInputId * id)
+prog{\underline}child{\underline}read{\underline}stdout({\dollar}, int * source, XtInputId * id)
 {\lbrace}
-    int len, i;
+    prog{\underline}child{\underline}pipe{\underline}read({\dollar}, CHILD{\underline}STDOUT{\underline}RD );
+{\rbrace}\endCode
 
-    if( ! {\dollar}child ) ERR("memory corruption");
-    char buf[1024];
-    len = read( *source, buf, sizeof(buf) );
 
-    undraw{\underline}selection({\dollar});
-    for(i=0;i{\langle}len;i++)
-        te{\underline}putc( {\dollar}, buf[i] );
-    selection{\underline}draw({\dollar});
+\Section
+\Code
+prog{\underline}child{\underline}read{\underline}stderr({\dollar}, int * source, XtInputId * id)
+{\lbrace}
+    prog{\underline}child{\underline}pipe{\underline}read({\dollar}, CHILD{\underline}STDERR{\underline}RD );
 {\rbrace}\endCode
 
 
@@ -922,21 +983,20 @@ prog{\underline}child{\underline}err{\underline}read({\dollar}, int * source, Xt
 prog{\underline}run({\dollar})
 {\lbrace}
         if( {\dollar}child ) prog{\underline}kill({\dollar});
-        {\dollar}child = fork2{\underline}open( "lua5.3", "-i", NULL, "-e", "{\underline}PROMPT=''", NULL );
+        {\dollar}child = fork2{\underline}open( "./interpreter.sh", "-i", NULL, "-e", "{\underline}PROMPT=''", NULL );
         {\dollar}cid = XtAppAddInput( XtWidgetToApplicationContext({\dollar}),
-                       {\dollar}child-{\rangle}fd[0],
+                       {\dollar}child-{\rangle}fd[CHILD{\underline}STDOUT{\underline}RD],
                        (XtPointer)XtInputReadMask,
-                       (XtInputCallbackProc)prog{\underline}child{\underline}read,
+                       (XtInputCallbackProc)prog{\underline}child{\underline}read{\underline}stdout,
                        {\dollar} );
 
         {\dollar}eid = XtAppAddInput( XtWidgetToApplicationContext({\dollar}),
-                       {\dollar}child-{\rangle}fd[4],
+                       {\dollar}child-{\rangle}fd[CHILD{\underline}STDERR{\underline}RD],
                        (XtPointer)XtInputReadMask,
-                       (XtInputCallbackProc)prog{\underline}child{\underline}err{\underline}read,
+                       (XtInputCallbackProc)prog{\underline}child{\underline}read{\underline}stderr,
                        {\dollar} );
 
-
-
+         if( {\dollar}child ) fork2{\underline}write({\dollar}child, "hello world{\backslash}n");
 {\rbrace}\endCode
 
 
@@ -1265,6 +1325,7 @@ prog{\underline}kill({\dollar})
         {\rbrace}
         if( {\dollar}cid ) {\lbrace} XtRemoveInput({\dollar}cid); {\dollar}cid=0; {\rbrace}
         if( {\dollar}eid ) {\lbrace} XtRemoveInput({\dollar}eid); {\dollar}eid=0; {\rbrace}
+        {\dollar}INTERACTIVE=1;
 {\rbrace}\endCode
 
 
@@ -1278,6 +1339,36 @@ do{\underline}resize({\dollar})
     printf("WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}gWidth, {\dollar}gHeight );
     printf("pix WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}grid{\underline}pix{\underline}width, {\dollar}grid{\underline}pix{\underline}height );
     printf("w WxH={\percent}dx{\percent}d{\backslash}n",{\dollar}width, {\dollar}height );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+comm{\underline}exit{\underline}cb({\dollar})
+{\lbrace}
+        TRACE(2,"exit");
+        {\dollar}INTERACTIVE=0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+comm{\underline}run{\underline}cb({\dollar})
+{\lbrace}
+        TRACE(2,"run");
+        {\dollar}INTERACTIVE=1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+comm{\underline}recv{\underline}cb({\dollar}, void * u, void * d)
+{\lbrace}
+    TRACE(2,"read line");       
+    int line = (intptr{\underline}t) d;
+    if( line {\langle} 1 ) return;
+    cp{\underline}func{\underline}t func = cp{\underline}lookup(line);
+    if( func ) func({\dollar});
 {\rbrace}\endCode
 
 

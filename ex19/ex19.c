@@ -175,7 +175,7 @@ static void inc_rst( Widget w, void *u, void *c );
 static void quarks_init(void);
 static void mcu_input_cb( XtPointer p, int *n, XtInputId *id );
 
-int mcu_open(uint mcu);
+static int mcu_open(uint mcu);
 
 enum MCU_STATE {
     DISABLED,
@@ -211,7 +211,7 @@ static struct mcu_comm *mcu_ptr(uint ctx)
    if no commands are received send "x\n" and
    wait until command is received.
 */
-uint mcu_create(Widget top, char *host, char* service)
+static uint mcu_create(Widget top, char *host, char* service)
 {
     if(! MCU_COMM ) MCU_COMM = m_create(10,sizeof(struct mcu_comm));
     struct mcu_comm *mcu = m_add(MCU_COMM);
@@ -225,7 +225,7 @@ uint mcu_create(Widget top, char *host, char* service)
     return m_len(MCU_COMM);
 }
 
-int mcu_open(uint mcuid)
+static int mcu_open(uint mcuid)
 {
     struct mcu_comm *mcu = mcu_ptr(mcuid);
     mcu->fd  = sock_connect_service(mcu->host,mcu->service);
@@ -254,7 +254,7 @@ static void mcu_send(uint mcuid, char *s)
 }
 
 
-void mcu_destroy(uint mcuid)
+static void mcu_destroy(uint mcuid)
 {
     struct mcu_comm *mcu = mcu_ptr(mcuid);
     mcu_close(mcuid);
@@ -263,21 +263,6 @@ void mcu_destroy(uint mcuid)
     mcu->state = DISABLED;
 }
 
-/* read from queue until newline,
- *   i know it is not zero copy...
- */
-int mrb_get_line( int line, struct mrb *q )
-{
-    int ch, found = 0;
-    while( (ch=mrb_get(q)) != -1 )
-        if( ch == 10 ) {
-            m_putc(line,0);
-            found = 1;
-            break;
-        } else m_putc(line,ch);
-
-    return found;
-}
 
 struct mv2_signal {
   void *d;
@@ -435,7 +420,7 @@ void mv2_onwrite( int q, void (*fn) (void*), void *d, int remove )
 /** @brief read from fd and fill available space in queue
  * @returns -1 on error, 0 ok
  */
-int mrb_read_max(int fd, struct mrb *q)
+static int mrb_read_max(int fd, struct mrb *q)
 {
     int free_space;
     char *buf  = mrb_maxsize(q, &free_space);
@@ -471,7 +456,7 @@ static void mcu_input_cb( XtPointer p, int *n, XtInputId *id )
         return;
     }
 
-    while( mrb_get_line( mcu->line, mcu->qin ) )
+    while( mrb_get_line( mcu->qin, mcu->line ) )
         {
             mv2_parse_input(mcu->line);
             int p1=2; mv_parse(mcu->line,&p1,"");
@@ -564,9 +549,9 @@ static void InitializeApplication( Widget top )
     CONFIG.filelist = m_create(100, sizeof(char*));
     CONFIG.vset = v_init();
     quarks_init();
-    XtAppContext app = XtWidgetToApplicationContext(top);
-    XtAppAddTimeOut(app, COMM_TIMER_MS, mcu_communication, app );
-    mcu_create( TopLevel, CONFIG.host_name, CONFIG.host_service );
+    // XtAppContext app = XtWidgetToApplicationContext(top);
+    // XtAppAddTimeOut(app, COMM_TIMER_MS, mcu_communication, app );
+    // mcu_create( TopLevel, CONFIG.host_name, CONFIG.host_service );
 
     mv2_onwrite( q_pin, input_pin_status_changed, 0, 0 );
     mv2_onwrite( q_cfg, port_cfg_changed, 0, 0 );
@@ -646,6 +631,9 @@ int main ( int argc, char **argv )
 {
     trace_main = TRACE_MAIN;
 
+    int jörg = 0;
+
+    
     XtAppContext app;
     signal(SIGPIPE, SIG_IGN); /* ignore broken pipe on write */
     m_init();
