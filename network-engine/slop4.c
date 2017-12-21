@@ -82,6 +82,7 @@ void slop_put( struct slop_state *slop, int ch )
 	if( m_len(m) || m_len(slop->msg) > 1 ) {
 	    slop->error += slop->state; 	    
             /* send message */
+	    
 	    slop->cb(slop->error, slop->msg, slop->ctx);
 	    slop_free_message(slop->msg);
 	}
@@ -137,9 +138,11 @@ void slop_put( struct slop_state *slop, int ch )
 	slop->crc=crc_init();
 	return;
     }
-    TRACE(1,"store byte");
-    if( m_len(m) < SLOP_CACHE )
+
+    if( m_len(m) < SLOP_CACHE ) {
 	m_putc(m, ch);
+	TRACE(1,"store byte %c", ch);
+    }
     slop->crc = crc_update_byte(slop->crc,ch);
 }
 

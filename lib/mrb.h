@@ -17,8 +17,8 @@ struct mrb {
     int fd;
     int rd,wr;
     int size;
-    unsigned char buf[0];
     int read_error;
+    unsigned char buf[0];
 };
 
 int mrb_bytesused(struct mrb *b);

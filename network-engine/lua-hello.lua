@@ -15,16 +15,18 @@ a = check_func(100,200);
 howdy( "what", "should", "we", "do", a );
 circle( 50,60,70 );
 
-tab = measure_screen();
-
-print( "name is: " .. tab["name"] );
-print( "ip   is: " .. tab["ip"] );
-print( "date is: " .. tab["date"] );
 
 clrscr();
 
-for i=1,100,3
+for i=1,100,100
 do
 	circle( 50+i, 60+i, 170 - i );
 end
+
+rect( 100, 100, 50,60 )
+
+tab = measure_screen();
+print( "width is: " .. tab["width"] );
+print( "height is: " .. tab["height"] );
+
 

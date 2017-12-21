@@ -1,0 +1,1297 @@
+@CLASS TermEd ( Core )
+
+@PUBLIC
+@var int gWidth = 40
+@var int gHeight = 25
+@var int size = 8
+@var int selTime = 400
+@var String text = <String> "Hello World\nHow are you?"
+@var <XftColor> XftColor fg = <String> "White"
+@var <XftColor> XftColor bg = <String> "Darkgreen"
+@var <XftColor> XftColor cbg = <String> "Red"
+@var <XftColor> XftColor cfg = <String> "Green"
+@var String host = <String> "localhost"
+@var String port = <String> "10002"
+
+
+@PRIVATE
+@var XtIntervalId timerid
+@var Boolean blink
+@var XftFont *xftFont
+@var XftDraw *draw
+@var XftColor* col[4]
+@var uint32_t *scr
+@var int grid_pix_width
+@var int grid_pix_height
+@var Bool selection_visible
+@var XRectangle rsel
+@var XRectangle rsel_old
+@var GC gc_copy
+@var uint8_t *cmd
+@var uint cmd_len
+@var int progm
+@var int sln
+@var int cp2
+@var XtInputId cid
+@var XtInputId eid
+@var Bool INTERACTIVE
+@var int server_id;
+
+@methods
+@proc class_initialize { converters_xft_init(); }
+
+@proc initialize
+{
+    FcChar32 bat = 0x42;
+    XGlyphInfo extents;
+    Display *dpy = XtDisplay($);
+    font_load($,$size);
+    XftTextExtents32(dpy, $xftFont, &bat, 1, &extents);
+    $height = ($grid_pix_height = $xftFont->ascent + $xftFont->descent) * $gHeight;
+    $width  = ($grid_pix_width = extents.width) * $gWidth;
+    $draw=0;
+    $cmd=0;
+    $scr=0;
+    $sln=0;
+    $col[0] = & $fg;
+    $col[1] = & $bg;
+    $col[2] = & $cfg;
+    $col[3] = & $cbg;
+    $selection_visible = False;
+    $timerid = 0;
+    $gc_copy =  XtGetGC($, 0,0 );
+    $progm = m_create(100,sizeof(char*));
+    do_resize($);
+    $INTERACTIVE=1;
+
+    $cp2 = cp2_init($);
+    cp2_add($cp2, "EXIT", comm_exit_cb );
+    cp2_add($cp2, "RUN", comm_run_cb );
+    cp2_add($cp2, "GOTOXY:", comm_gotoxy );
+    cp2_add($cp2, "WRITE:", comm_write );
+    cp2_add($cp2, "MEASURE_SCREEN", comm_measure_screen );
+    cp2_add($cp2, "RECTF:", comm_rectf );
+    cp2_add($cp2, "CLRSCR", comm_clrscr );
+    cp2_add($cp2, "CIRCLE:", comm_circle );
+    cp2_add($cp2, "ERR:", comm_err );		
+    
+    $sln = sln_init();
+
+
+    try_connect($,NULL);
+    
+}
+
+
+@proc destroy
+{
+     cp2_free($cp2);
+     
+    if( $draw) XftDrawDestroy( $draw );
+    $draw=0;
+    font_free($);
+    if( $scr ) { free($scr); $scr=0; }
+    if( $cmd ) { free($cmd); $cmd=0; }
+    if( $progm ) { m_free_strings( $progm, 0); $progm=0; }
+    if( $sln ) prog_kill($);
+
+}
+
+@proc set_values
+{
+    if( $old$size != $size ) {
+        font_free($);
+        font_load($,$size);
+        $resize( $ );
+    }
+    return True; /* call expose */
+}
+
+@proc resize
+{
+    $gWidth  = $width / $grid_pix_width;
+    $gHeight = $height / $grid_pix_height;
+    do_resize($);
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    if(!$draw )
+        $draw = XftDrawCreate(dpy, XtWindow($),
+                              DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    test_convert($);
+    full_draw($);
+    selection_draw($);
+    /*   FcChar32 bat = 0xf240 + $status;
+        XftDrawString32($draw, $col[$status],$xftFont,0,$xftFont->ascent,&bat,1);
+    */
+    printf("w WxH=%dx%d\n",$width, $height );
+}
+
+
+@UTILITIES
+@proc font_free($)
+{
+    Display *dpy = XtDisplay($);
+    if( $xftFont ) XftFontClose(dpy, $xftFont );
+    $xftFont=0;
+}
+
+@proc font_load($,int size)
+{
+    Display *dpy = XtDisplay($);
+    int screen = DefaultScreen(dpy);
+    char fontname[30];
+    sprintf(fontname, "Source Code Pro-%d", $size );
+    font_free($);
+    $xftFont = XftFontOpenName(dpy,screen, fontname );
+}
+
+@proc draw_glyph_color($, int x, int y, int fg, int bg, uint32_t ucs4 )
+{
+    int x0,y0,w,h;
+    uint32_t glyph;
+
+    x0 = x * $grid_pix_width;
+    y0 = y * $grid_pix_height;
+    w = $grid_pix_width;
+    h = $grid_pix_height;
+
+    if( bg >= 0 ) XftDrawRect($draw,$col[bg], x0,y0,w,h );
+    if( ucs4 == 0 || ucs4 == 32 ) return;
+
+    glyph = XftCharIndex ( XtDisplay($), $xftFont, ucs4 );
+    XftDrawGlyphs ($draw, $col[fg], $xftFont,
+                   x0, y0+$xftFont->ascent,
+                   &glyph, 1);
+}
+
+@proc full_draw($)
+{
+    int x,y;
+    XftDrawRect($draw,$col[1], 0,0, $width, $height );
+    for(x=0;x<$gWidth;x++) {
+        for(y=0;y<$gHeight;y++) {
+            draw_glyph_color($,x,y,0,-1,$scr[x + y * $gWidth ] );
+        }
+    }
+}
+
+@proc putcharat($, int x, int y, uint32_t ucs4 )
+{
+    if( x < $gWidth && x >= 0 && y < $gHeight && y >= 0 )
+        {
+            $scr[x + y * $gWidth ] = ucs4;
+        }
+}
+
+@proc uint32_t getcharat($, int x, int y )
+{
+    if( x < $gWidth && x >= 0 && y < $gHeight && y >= 0 )
+        {
+            return $scr[x + y * $gWidth ];
+        }
+
+    return 0;
+}
+
+@proc  drawcharat($, int x, int y, int fg, int bg )
+{
+    if( x < $gWidth && x >= 0 && y < $gHeight && y >= 0 )
+        {
+            draw_glyph_color($,x,y,fg,bg,$scr[x + y * $gWidth ] );
+        }
+}
+
+@proc draw_string($,int x, int y, char *str)
+{
+    int len,l;
+    unsigned char *string = (void*) str;
+    uint32_t ucs4;
+    len = strlen( (char*)string);
+    x=0; y=0;
+    while(1) {
+        l = FcUtf8ToUcs4 (string, &ucs4, len);
+        if( l<= 0 || len <=0 ) return;
+        if( ucs4 == '\n' ) { x=0; y++; }
+        if( x >= $gWidth ) { x=0; y++; }
+        if( y >= $gHeight ) { y=0; }
+        if( ucs4 >=' ' ) {
+            putcharat($,x,y,ucs4);
+            x++;
+        }
+        string += l;
+        len -= l;
+    }
+}
+
+@proc test_convert($)
+{
+    draw_string($, 0, $gHeight / 2, $text );
+}
+
+@proc selection_timer( $, XtIntervalId *id)
+{
+    int nr = $blink ? 2 : 0;
+    if( $selection_visible ) {
+        drawcharat($, $rsel_old.x, $rsel_old.y, nr, nr+1 );
+        $blink = ! $blink;
+        if( id==NULL && $timerid ) XtRemoveTimeOut($timerid);
+        $timerid = XtAppAddTimeOut(XtWidgetToApplicationContext($), $selTime,
+                        (void*)selection_timer, $ );
+    }
+    else $timerid=0;
+}
+
+@proc undraw_selection($)
+{
+    if( $selection_visible ) {
+        drawcharat($, $rsel_old.x, $rsel_old.y, 0,1 );
+        $selection_visible = False;
+        if($timerid) {
+            XtRemoveTimeOut($timerid);
+            $timerid=0;
+        }
+    }
+}
+
+@proc selection_draw($)
+{
+    if( $rsel.x >= $gWidth ) $rsel.x = $gWidth-1;
+    if( $rsel.y >= $gHeight ) $rsel.y = $gHeight-1;
+    undraw_selection($);
+    $selection_visible = True;
+    $rsel_old = $rsel;
+    $blink = True; selection_timer($,0);
+}
+
+@proc scr_scroll_up($)
+{
+        memcpy( $scr, $scr + $gWidth,
+                ($gWidth*($gHeight-1))*4 );
+        memset( $scr + $gWidth*($gHeight-1), 0, $gWidth*4 );
+}
+
+@proc pix_scroll_up($)
+{
+/*
+      XCopyArea(display, src, dest, gc, src_x, src_y, width, height,  dest_x, dest_y)
+      Display *display;
+      Drawable src, dest;
+      GC gc;
+      int src_x, src_y;
+      unsigned int width, height;
+      int dest_x, dest_y;
+*/
+    XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
+              0, $grid_pix_height,
+              $grid_pix_width * ($gWidth),
+              $grid_pix_height * ($gHeight-1),
+              0,0 );
+
+    /* clear background */
+    XftDrawRect($draw,$col[1],
+    0,      $grid_pix_height * ($gHeight-1),
+    $width, $grid_pix_height );
+
+}
+
+
+@proc te_pos1($)
+{
+    $rsel.x = 0;
+}
+
+@proc te_tab($)
+{
+    int x = $rsel.x;
+    x /= 8;
+    x ++;
+    x *= 8;
+    if( x < $gWidth ) $rsel.x = x;
+}
+
+@proc te_down($)
+{
+    if( $rsel.y < ($gHeight-1) ) {
+        $rsel.y++;
+        return;
+    }
+
+    pix_scroll_up($);
+    scr_scroll_up($);
+}
+
+
+@proc Bool te_parse($,uint32_t ucs4)
+{
+    switch( ucs4 ) {
+    default: break;
+    case 10: te_pos1($); te_down($); return True;
+    case '\t': te_tab($); return True;
+    case 13: te_pos1($); return True;
+    }
+    return False;
+}
+
+@proc te_gotoxy($, int x, int y)
+{
+    undraw_selection($);
+    if( x >= $gWidth ) x=$gWidth-1;
+    if( y >= $gHeight ) x=$gHeight-1;
+    $rsel.x = x;
+    $rsel.y = y;
+    selection_draw($);
+}
+
+@proc te_right($)
+{
+    if( $rsel.x < ($gWidth-1) ) {
+        $rsel.x++;
+        return;
+    }
+    te_pos1($);
+    te_down($);
+}
+
+
+@proc pix_del($)
+{
+   int x0,y0,x1,y1,w,h,x,y;
+   x = $rsel.x; y=$rsel.y;
+   /*-----------------------*/
+   /* destination           */
+   x0 = x;
+   y0 = y;
+   /*-----------------------*/
+   /* width, height         */
+   w = $gWidth - (x+1);
+   h = 1;
+   /*-----------------------*/
+   /* source                */
+   x1 = x0+1;
+   y1 = y0;
+   /*-----------------------*/
+   /* transformation        */
+   w   *= $grid_pix_width;
+   x0  *= $grid_pix_width;
+   x1  *= $grid_pix_width;
+   h   *= $grid_pix_height;
+   y0  *= $grid_pix_height;
+   y1  *= $grid_pix_height;
+
+   XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
+             x1,y1,w,h, /* source */
+             x0,y0      /* destination */
+             );
+}
+
+@proc pix_ins($)
+{
+   int x0,y0,x1,y1,w,h,x,y;
+   x = $rsel.x; y=$rsel.y;
+   /*-----------------------*/
+   /* destination           */
+   x0 = x+1;
+   y0 = y;
+   /*-----------------------*/
+   /* width, height         */
+   w = $gWidth - (x+1);
+   h = 1;
+   /*-----------------------*/
+   /* source                */
+   x1 = x;
+   y1 = y;
+   /*-----------------------*/
+   /* transformation        */
+   w   *= $grid_pix_width;
+   x0  *= $grid_pix_width;
+   x1  *= $grid_pix_width;
+   h   *= $grid_pix_height;
+   y0  *= $grid_pix_height;
+   y1  *= $grid_pix_height;
+
+   XCopyArea(XtDisplay($), XtWindow($), XtWindow($), DefaultGC(XtDisplay($),0),
+             x1,y1,w,h, /* source */
+             x0,y0      /* destination */
+             );
+}
+
+@proc te_ins($)
+{
+   int i,x,y;
+   x = $rsel.x; y=$rsel.y;
+   uint32_t *s = $scr+y* $gWidth;
+
+   /* letztes zeichen der zeile mit <null> füllen */
+   if( x == $gWidth -1 ) {
+      s[x] = 0;
+      return;
+   }
+
+   for(i=$gWidth-2; i>=x ; i-- )
+              s[i+1] = s[i];
+   pix_ins($);
+   s[x] = 32;
+}
+
+
+@proc te_del($)
+{
+   uint16_t i,x,y;
+   x = $rsel.x; y=$rsel.y;
+   uint32_t *s = $scr+y* $gWidth;
+
+   /* letztes zeichen der zeile mit <null> füllen */
+   if( x == $gWidth -1 ) {
+      s[x] = 0;
+      return;
+   }
+
+   for(i=x+1; i< $gWidth; i++ )
+              s[i-1] = s[i];
+   pix_del($);
+}
+
+
+@proc te_putc($, uint32_t ucs4)
+{
+    if( $rsel.x >= $gWidth ) $rsel.x = $gWidth-1;
+    if( $rsel.y >= $gHeight ) $rsel.y = $gHeight-1;
+    if( te_parse($,ucs4) ) return;
+    putcharat($, $rsel.x, $rsel.y,ucs4);
+    drawcharat($, $rsel.x, $rsel.y, 0,1 );
+    $selection_visible = False;
+    te_right($);
+}
+
+@proc te_home($)
+{
+    undraw_selection($);
+    $rsel.x = 0; $rsel.y=0;
+    selection_draw($);	
+}
+
+
+@proc te_clrscr($)
+{	
+    memset($scr,0,$gWidth * $gHeight * 4 );
+    full_draw($);
+    $selection_visible = False;
+    te_home($);
+}
+
+
+@proc te_left($)
+{
+    if( $rsel.x == 0 ) return;
+    $rsel.x--;
+}
+
+
+@proc exec_line($)
+{
+    int i,len, space_left;
+    unsigned char *dest;
+    // char *string = malloc( $gWidth * 6 + 2 );
+    char *string = (void*)$cmd;
+    uint32_t *s = $scr + $rsel.y * $gWidth;
+    dest = (void*)string;
+    space_left = $cmd_len;
+    for( i=0; i< $gWidth; i++ )
+        {
+            if( space_left < 7 ) break;
+            len = FcUcs4ToUtf8( *s++, dest );
+            dest+=len;
+            space_left -= len;
+        }
+    *dest = 0;
+    printf("str: %s\n", string );
+
+    /* check if there is a line number prefix */
+    if(! prog_insert_line($, string) ) return;
+
+    if( strncmp( string, "list", 4 ) == 0 ) prog_list($);
+    else if( strncmp( string, "save", 4 ) == 0 ) prog_save($);
+    else if( strncmp( string, "load", 4 ) == 0 ) prog_load($);
+    else if( strncmp( string, "run", 3 ) == 0 ) prog_run($);
+    else if( strncmp( string, "parse", 5 ) == 0 ) prog_parse($);
+    else if( strncmp( string, "del", 3 ) == 0 ) prog_del($);
+    else if( $sln ) prog_interpret($);
+}
+
+@proc prog_interpret($)
+{
+    char *s = (void*)$cmd;
+    while(*s && *s == '>' ) s++;
+    /* dprintf( $sln->fd[3], "%s\n", s ); */
+}
+
+
+@proc prog_child_pipe_read($, int pipe)
+{
+
+	int buf = 0;
+      
+      if( strncmp(m_buf(buf),"RUN",3)==0 ) {
+      	  $INTERACTIVE=0;
+	  TRACE(2, "interactive mode off" );
+      }
+      else if( strncmp(m_buf(buf),"EXIT",4)==0 ) {
+      	  TRACE(2, "interactive mode ON" );
+      	  $INTERACTIVE=1;
+      }
+
+   selection_draw($);
+}
+
+@proc prog_child_read($, int *source, XtInputId *id)
+{
+	TRACE(1,"");
+	if( sln_input_cb($sln) ) {
+	    TRACE(1,"server died" );
+	    XtRemoveInput(*id);
+    	}
+}
+
+@  starte das program
+   beginne mit erster zeile oder der angegeben
+   beispiel "run 200" startet bei zeile 200
+   
+@proc prog_run($)
+{
+	int line,match;
+	char *s =(char*) $cmd+3;
+    	int arg;
+	line=0;
+	/* falls eine zeilennummer angegeben wurde, diese zeile suchen */	
+	if(! get_num(&s,&arg) ) {
+	    match  = progm_find( $progm, arg, &line );
+            if( match != 0 ) {
+	    	te_write($, "\nerror can not find line\n");
+	    	return;
+	    }
+        }
+	int buf = m_create(10240,1);
+	int crc = slop_encode_str( buf, 0, "PUT:" );
+
+	for( ; line < m_len($progm); line++ )
+	{
+	   s = STR($progm,line);
+	   crc = slop_encode_str(buf,crc,s+4);
+	   crc = slop_encode(buf,crc,10);
+	}
+ 	slop_encode(buf,crc,-1);
+	sock_write( sln_get_fd($sln), buf);
+	m_free(buf);
+}
+
+
+
+
+@proc char *progm_alloc($, uint32_t ln, char *s)
+{
+        char *buf = malloc( 5 + strlen(s) );
+        *(uint32_t *)buf = ln;
+        while( isspace(*s) ) s++;
+        strcpy( buf +4, s );
+        return buf;
+}
+
+@proc progm_insert($, int i, uint32_t arg, char *s)
+{
+        m_ins($progm,i, 1);
+        STR($progm, i) = progm_alloc($,arg,s);
+}
+
+@proc progm_overwrite($, int i, uint32_t arg, char *s)
+{
+        free( STR($progm,i));
+        STR($progm, i) = progm_alloc($,arg,s);
+}
+
+@proc progm_append($, uint32_t arg, char *s)
+{
+        char *buf = progm_alloc($,arg,s);
+        m_put( $progm, &buf );
+}
+
+
+@ finde zeile |num| im puffer
+  returns: match
+  |*pos| == zeilennummer
+  match == 0 : gefunden
+  match <  0 : num größte zeile
+  match >  1 : *pos größer als |num|
+@proc int progm_find(int prog, uint32_t num, int *pos)
+{
+        int i;
+        uint32_t n;
+        char *s;
+
+        for(i=0;i<m_len(prog);i++) {
+          s= STR(prog,i);
+          n = *(uint32_t *) s;
+          if( n == num ) { *pos=i; return 0; }
+          else if( n > num ) { *pos=i; return 1; };
+        }
+        *pos = i;
+        return -1;
+}
+
+
+@proc progm_put($, uint32_t arg, char *ln )
+{
+        int i;
+        uint32_t n;
+        char *s;
+
+        for(i=0;i<m_len($progm);i++) {
+          s= STR($progm,i);
+          n = *(uint32_t *) s;
+          if( n == arg ) { progm_overwrite( $, i, arg, ln ); return; }
+          else if( n > arg ) { progm_insert($, i, arg, ln ); return; }
+        }
+        progm_append($,arg, ln );
+}
+
+
+@proc Bool prog_insert_line($, char *buf)
+{
+        char *s = (void*) buf;
+        char *endp;
+        int arg;
+
+        arg = strtol( s,&endp,10);
+        if( s == endp ) { return 1; }
+
+        progm_put($, arg, endp );
+        return 0;
+}
+
+
+@ load a program file to memory
+  syntax: load filename
+
+
+@proc prog_error( $, char *s )
+{
+        te_down($);
+        te_pos1($);
+        te_write($,s);
+        te_down($);
+        te_pos1($);
+}
+
+
+@proc prog_load($)
+{
+        char *s = (void*)$cmd+5;
+        int p = m_create(20,1);
+
+        while( *s && ! isspace(*s) )
+               m_putc( p, *s++ );
+        m_putc(p,0);
+
+        FILE *fp = fopen( m_buf(p), "r" );
+        if( !fp ) { prog_error( $, "file read error" ); goto leave; }
+        m_clear(p);
+
+
+        while( m_fscan2( p, '\n', fp ) == '\n' ) {
+                prog_insert_line($,m_buf(p));
+                m_clear(p);
+        }
+
+        fclose(fp);
+        leave: m_free(p);
+
+}
+
+
+@ save a program file to filesystem
+  syntax: save filename
+@proc prog_save($)
+{
+        /* get two integer args */
+        char *s = (void*)$cmd+5;
+        int p = m_create(20,1);
+        int i;
+
+        while( *s && ! isspace(*s) )
+               m_putc( p, *s++ );
+        m_putc(p,0);
+
+        FILE *fp = fopen( m_buf(p), "w" );
+        if( !fp ) { prog_error( $, "file write error" ); goto leave; }
+
+        for(i=0;i<m_len($progm);i++)
+        {
+                s = STR($progm,i);
+                uint32_t n = *(uint32_t *)s; s+=4;
+                fprintf(fp,"%u %s\n", n,s );
+        }
+
+        fclose(fp);
+        leave: m_free(p);
+}
+
+@proc prog_parse($)
+{
+
+    if(! $sln ) {
+        prog_error($,"starting subshell with 'run'");
+        prog_run($);
+    }
+
+    int from,len;
+
+    from = 0;
+    len  = m_len($progm);
+
+    /* get two integer args */
+    char *s = (void*)$cmd+6;
+    char *endp;
+    from = strtol( s,&endp,10);
+    if( s == endp ) { from=0; goto cont; }
+
+ cont:
+    prog_do_parse($, from, len);
+}
+
+
+@proc Bool get_num(char **s, int *num)
+{
+    while( **s && isspace(**s) ) (*s)++;
+    int n=0;
+    char *e = *s;
+    while( **s && isdigit(**s) ) {
+	n=(10*n) + (**s)-'0';
+	(*s)++;
+    }
+    if( e == *s ) return 1;
+    *num = n;
+    return 0;
+}
+
+@  delete lines from program
+   example: 
+   1) delete all
+         del
+   2) delete single line ten
+         del 10
+   3) delete five lines starting at ten
+         del 10 5
+   
+@proc prog_del($)
+{
+    char *s = (void*)$cmd+3;
+    int from,cnt;
+    
+    if( get_num(&s,&from) ) { m_free_strings( $progm, 1); return; }
+    if( get_num(&s,&cnt) ) cnt=1;
+
+    TRACE(1,"from:%d, cnt:%d", from, cnt );
+    delete_lines($, from, cnt );
+}
+
+
+@  list program
+   example: list 10
+   example: list 10 8
+
+@proc prog_list($)
+{
+        int arg,from,len;
+
+        from = 0;
+        len  = 100;
+
+        /* get two integer args */
+        char *s = (void*)$cmd+5;
+        char *endp;
+        arg = strtol( s,&endp,10);
+        if( s == endp ) { arg=0; goto cont; }
+
+        s=endp; if( *s == ',' ) s++;
+        from = arg;
+        arg = strtol( s,&endp,10);
+        if( s == endp ) { arg=0; goto cont; }
+        len = arg;
+
+        cont:
+        te_pos1($); te_down($);
+        prog_do_list($, from, len);
+}
+
+
+@proc te_write($, char *str)
+{
+    int len,l;
+    unsigned char *string = (void*) str;
+    uint32_t ucs4;
+    len = strlen( (char*)string);
+
+    while(1) {
+        l = FcUtf8ToUcs4 (string, &ucs4, len);
+        if( l<= 0 || len <=0 ) return;
+        te_putc($,ucs4);
+        string += l;
+        len -= l;
+    }
+}
+
+@proc te_writeln($,char *s)
+{
+        te_write($,s);
+        te_pos1($);
+        te_down($);
+}
+
+
+@proc prog_print($, int i)
+{
+        char buf[20];
+
+
+        char *s = STR($progm,i);
+        uint32_t num = *(uint32_t *)s;
+        s+=4;
+
+        sprintf(buf,"%u", num);
+        te_write($,buf);
+        te_putc($,32);
+        te_write($,s);
+}
+
+
+@proc delete_lines($, int from, int len)
+{
+        int i;
+        int line;
+
+        int match  = progm_find( $progm, from, &line );
+        if( match < 0 ) return;
+
+        for(i=0;i<len;i++) {
+                if( match >= m_len($progm) ) break;
+		char *s = STR($progm,line);		
+		free(s);
+		m_del($progm,line);
+	}
+}
+
+
+@proc prog_do_list($, int from, int len)
+{
+        int i;
+        int line;
+
+        int match  = progm_find( $progm, from, &line );
+        if( match < 0 ) return;
+
+        for(i=line;i<line+len;i++) {
+                if( i >= m_len($progm) ) break;
+                prog_print($,i);
+                te_pos1($);
+                te_down($);
+        }
+}
+
+@proc prog_do_parse($, int from, int len)
+{
+        int i;
+        int line;
+
+        int match  = progm_find( $progm, from, &line );
+        if( match < 0 ) return;
+
+        for(i=line;i<line+len;i++) {
+                if( i >= m_len($progm) ) break;
+                char *s = STR($progm,i);
+                s+=4;
+		
+                /* dprintf( $sln->fd[3], "%s\n", s ); */
+        }
+}
+
+
+
+@proc prog_kill($)
+{
+        if( $sln ) {
+            $sln=0;
+        }
+        if( $cid ) { XtRemoveInput($cid); $cid=0; }
+        if( $eid ) { XtRemoveInput($eid); $eid=0; }
+	$INTERACTIVE=1;
+}
+
+@proc do_resize($)
+{
+    $scr=realloc($scr, $gWidth * $gHeight * 4 );
+    memset($scr,0,$gWidth * $gHeight * 4 );
+    $cmd=realloc($cmd,$cmd_len = ($gWidth+2) * 6 );
+    TRACE(1,"WxH=%dx%d\n",$gWidth, $gHeight );
+    TRACE(1,"pix WxH=%dx%d\n",$grid_pix_width, $grid_pix_height );
+    TRACE(1,"w WxH=%dx%d\n",$width, $height );
+}
+
+
+@proc int xatoi(int m, int *p, int *number_ret)
+{
+	while( *p < m_len(m) && isspace(CHAR(m,*p))) (*p)++;
+	
+	int n=0;
+	int e=*p;
+	while( *p < m_len(m) && isdigit(CHAR(m,*p))) {
+	       n=(n*10)+(CHAR(m,*p)-'0');
+	       (*p)++;
+	}
+	*number_ret = n;
+	return e == *p;
+}
+
+
+@proc int parse_numbers(int m, int *p, int cnt)
+{
+	int num = m_create(10,sizeof(int));
+	int d;
+
+	while( xatoi(m,p,&d) == 0 && cnt-- )
+	       m_put(num,&d);
+	      
+	return num;
+}
+
+@proc comm_gotoxy($, int buf)
+{
+	int offs = 7;
+	int m = parse_numbers(buf,&offs, 2);
+	if( m_len(m) !=2 ) {
+	    WARN("comm error");
+	    return;
+	}
+	te_gotoxy($, INT(m,0), INT(m,1));
+	m_free(m);
+}
+
+@proc comm_err($, int buf)
+{
+	int offs = 4; /* err: */
+	te_pos1($);
+	if( offs < m_len(buf))
+	    te_write($, mls(buf,offs) );
+	te_pos1($);
+	te_down($);
+}
+
+@proc comm_write($, int buf)
+{
+	int offs = 6; /* write: */
+	if( offs < m_len(buf))
+	    te_write($, mls(buf,offs) );
+}
+
+
+@proc void parse_color($, int buf, int *p, XftColor *color_ret)
+{
+    Display *dpy;
+    XRenderColor    renderColor;
+    Screen	*screen;
+    Colormap	colormap;
+    int spec_m = m_create(20,1);
+    
+    screen = XtScreen($);
+    dpy = XtDisplay($);
+    colormap = DefaultColormap(dpy, DefaultScreen(dpy));
+    
+    while( *p < m_len(buf) &&
+	   isspace(CHAR(buf,*p))) (*p)++;
+    while( *p < m_len(buf) &&
+	   !isspace(CHAR(buf,*p)))
+	{
+	    m_putc(spec_m, CHAR(buf,*p));
+	    (*p)++;
+	}
+    m_putc(spec_m,0);
+
+    char *spec = m_buf(spec_m);
+    if (strcasecmp (spec, XtDefaultForeground) == 0)
+    	{
+	    renderColor.red = 0;
+	    renderColor.green = 0;
+	    renderColor.blue = 0;
+	    renderColor.alpha = 0xffff;
+    	}
+    else if (strcasecmp (spec, XtDefaultBackground) == 0)
+    	{
+	    renderColor.red = 0xffff;
+	    renderColor.green = 0xffff;
+	    renderColor.blue = 0xffff;
+	    renderColor.alpha = 0xffff;
+	}
+    else if (!XRenderParseColor (dpy, spec, &renderColor))
+	{
+
+	    goto parse_error;
+	}
+
+    if (XftColorAllocValue (dpy,
+			     DefaultVisual (dpy,
+					    XScreenNumberOfScreen (screen)),
+			     colormap,
+			     &renderColor,
+			     color_ret))
+	{
+	    m_free(spec_m);
+	    return; /* success */
+	}
+
+    
+ parse_error:
+    WARN("error parsing color spec %s", spec );
+    *color_ret =* ($col[0]); /* default foreground, struct copy! */
+    m_free(spec_m);
+}
+
+
+@  draw filled rectangle
+   example: rectf:10 20 30 40 white
+   without color argument use default foreground color
+   
+@proc comm_rectf($, int buf)
+{
+	int offs = 6;
+	int m = parse_numbers(buf,&offs,4);
+	if( m_len(m) !=4 ) {
+	    WARN("comm error");
+	    return;
+	}
+
+	XftColor col;
+	parse_color( $, buf, &offs, &col );
+
+	XftDrawRect( $draw, &col, 
+		     INT(m,0), INT(m,1),
+		     INT(m,2), INT(m,3) );
+	m_free(m);
+}
+
+
+@proc comm_clrscr($, int buf)
+{
+    te_clrscr($);
+}
+
+
+@  draw circle
+   example: CIRCLE:10 20 30 white
+   without color argument use default foreground color
+   
+@proc comm_circle($, int buf)
+{
+	int offs = 7;
+	int m = parse_numbers(buf,&offs,3);
+	if( m_len(m) !=3 ) {
+	    WARN("circle paramter error");
+	    return;
+	}
+
+	XftColor col;
+	parse_color( $, buf, &offs, &col );
+
+	int x,y,r;
+	x=INT(m,0);
+	y=INT(m,1);
+	r=INT(m,2);
+	
+	Display *dpy = XtDisplay($);
+	Drawable d = XtWindow($);
+	XSetForeground(dpy, $gc_copy, col.pixel );
+	XDrawArc( dpy, d, $gc_copy, x,y,r,r,0,360*64 );    
+	m_free(m);
+}
+
+
+
+@  get screen size
+   request: MEASURE_SCREEN
+   reply:   MEASURE: width height columns rows 
+
+@proc comm_measure_screen($, int buf)
+{
+    sln_printf($sln,"MEASURE_SCREEN:%d %d %d %d",
+	       $width, $height,
+	       $gWidth, $gHeight
+	       );
+}
+
+
+
+
+@proc comm_exit_cb($, int buf)
+{
+	TRACE(2,"exit");
+	$INTERACTIVE=0;
+}
+
+@proc comm_run_cb($, int buf)
+{
+	TRACE(2,"run");
+	$INTERACTIVE=1;
+}
+
+@proc comm_recv_cb(int err, int msg, int sln, $)
+{
+    TRACE(2,"read line");	
+    cp2_func_t func = cp2_lookup($cp2,msg);
+    if( func ) {
+	func($, (void*)(intptr_t)msg);
+    } else WARN("command not found %s", (char*) m_buf(msg) );
+}
+
+
+@  if we are not connected to a server create a connection
+   this check is repeated every second
+
+@proc try_connect($, XtIntervalId *id)
+{
+    XtAppContext app = XtWidgetToApplicationContext($);    
+    if( sln_get_fd($sln) < 0 ) {
+	int fd = sln_connect( $sln, $host,$port, (sln_input_t)comm_recv_cb,  $);
+	if( fd >= 0 ) {
+	    XtAppAddInput( app,
+			   fd,
+			   (XtPointer)XtInputReadMask,
+			   (XtInputCallbackProc)prog_child_read,
+			   $ );
+	}
+    }
+    
+    XtAppAddTimeOut(app , 1000,(XtTimerCallbackProc) try_connect, $ );
+}
+
+
+
+
+
+@TRANSLATIONS
+@trans   <Key>Right:       forward_char()
+@trans   <Key>Left:        backward_char()
+@trans   <Key>Up:          prev_line()
+@trans   <Key>Down:        next_line()
+@trans   <Key>Return:      key_return()
+@trans   <Key>Delete:      key_del()
+@trans   <Key>BackSpace:   key_backspace()
+@trans   <Key>Escape:      kill_child()
+@trans   <Key>:            insert_char()
+
+
+@ACTIONS
+
+@proc kill_child
+{
+    undraw_selection($);
+    te_writeln($, "kill");
+    prog_kill($);
+
+    selection_draw($);
+}
+
+@proc key_del
+{
+    undraw_selection($);
+    te_del($);
+    selection_draw($);
+}
+
+@proc key_backspace
+{
+    undraw_selection($);
+    te_left($);
+    te_del($);
+    selection_draw($);
+}
+
+
+@proc key_return
+{
+    undraw_selection($);
+    exec_line($);
+    te_pos1($);
+    te_down($);
+    selection_draw($);
+}
+
+
+@proc insert_char
+{
+    int len;
+    unsigned char buf[32];
+    KeySym key_sim;
+    uint32_t ucs4;
+
+    len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
+    if (len <= 0) return;
+
+    if(! $INTERACTIVE && $sln ) {
+    	 sln_printf($sln, "KEY: %*s\n",len,buf);	
+	 return;
+    }
+    
+
+    FcUtf8ToUcs4 (buf, &ucs4, len);
+    undraw_selection($);
+    te_ins($);
+    te_putc($,ucs4);
+    selection_draw($);
+}
+
+
+
+@proc prev_line
+{
+    if( $rsel.y == 0 ) return;
+    $rsel.y--;
+    selection_draw($);
+}
+
+@proc next_line
+{
+    undraw_selection($);
+    te_down($);
+    // if( $rsel.y < ($gHeight-1) )
+    // $rsel.y++;
+    selection_draw($);
+}
+
+@proc backward_char
+{
+    if( $rsel.x == 0 ) return;
+    $rsel.x--;
+    selection_draw($);
+}
+
+@proc forward_char
+{
+    if( $rsel.x < ($gWidth-1) )
+        $rsel.x ++;
+    selection_draw($);
+}
+
+
+
+@IMPORTS
+
+@incl <stdint.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"
+@incl "converters-xft.h"
+@incl "cp2.h"
+@incl "slop4.h"
+@incl <X11/Xaw/XawImP.h>
+@incl "slopnet.h"
+

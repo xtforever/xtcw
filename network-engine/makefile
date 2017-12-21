@@ -1,6 +1,9 @@
 include ../rules.mk
+
+
 TARGET=cwnet
-OBJS=xt_cairo.o slopnet.o slop4.o mrb.o  table256-crc16.o command-parser.o
+OBJS=xt_cairo.o slopnet.o slop4.o  table256-crc16.o command-parser.o mrb.o
+OBJS+=TermEd.o cp2.o
 
 M=$(CURDIR)/..
 LOADLIBES+=
@@ -14,7 +17,10 @@ WFLAGS= -d doc -c src -i xtcw --include-prefix=xtcw $(wb_install)/tex.w $(wb_ins
 xtcw/%.h src/%.c: %.widget
 	wb_search=../wb ../wbuild/wb.sh $^ $(WBUILD) $(WFLAGS)
 
+
 all: $(TARGET)  lua-server lua-client
+
+src/TermEd.o: src/TermEd.c
 
 $(TARGET): $(OBJS) $(M)/wcl/libxtcw.a
 

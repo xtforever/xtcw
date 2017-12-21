@@ -101,6 +101,7 @@
 #include "slopnet.h"
 #include "communication.h"
 #include "slop4.h"
+#include "xtcw/TermEd.h"
 
 Widget TopLevel;
 int trace_main;
@@ -218,7 +219,7 @@ static void exec_lua_cb( Widget w, void *u, void *c )
 static void RegisterApplication ( Widget top )
 {
     /* -- Register widget classes and constructors */
-    // RCP( top, wbatt );
+    RCP( top, termEd );
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
     RCB( top, quit_cb );
@@ -405,6 +406,19 @@ void lgfx_destruct(int lgfxn)
 }
 
 /*------------------------------------------------------------*/
+int cmd_measure(int msg,void *ctx)
+{
+    Dimension width, height;
+    TRACE(1,"");
+    Widget w = CWNET.widget_draw1;
+    if( w ) {
+	XtVaGetValues(w, XtNwidth, &width, XtNheight, &height, NULL );
+	int sln = (intptr_t) ctx;
+	sln_printf(sln,"MEASURE:%d %d", width, height );
+    }
+    return 0;
+}
+
 
 int cmd_clrscr(int msg,void *ctx)
 {
@@ -419,6 +433,24 @@ int cmd_clrscr(int msg,void *ctx)
     return 0;
 }
 
+int cmd_rect(int msg,void *ctx)
+{
+    TRACE(1,"");
+    int x,y,wi,h;
+    sscanf( mls(msg,5), "%d %d %d %d", &x, &y, &wi, &h );
+    
+    Widget w = CWNET.widget_draw1;
+    if( w ) { 
+	Drawable d = XtWindow( w );
+	Display *dpy = XtDisplay(w);
+	GC gc = DefaultGC(dpy,DefaultScreen(dpy));
+	XSetForeground(dpy, gc, 0xffffff);
+	XDrawRectangle( dpy, d, gc, x,y,wi,h );
+    }
+    
+    TRACE(1,"server told us to draw a rectange");
+    return 0;
+}
 
 int cmd_circle(int msg,void *ctx)
 {
@@ -476,7 +508,6 @@ static void xt_sln_input_cb( XtPointer p, int *n, XtInputId *id )
 {
     TRACE(1,"");
     int sln = (intptr_t) p;
-    int err;
     
     if( sln_input_cb(sln) ) {
 	TRACE(1,"server died" );
@@ -489,6 +520,9 @@ static void xt_sln_input_cb( XtPointer p, int *n, XtInputId *id )
 /*------------------------------------------------------------------------*/
 static void try_connect(void *user_data, XtIntervalId *id)
 {
+
+    return;
+    
     int sln = (intptr_t) user_data;
     XtAppContext app = XtWidgetToApplicationContext(TopLevel);
 
@@ -587,6 +621,8 @@ int main ( int argc, char **argv )
     cp_add( "EXIT", cmd_exit );
     cp_add( "CIRCLE:", cmd_circle );
     cp_add( "CLRSCR", cmd_clrscr );
+    cp_add( "RECT:", cmd_rect );
+    cp_add( "MEASURE", cmd_measure );
     int sln = sln_init();
     CWNET.sln = sln;
     XtAppAddTimeOut(app , 1000, try_connect, (XtPointer) (intptr_t) sln );

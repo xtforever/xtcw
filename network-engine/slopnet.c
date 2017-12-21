@@ -14,11 +14,13 @@ static int SLN_SELECT_EXIT = 0;
 
 static int SLN = 0;
 struct sln_st {
+    int init; /* fixed positon, must be first element! */
+    
     int fd;
     sln_input_t callback;
     void *ctx;
 
-    int init;
+
     struct slop_state slop_inp;
 
     struct mrb *buf_in;
@@ -107,14 +109,22 @@ int sln_init(void)
     return pos;
 }
 
+
+/* close sln and close fd  */
 void sln_free(int n)
 {
     struct sln_st *sln = sln_get(n);
-
     if( sln->fd >= 0 ) {
 	close(sln->fd);
 	sln->fd = -1;
     }
+    sln_free_open_fd(n);
+}
+
+/* close sln but do not close fd */
+void sln_free_open_fd(int n)
+{
+    struct sln_st *sln = sln_get(n);
     sln->init = 0;
     free(sln->buf_in); sln->buf_in=0;
     free(sln->buf_out); sln->buf_out=0;
@@ -135,6 +145,14 @@ void sln_destruct(void)
     }
     m_free(SLN);
     SLN=0;
+}
+
+
+void sln_callback(int n, sln_input_t cb, void *ctx )
+{
+    struct sln_st *sln = sln_get(n);
+    sln->callback = cb;
+    sln->ctx = ctx;
 }
 
 
@@ -264,6 +282,7 @@ static void add_new_client(int fd, sln_input_t cb, void *ctx)
 
 static int process_incomming_data(int fd)
 {
+    
     int sln = find_sln(fd);
     int e= sln_input_cb(sln) ;
     if( e ) {
@@ -372,4 +391,56 @@ void sln_client_select(int n)
 	
     }
     SLN_SELECT_EXIT=0;
+}
+
+
+
+/** wait for input on given slopnet connection, if input arrived
+    read input, parse input and execute commands
+
+   returns:
+   - 0 : if timeout occured
+   - 1 : if new messsage has arrived 
+*/
+
+int sln_select_timeout(int sln, int timeout_ms)
+{
+    int listener = sln_get_fd(sln);
+    struct timeval tv;
+    fd_set master;
+    fd_set tmp_rd_fds;
+    int fdmax;     /* maximum file descriptor number plus one */
+    int ret;
+    
+    /* clear the master and temp sets */
+    FD_ZERO(&master);
+    FD_ZERO(&tmp_rd_fds);
+
+    /* add the listener to the master set */
+    FD_SET(listener, &master);
+
+    /* keep track of the biggest file descriptor */
+    fdmax = listener +1; /* so far, it's this one*/
+
+    for( ; ; )
+    {
+	tv.tv_sec = timeout_ms / 1000;
+	tv.tv_usec = timeout_ms * 1000; /* 1000 * 1000 */
+	tmp_rd_fds = master;
+	ret = select(fdmax, &tmp_rd_fds, NULL, NULL, &tv);
+	if(ret == -1 ) {
+	    if( errno == EINTR || errno == EAGAIN ) continue; 
+	    ERR("select()");
+         }
+
+         if( ret == 0 ) { 
+            return 0; /* timeout */
+         }
+	 int e = sln_input_cb(sln) ; /* parse and execute */
+	 if( e ) {
+	    ERR("comm error at sln:%d", sln);
+	 }
+	
+	 return 1;
+    }
 }

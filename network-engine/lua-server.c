@@ -3,73 +3,108 @@
 #include "command-parser.h"
 #include "mls.h"
 #include "luaexec.h"
+#include "communication.h"
+
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define SOCKET_PORT "1234"
 
-int cmd_put(int msg,void *ctx)
+
+int CHILD_PID;
+
+int waiting_for_child(void)
 {
-    TRACE(1,"%s", (char*) mls(msg,0) );
-
-    m_putc(msg,0);
-    luaexecute( mls(msg,4), ctx );
-
-    int sln = (intptr_t) ctx;
-    sln_printf(sln,"EXIT");
+    int status;
+    int err = waitpid(-1,&status, 0 ); /* WNOHANG */
+    if( err == 0 ) return 0;
+    if( err == -1 ) {
+        printf("error in waitpid\n");
+        return 3;
+    }
+    if (WIFEXITED(status)) {
+        printf("Child exited, status=%d\n", WEXITSTATUS(status));
+        if( WEXITSTATUS(status) ) return 2;
+        return 1;
+    }
     return 0;
 }
 
 
-int cmd_get(int msg, void *ctx)
+
+
+void new_client(int fd)
 {
-    TRACE(1,"");
-    return 0;
-}    
-
-
-void execute_msg(int msg, void *ctx)
-{
-    cp_func_t fn = cp_lookup(msg);
-    if(fn) fn( (void*)(intptr_t)msg, ctx);
-}
-
-       
-
-
-/**
- * this function is called if some data has arrived 
- */
-void process_new_packet(int error, int msg, int sln, void *ctx)
-{
-    if( error ) return;
-
-    m_putc(msg,0);
-    TRACE(1,"Msg: %s\n", (char*)mls(msg,0));
-    execute_msg(msg,(void*)(intptr_t)sln);
+    int pid;
+    if( (pid=fork()) < 0) {
+	ERR("fork");
+    } else if( pid == 0 ) {
+	luaexec_main(fd);
+    }
+    close(fd);
+    TRACE(1,"SERVER STOPED UNTIL CHILD HAS EXITED");
+    waiting_for_child();     /* wait for child to exit */
+    TRACE(1,"PARENT CONTINUE");
 }
 
 
+int SERVER_SELECT_EXIT = 0;
 
-void server_start()
+static void server_wait(int listener)
 {
+    fd_set master;
+    fd_set tmp_rd_fds;
+    int fdmax;     /* maximum file descriptor number plus one */
+    int newfd;     /* newly accept()ed socket descriptor */
+    int ret;
+    /* clear the master and temp sets */
+    FD_ZERO(&master);
+    FD_ZERO(&tmp_rd_fds);
 
-    sln_server_loop( SOCKET_PORT, process_new_packet,0);
-    TRACE(1,"server started.Port: %s", SOCKET_PORT );
+    /* add the listener to the master set */
+    FD_SET(listener, &master);
+
+    /* keep track of the biggest file descriptor */
+    fdmax = listener +1; /* so far, it's this one*/
+     
+    for(;  !  SERVER_SELECT_EXIT ; )
+    {
+	tmp_rd_fds = master;
+	ret = select(fdmax, &tmp_rd_fds, NULL, NULL, NULL);
+	if( ret == -1) {
+	    if( errno == EINTR || errno == EAGAIN ) continue; 
+	    ERR("select()");
+	}
+
+	if( ret == 0 ) continue;
+	TRACE(1,"select returns: %d", ret );
+	newfd = sock_accept_incomming_connection(listener);
+	if( newfd < 0 ) {
+	    WARN("accept error");
+	} else {
+	    TRACE(1,"accept new conn");
+	    new_client(newfd);
+	}
+    }
 }
-
-
 
 int main(int argc, char **argv)
 {
+    char * port = SOCKET_PORT; 
     m_init();
     trace_level=1;
 
-/* init commands */
-    cp_init();
-    cp_add( "PUT:", cmd_put );
-    cp_add( "GET", cmd_get );
+    int sfd = sock_listen_on_port(port);
+    if( sfd < 0 ) ERR("could not bind to %s", port );
+    TRACE(1,"server started.Port: %s", SOCKET_PORT );
 
-    server_start();
+    sock_make_socket_blocking(sfd);
+    server_wait(sfd);
+
+
     
+    close(sfd);
     m_destruct();
     return EXIT_SUCCESS;
 }

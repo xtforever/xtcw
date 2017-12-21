@@ -35,18 +35,19 @@ void cp_add( char *name, void *func)
 }
 
 
-
 static int cmp( char *s, int m )
 {
-    int p;
-    char *d;
-    m_foreach( m, p, d ) {
-        if( *s==0 ) return 0; /* match */
-        if( *s != *d ) break; /* no match */
-        s++;
+    char ch;
+    int len = strlen(s);
+    if( len > m_len(m) ) return 1;
+    
+    while( len-- ) {
+	ch = CHAR(m,len);
+	if( ch != s[len] ) return 1;
     }
-    return 1; /* no match */
+    return 0;
 }
+
 
  static int lookup(int m, int key)
  {
@@ -64,3 +65,4 @@ cp_func_t cp_lookup(int m)
     struct cp_data_st *cp = mls(CP_DATA, p);
     return cp->func;
 }
+

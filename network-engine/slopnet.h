@@ -9,6 +9,7 @@ typedef void (*sln_input_t) (int error, int msg, int sln, void *ctx);
 int sln_init(void);
 void sln_destruct(void);
 void sln_free(int sln);
+void sln_free_open_fd(int n);
 
 /* returns fd for socket */
 int sln_listen(int sln, int port);
@@ -21,7 +22,7 @@ int sln_input_cb(int n);
 int sln_printf(int n, char *format, ... );
 
 int sln_vaprintf(int n, char *format, va_list va );
-
+void sln_callback(int n, sln_input_t cb, void *ctx );
 int sln_accept(int sln, int fd, sln_input_t cb, void *ctx );		
 
 int sln_lookup_fd(int fd);
@@ -34,5 +35,6 @@ void sln_server_select(int listener, sln_input_t cb, void *ctx);
 void sln_client_select(int sln);
 int sln_server_loop(char *port,  sln_input_t cb, void *ctx );
 
+int sln_select_timeout(int n, int timeout_ms);
 #endif
 		

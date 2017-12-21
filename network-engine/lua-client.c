@@ -46,6 +46,13 @@ int cmd_circle(int msg,void *ctx)
     return 0;
 }
 
+int cmd_measure(int msg,void *ctx)
+{
+    int sln = (intptr_t) ctx;
+    sln_printf(sln,"MEASURE:50 500");
+    return 0;
+}
+
 
 
 /**
@@ -83,6 +90,7 @@ int main(int argc, char **argv)
     cp_add( "PUT:", cmd_put );
     cp_add( "EXIT", cmd_exit );
     cp_add( "CIRCLE:", cmd_circle );
+    cp_add( "MEASURE", cmd_measure );
 
 
     
