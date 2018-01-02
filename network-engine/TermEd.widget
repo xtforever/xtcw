@@ -73,6 +73,8 @@
     cp2_add($cp2, "RECTF:", comm_rectf );
     cp2_add($cp2, "CLRSCR", comm_clrscr );
     cp2_add($cp2, "CIRCLE:", comm_circle );
+    cp2_add($cp2, "LINE:", comm_line );
+    
     cp2_add($cp2, "ERR:", comm_err );		
     
     $sln = sln_init();
@@ -575,10 +577,12 @@
         }
 	int buf = m_create(10240,1);
 	int crc = slop_encode_str( buf, 0, "PUT:" );
-
+	char num[16]; 
 	for( ; line < m_len($progm); line++ )
 	{
 	   s = STR($progm,line);
+	   /* sprintf( num, "%u:", *(uint32_t*)s );
+	      crc = slop_encode_str(buf,crc,num);	*/   
 	   crc = slop_encode_str(buf,crc,s+4);
 	   crc = slop_encode(buf,crc,10);
 	}
@@ -875,7 +879,7 @@
         if( match < 0 ) return;
 
         for(i=0;i<len;i++) {
-                if( match >= m_len($progm) ) break;
+                if( line >= m_len($progm) ) break;
 		char *s = STR($progm,line);		
 		free(s);
 		m_del($progm,line);
@@ -1127,6 +1131,37 @@
 	       $gWidth, $gHeight
 	       );
 }
+
+
+@  draw line
+   example: LINE:10 20 100 30 white
+   without color argument use default foreground color
+   
+@proc comm_line($, int buf)
+{
+	int offs = 5;
+	int m = parse_numbers(buf,&offs,4);
+	if( m_len(m) !=4 ) {
+	    WARN("circle paramter error");
+	    return;
+	}
+
+	XftColor col;
+	parse_color( $, buf, &offs, &col );
+
+	int x1,y1,x2,y2;
+	x1=INT(m,0);
+	y1=INT(m,1);
+	x2=INT(m,2);
+	y2=INT(m,3);	
+	
+	Display *dpy = XtDisplay($);
+	Drawable d = XtWindow($);
+	XSetForeground(dpy, $gc_copy, col.pixel );
+	XDrawLine( dpy, d, $gc_copy, x1,y1,x2,y2 );    
+	m_free(m);
+}
+
 
 
 

@@ -162,6 +162,8 @@ int sln_connect(int n, char *host, char *service,
 		sln_input_t cb, void *ctx )
 {
     struct sln_st *sln = sln_get(n);
+    if( sln->fd >= 0 ) close(sln->fd);
+    
     sln->callback = cb;
     sln->ctx = ctx;
     sln->init = 2;
@@ -188,7 +190,7 @@ static void slop_parse( struct sln_st *sln )
 }
 
 
-static void sln_close( struct sln_st *sln )
+static void sln_close( struct sln_st *sln ) /*  */
 {
     if( sln->fd >= 0 ) {
 	close(sln->fd);
@@ -400,7 +402,8 @@ void sln_client_select(int n)
 
    returns:
    - 0 : if timeout occured
-   - 1 : if new messsage has arrived 
+   - 1 : if new messsage has arrived
+   - 2 : comm error
 */
 
 int sln_select_timeout(int sln, int timeout_ms)
@@ -436,9 +439,11 @@ int sln_select_timeout(int sln, int timeout_ms)
          if( ret == 0 ) { 
             return 0; /* timeout */
          }
-	 int e = sln_input_cb(sln) ; /* parse and execute */
+	 int e = sln_input_cb(sln) ; /* read parse and execute */
 	 if( e ) {
-	    ERR("comm error at sln:%d", sln);
+	     sln_close(sln_get(sln));
+	     WARN("comm error at sln:%d", sln);
+	     return 2;
 	 }
 	
 	 return 1;

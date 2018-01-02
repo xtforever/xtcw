@@ -16,16 +16,16 @@ cwnet.traceLevel: 1
 
 
 *g1.wcClass: Gridbox
-*g1.wcChildren: draw1 vb 
+*g1.wcChildren: draw1  
 
 
 *draw1.weightx: 1
 *draw1.weighty: 1
 *draw1.WcClass: TermEd
 *draw1.label: Hello
-*draw1.gWidth: 120
+*draw1.gWidth: 100
 *draw1.gHeight: 30
-*draw1.size: 12
+*draw1.size: 18
 *draw1.host: localhost
 *draw1.port: 1234
 

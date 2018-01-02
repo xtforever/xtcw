@@ -18,7 +18,7 @@ xtcw/%.h src/%.c: %.widget
 	wb_search=../wb ../wbuild/wb.sh $^ $(WBUILD) $(WFLAGS)
 
 
-all: $(TARGET)  lua-server lua-client
+all: $(TARGET)  lua-server lua-client mcucom-test
 
 src/TermEd.o: src/TermEd.c
 
@@ -32,12 +32,15 @@ $(TARGET)-dyn: $(OBJS) $(TARGET).o
 
 lua-server: CFLAGS+=$(shell pkg-config lua5.3 --cflags)
 lua-server: LOADLIBES+=$(shell pkg-config lua5.3 --libs)
-lua-server: $(OBJS) slop-server.o command-parser.o  luaexec.o $(M)/wcl/libxtcw.a
+lua-server: $(OBJS) slop-server.o command-parser.o mcucom.o luaexec.o $(M)/wcl/libxtcw.a
 
 lua-client: $(OBJS) slop-server.o command-parser.o  $(M)/wcl/libxtcw.a
 
 lua-test: CFLAGS+=$(shell pkg-config lua5.3 --cflags)
 lua-test: LOADLIBES+=$(shell pkg-config lua5.3 --libs)
+
+
+mcucom-test:   $(OBJS) mcucom.o $(M)/wcl/libxtcw.a
 
 clean:
 	${RM} -rf $(TARGET) *.o src doc xtcw *~ lua-client lua-server lua-test cwnet-dyn slop-server

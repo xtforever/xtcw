@@ -6,6 +6,7 @@
 #include "luaexec.h"
 #include "slopnet.h"
 #include "mls.h"
+#include "mcucom.h"
 #include "command-parser.h"
 
 #include <stdio.h>
@@ -18,6 +19,7 @@
 
 static int EXIT_FLAG = 0;
 static int SLN_CURRENT =-1; /* the connection, should be stored in lua state */
+static int MCU_CURRENT =-1; /* the connection to mcu, should be stored in lua state */
 static void *LAST_CP_FUNC = 0;
 
 
@@ -92,6 +94,29 @@ static int luaexec_clrscr(lua_State* state)
   return 0;
 }
 
+static int luaexec_line(lua_State* state)
+{
+  // The number of function arguments will be on top of the stack.
+  int args = lua_gettop(state);
+  if( args != 4 && args != 5 ) goto error;
+
+  const char *s = "";
+
+
+  int a,b,c,d;
+  a=lua_tonumber(state, 1);
+  b=lua_tonumber(state, 2);
+  c=lua_tonumber(state, 3);
+  d=lua_tonumber(state, 4);
+  if( args == 5 ) s = lua_tostring(state, 5);
+  
+  printf("line\n");
+  sln_printf(SLN_CURRENT, "LINE:%d %d %d %d %s",a,b,c,d, s );
+  
+ error:
+  return 0;
+}
+
 static int luaexec_circle(lua_State* state)
 {
   // The number of function arguments will be on top of the stack.
@@ -126,16 +151,43 @@ static int luaexec_gotoxy(lua_State* state)
 
 static int luaexec_write(lua_State* state)
 {
+    TRACE(1,"");
   // The number of function arguments will be on top of the stack.
   int args = lua_gettop(state);
   if( args != 1 ) goto error;
 
   const char *s = lua_tostring(state, 1);
-
   sln_printf(SLN_CURRENT, "WRITE:%s",s);
+
+  
+  
   
  error:
   return 0;
+}
+
+static int luaexec_mcu(lua_State* state)
+{
+  // The number of function arguments will be on top of the stack.
+  int args = lua_gettop(state);
+  if( args != 1 ) {
+      return luaL_error(state, "need something to send" );
+  }
+
+  const char *s = lua_tostring(state, 1);
+  TRACE(1,"send: %s", s );
+  
+  if( mcu_error(MCU_CURRENT ) ) {
+      TRACE(1,"reconnect");
+      mcu_connect(MCU_CURRENT);
+  }
+  
+  if( mcu_req( MCU_CURRENT, s ) ) {
+      return luaL_error(state, "mcu transmission error" );
+  }
+  
+  lua_pushstring( state, m_buf(mcu_get_msg(MCU_CURRENT)));
+  return 1;
 }
 
 
@@ -321,9 +373,16 @@ static void init_commands()
     cp_add( "MEASURE_SCREEN:", cmd_measure_screen );
 }
 
-static int luaexecute(char* prog, int fd)
+
+struct lua_buf {
+    char *str;
+    uint32_t line;
+};
+
+static int PROG_READY = 0;
+
+static int luaexecute(int prog, int fd)
 {
-    TRACE(1,"executing lua code");
     int result;
     lua_State *state = luaL_newstate();
 
@@ -338,7 +397,8 @@ static int luaexecute(char* prog, int fd)
     lua_register(state, "rectf", luaexec_rectf);
     lua_register(state, "write", luaexec_write);
     lua_register(state, "gotoxy", luaexec_gotoxy);
-
+    lua_register(state, "line", luaexec_line);
+    lua_register(state, "mcu", luaexec_mcu);
 
     /* setup a slop encoded connection inside lua */
     int sln = sln_init();
@@ -348,19 +408,85 @@ static int luaexecute(char* prog, int fd)
     /* setup our command parser */
     init_commands();
 
-    result = luaL_dostring(state, prog );
-
+    result = luaL_dostring(state, (char*)mls(prog,0) );
     if ( result != LUA_OK ) {
 	print_error(state);
     }
 
+    /*
+    struct lua_buf *d; int p;
+    m_foreach(prog,p,d) {
+	char number[10]; sprintf(number,"%u", d->line );
+	TRACE(1,"exec: %s", d->str );
+	result =
+	    luaL_loadbuffer(state, d->str, strlen(d->str), number) ||
+	    lua_pcall(state, 0, 0, 0);
+	if ( result != LUA_OK ) {
+	    print_error(state);
+	    break;
+	}
+    }
+    */
+
+    #if 0
+    result = luaL_dostring(state, prog );
+    if ( result != LUA_OK ) {
+	print_error(state);
+    }
+    #endif
+    
+    /*
+    TRACE(1,"start executing lua code");	
+    char line[10];
+    char *s0;
+    char *s = prog;
+    int cnt = 0;
+    while( *s ) {
+	int len = 0;
+	while( s[len] && s[len] != 10 ) len++;
+	cnt++; sprintf(line,"%u", cnt );
+
+	result =
+	    luaL_loadbuffer(state, s, len, line) ||
+	    lua_pcall(state, 0, 0, 0);
+	
+	
+	if(s[len]==0) break;   
+	s += len+1;
+    }
+    */
+
     lua_close(state);
-    sln_free_open_fd(sln); SLN_CURRENT=0;
+    /* close slopnet connection, but leave socket open */ 
+    sln_free_open_fd(sln);
+    SLN_CURRENT=0;
+    
     return result;
 }
 
 
-static char * PROG_READY = 0;
+
+
+/* copy prog to buffer */
+void parse_prog(int msg)
+{
+    int e;
+    struct lua_buf d;
+    if( PROG_READY <=0  ) PROG_READY = m_create(100,1);
+    m_clear( PROG_READY );
+    int p=4;
+    m_write(PROG_READY,0,mls(msg,p), m_len(msg)-p);
+    /*
+    while( p < m_len(msg) ) {
+	e = sscanf( (char*)mls(msg,p), "%u:%m[^\n]s\n", &d.line, &d.str );
+	if( e != 2 ) break;
+	m_put( PROG_READY, &d );
+	while( p < m_len(msg) && CHAR(msg,p) != 10 ) p++;
+	p++;
+    } 
+    */   	    
+}
+
 
 /**
  * this function is called if some data has arrived inside main select loop 
@@ -369,40 +495,38 @@ static void program_input_cb(int error, int msg, int sln, void *ctx)
 {
     if( error ) return;
     m_putc(msg,0);
-    TRACE(1,"Msg: %s\n", (char*)mls(msg,0));
+    TRACE(1,"prog input");
 
     if( strncmp( (char*)mls(msg,0), "PUT:", 4 )== 0 )
 	{
-	    PROG_READY = strdup(mls(msg,4)); 
+	    parse_prog( msg );
 	}
 }
 
 
 /* lua subprocess, execute lua and exit child */
-void luaexec_main(int fd)
+void luaexec_main(int fd, int mcu1)
 {
-
     /* for now, this is the state of the current connection */
     MSG_STACK = m_create(MSG_STACK_MAX, sizeof (struct msg_st));
-
 
     /* setup a slop encoded connection */
     int sln = sln_init();
     SLN_CURRENT = sln;
+    MCU_CURRENT = mcu_get_sln(mcu1);
     sln_accept( sln, fd, program_input_cb, NULL );
 
     TRACE(1,"waiting for lua code");    
-    /* exit flag can be set via external command */
+    /* exit flag can be set via etxernal command */
     while( ! EXIT_FLAG )
 	{
-	    sln_select_timeout(sln, 200);
-	    if( PROG_READY ) {
+	    if( sln_select_timeout(sln, 200) == 2 ) break;
+	    if( PROG_READY > 0) {
 		sln_printf(sln, "RUN" );
 		int result = luaexecute( PROG_READY, fd );
 		/* tell client lua program is finished */
 		sln_printf(sln, "EXIT:%d", result );
-		free(PROG_READY);
-		PROG_READY=0;
+		m_free(PROG_READY); PROG_READY=0;
 		TRACE(1,"waiting for lua code");
 	    }
 	}

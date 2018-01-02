@@ -4,12 +4,14 @@
 #include "mls.h"
 #include "luaexec.h"
 #include "communication.h"
+#include "mcucom.h"
 
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
 #define SOCKET_PORT "1234"
+#define MCU_SOCKET_PORT "1235"
 
 
 int CHILD_PID;
@@ -31,16 +33,13 @@ int waiting_for_child(void)
     return 0;
 }
 
-
-
-
-void new_client(int fd)
+void new_client(int fd, int mcu1)
 {
     int pid;
     if( (pid=fork()) < 0) {
 	ERR("fork");
     } else if( pid == 0 ) {
-	luaexec_main(fd);
+	luaexec_main(fd, mcu1);
     }
     close(fd);
     TRACE(1,"SERVER STOPED UNTIL CHILD HAS EXITED");
@@ -51,7 +50,7 @@ void new_client(int fd)
 
 int SERVER_SELECT_EXIT = 0;
 
-static void server_wait(int listener)
+static void server_wait(int listener, int mcu1)
 {
     fd_set master;
     fd_set tmp_rd_fds;
@@ -84,7 +83,7 @@ static void server_wait(int listener)
 	    WARN("accept error");
 	} else {
 	    TRACE(1,"accept new conn");
-	    new_client(newfd);
+	    new_client(newfd, mcu1);
 	}
     }
 }
@@ -98,9 +97,15 @@ int main(int argc, char **argv)
     int sfd = sock_listen_on_port(port);
     if( sfd < 0 ) ERR("could not bind to %s", port );
     TRACE(1,"server started.Port: %s", SOCKET_PORT );
-
     sock_make_socket_blocking(sfd);
-    server_wait(sfd);
+
+    int mcu1 = mcu_init("localhost", "1235" );
+    int mcufd = mcu_connect(mcu1);
+    if( mcufd >= 0 ) 
+	sock_make_socket_blocking(mcufd);
+    else WARN("mcu not found");
+    
+    server_wait(sfd,mcu1);
 
 
     
