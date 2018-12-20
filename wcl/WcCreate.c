@@ -360,10 +360,7 @@ static Widget WcxCreate			_(( ResourceRec*, Widget, char*, int ));
     This reduces resource conversions.
 */
 
-static void WcxGetPreRes( rp, pw, nm )
-    ResourceRec* rp;
-    Widget	 pw;
-    char*	 nm;
+static void WcxGetPreRes(ResourceRec* rp, Widget pw, char* nm)
 {
     XtGetSubresources(	pw, (XtPointer)rp, nm, nm,
 			wcPreRes, XtNumber(wcPreRes), NULL, 0 );
@@ -395,9 +392,7 @@ static void WcxGetPreRes( rp, pw, nm )
     }
 }
 
-static void WcxGetPostRes( rp, w )
-    ResourceRec* rp;
-    Widget       w;
+static void WcxGetPostRes(ResourceRec* rp, Widget w)
 {
     XtGetApplicationResources(	w, (XtPointer)rp,
 				wcPostRes, XtNumber(wcPostRes), NULL, 0 );
@@ -416,11 +411,7 @@ static void WcxGetPostRes( rp, w )
     Constructor function address from the Wcl Mapping Agent using this quark.
 */
 
-static Widget WcxCreateFromQuark( rp, pw, name, creationType )
-    ResourceRec* rp;
-    Widget       pw;
-    char*        name;
-    int		 creationType;
+static Widget WcxCreateFromQuark(ResourceRec* rp, Widget       pw, char*        name, int creationType)
 {
     XtAppContext	app = XtWidgetToApplicationContext( pw );
     WcWidgetConstructor	Constructor;
@@ -518,10 +509,11 @@ static Widget WcxCreateFromQuark( rp, pw, name, creationType )
     Then invoke all the callbacks on the callback list.
 */
 
-void WcxCreateNamedPopups ( pw, names, afterPopups )
-    Widget		pw;		/* parent widget		  */
-    char*		names;		/* comma or blank separated names */
-    XtCallbackRec*	afterPopups;
+void WcxCreateNamedPopups (
+     Widget		pw,		/* parent widget		  */
+    char*		names,		/* comma or blank separated names */
+    XtCallbackRec*	afterPopups
+    )
 {
     char        cleanName[MAX_XRMSTRING];
     char*       next;
@@ -564,11 +556,12 @@ void WcxCreateNamedPopups ( pw, names, afterPopups )
     XmCreateScrolled*() or XmCreate*Dialog confusion functions.
 */
 
-void WcxCreateNamedChildren ( pw, names, afterChildren, afterManageChildren )
-    Widget		pw;
-    char*		names;		/* comma or blank separated names */
-    XtCallbackRec*	afterChildren;	/* invoked BEFORE managing kids	  */
-    XtCallbackRec*	afterManageChildren;
+void WcxCreateNamedChildren (
+     Widget		pw,
+    char*		names,		/* comma or blank separated names */
+    XtCallbackRec*	afterChildren,	/* invoked BEFORE managing kids	  */
+    XtCallbackRec*	afterManageChildren
+    )
 {
     int		children = 0;
     Widget	widget_children[MAX_CHILDREN];
@@ -638,10 +631,7 @@ void WcxCreateNamedChildren ( pw, names, afterChildren, afterManageChildren )
 *******************************************************************************
 */
 
-static void WcxPrintCreationTrace( rp, child, creationType )
-    ResourceRec* rp;
-    Widget       child;
-    int		 creationType;
+static void WcxPrintCreationTrace(ResourceRec* rp, Widget child, int creationType)
 {
     char*	trace;
     char*	childName  = WcWidgetToFullName( child );	/* MUST FREE */
@@ -668,14 +658,15 @@ static void WcxPrintCreationTrace( rp, child, creationType )
     Returns the number of children sucessfully created.
 */
 
-void WcxPostCreate( rp, newWidget, creationType )
-    ResourceRec* rp;
-    Widget	 newWidget;
-    int		 creationType;
+void WcxPostCreate(
+		   ResourceRec* rp,
+		   Widget	 newWidget,
+		   int		 creationType
+		   )
 {
     XtCallbackRec*	cb;
 
-    WcxGetPostRes( rp, newWidget );
+    WcxGetPostRes(rp, newWidget );
 
     if (rp->trace)
 	WcxPrintCreationTrace( rp, newWidget, creationType );
@@ -703,11 +694,12 @@ void WcxPostCreate( rp, newWidget, creationType )
 *******************************************************************************
 */
 
-static Widget WcxCreate( rp, pw, name, creationType )
-    ResourceRec* rp;
-    Widget       pw;
-    char*        name;
-    int		 creationType;
+static Widget WcxCreate(
+     ResourceRec* rp,
+     Widget       pw,
+     char*        name,
+     int 	 creationType
+    )
 {
     Widget child;
 
@@ -734,8 +726,7 @@ static Widget WcxCreate( rp, pw, name, creationType )
     they will be in the future.
 */
 
-void WcInitialize( root )
-    Widget root;
+void WcInitialize( Widget root )
 {
     XtAppContext app = XtWidgetToApplicationContext( root );
 
@@ -807,8 +798,7 @@ void WcInitialize( root )
     is created via XtInitialize().
 */
 
-int WcWidgetCreation ( root )
-    Widget       root;
+int WcWidgetCreation (     Widget root )
 {
     int		children;
     ResourceRec	res;
@@ -843,9 +833,10 @@ int WcWidgetCreation ( root )
 *******************************************************************************
 */
 
-void WcCreateNamedChildren ( pw, names )
-    Widget	pw;		/* parent widget			*/
-    char*	names;		/* (list of) widget names to create	*/
+void WcCreateNamedChildren (
+    Widget	pw,		/* parent widget			*/
+    char*	names		/* (list of) widget names to create	*/
+		    )
 {
     if ( NULL != pw && WcNonNull(names) )
 	WcxCreateNamedChildren ( pw, names, 
@@ -858,9 +849,10 @@ void WcCreateNamedChildren ( pw, names )
     creation time callbacks are invoked.  This function is invoked via
     the application, so the application can do whatever it wants...
 */
-Widget WcCreateChild( pw, name )
-    Widget	pw;
-    char*	name;
+Widget WcCreateChild(
+     Widget	pw,
+    char*	name
+    )
 {
     ResourceRec res;		/* child's creation resources	*/
 
@@ -885,10 +877,11 @@ Widget WcCreateChild( pw, name )
     creation time callbacks are invoked.  This function is invoked via
     the application, so the application can do whatever it wants...
 */
-Widget WcCreateChildFromTemplate( pw, name, template )
-    Widget	pw;
-    char*	name;
-    char*	template;
+Widget WcCreateChildFromTemplate(
+     Widget	pw,
+    char*	name,
+    char*	template
+    )
 {
     ResourceRec res;		/* child's creation resources	*/
 
@@ -931,17 +924,16 @@ Widget WcCreateChildFromTemplate( pw, name, template )
 *******************************************************************************
 */
 
-void WcCreateNamedPopups ( pw, names )
-    Widget      pw;         /* children's parent                            */
-    char*       names;      /* (list of) names of popup widgets to create   */
+void WcCreateNamedPopups (
+     Widget      pw,         /* children's parent                            */
+    char*       names      /* (list of) names of popup widgets to create   */
+    )
 {
     if ( NULL != pw && WcNonNull(names) )
 	WcxCreateNamedPopups ( pw, names, (XtCallbackRec*)NULL );
 }
 
-Widget WcCreatePopup( pw, name )
-    Widget	pw;
-    char*	name;
+Widget WcCreatePopup(Widget pw,char* name)
 {
     ResourceRec res;		/* child's creation resources   */
 
@@ -951,10 +943,11 @@ Widget WcCreatePopup( pw, name )
 	return (Widget)0;
 }
 
-Widget WcCreatePopupFromTemplate( pw, name, template )
-    Widget	pw;
-    char*	name;
-    char*	template;
+Widget WcCreatePopupFromTemplate(
+     Widget	pw,
+    char*	name,
+    char*	template
+    )
 {
     ResourceRec res;		/* child's creation resources   */
 
@@ -988,9 +981,7 @@ Widget WcCreatePopupFromTemplate( pw, name, template )
     WcCreateRoot() can be invoked from a callback and action too.
 */
 
-Widget WcCreateRoot( dpy, shellName )
-    Display* dpy;
-    char*    shellName;
+Widget WcCreateRoot(Display* dpy,char* shellName)
 {
     ResourceRec	res;
     Widget	newShell;
