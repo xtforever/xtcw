@@ -47,11 +47,12 @@
 */
 
 /*ARGSUSED*/
-void WcCvtStringToQuarkRec(args, num_args, fromVal, toVal )
-    XrmValue*	args;
-    Cardinal*	num_args;
-    XrmValue*	fromVal;
-    XrmValue*	toVal;
+void WcCvtStringToQuarkRec(
+     XrmValue*	args,
+    Cardinal*	num_args,
+    XrmValue*	fromVal,
+    XrmValue*	toVal
+    )
 {
     char*	fromString = (char*)(fromVal->addr);
 
@@ -80,11 +81,12 @@ void WcCvtStringToQuarkRec(args, num_args, fromVal, toVal )
 */
 
 /*ARGSUSED*/
-void WcCvtStringToQuark(args, num_args, fromVal, toVal )
-    XrmValue*   args;
-    Cardinal*   num_args;
-    XrmValue*   fromVal;
-    XrmValue*   toVal;
+void WcCvtStringToQuark(
+     XrmValue*   args,
+    Cardinal*   num_args,
+    XrmValue*   fromVal,
+    XrmValue*   toVal
+    )
 {
     char*       fromString = (char*)(fromVal->addr);
     XrmQuark	quark = XrmStringToQuark( fromString );
@@ -326,12 +328,14 @@ void WcCvtStringToWidget( args, num_args, fromVal, toVal )
 */
 #ifdef XtSpecificationRelease
 /* ARGSUSED */
-Boolean WcCvtStringToWidgetList(dpy, args, num_args, from, to, data)
-    Display*	dpy;
-    XrmValuePtr	args;
-    Cardinal*	num_args;
-    XrmValuePtr	from, to;
-    XtPointer*	data;
+Boolean WcCvtStringToWidgetList(
+     Display*	dpy,
+    XrmValuePtr	args,
+    Cardinal*	num_args,
+    XrmValuePtr	from, 
+    XrmValuePtr	to,
+    XtPointer*	data
+    )
 {
     Widget	beingCreated;
     Widget*	widgetList;
@@ -422,12 +426,13 @@ Boolean WcCvtStringToWidgetList(dpy, args, num_args, from, to, data)
 }
 
 /* ARGSUSED */
-void WcWidgetListDestructor( app, to, converter_data, args, num_args )
-    XtAppContext app;
-    XrmValuePtr	 to;
-    XtPointer	 converter_data;
-    XrmValuePtr	 args;
-    Cardinal*	 num_args;
+void WcWidgetListDestructor(
+     XtAppContext app,
+    XrmValuePtr	 to,
+    XtPointer	 converter_data,
+    XrmValuePtr	 args,
+    Cardinal*	 num_args
+    )
 {
     Widget* widgetList = *(Widget**)to->addr;
 
@@ -487,8 +492,7 @@ typedef struct _Segment {
     the SAME.  THEREFORE, DON'T CHANGE THE CLIENT DATA IN CALLBACKS!!
 */
 
-static caddr_t WcxClosureFromSeg( seg )
-    Segment*	   seg;
+static caddr_t WcxClosureFromSeg(Segment* seg )
 {
     if ( seg->arg_start )
     {
@@ -555,9 +559,7 @@ static caddr_t WcxClosureFromSeg( seg )
     unresolved methods or callbacks.
 */
 
-static XtCallbackRec* WcxBuildCallbackList( app, seg )
-    XtAppContext app;
-    Segment*     seg;
+static XtCallbackRec* WcxBuildCallbackList(XtAppContext app,Segment* seg )
 {
     XtCallbackRec	cbList[MAX_CALLBACKS];	/* temporary */
     int			cb;
@@ -624,10 +626,11 @@ static XtCallbackRec* WcxBuildCallbackList( app, seg )
 *******************************************************************************
 */
 
-static int WcxParseCallbackString( string, seg, num_segs )
-    char*	string;
-    Segment*	seg;
-    int		num_segs;
+static int WcxParseCallbackString(
+     char*	string,
+    Segment*	seg,
+    int		num_segs
+    )
 {
     register char* 	cp = string;
     register int	in_parens = 0;
@@ -803,11 +806,12 @@ end_of_parse:
     using the XtDestructor mechanism.
 */
 
-void WcCvtStringToCallback (args, num_args, fromVal, toVal)
-    XrmValue *args;
-    Cardinal *num_args;
-    XrmValue *fromVal;
-    XrmValue *toVal;
+void WcCvtStringToCallback (
+     XrmValue *args,
+     Cardinal *num_args,
+     XrmValue *fromVal,
+    XrmValue *toVal
+    )
 {
     static XtCallbackRec* retval;	/* return value MUST be static */
 
@@ -830,9 +834,7 @@ void WcCvtStringToCallback (args, num_args, fromVal, toVal)
 /*  -- Parse String into Callbacks and Arguments (client data)
 *******************************************************************************
 */
-XtCallbackRec* WcStringToCallbackList( w, callbacks )
-    Widget	w;
-    String	callbacks;
+XtCallbackRec* WcStringToCallbackList(Widget w, String callbacks )
 {
     Segment	 name_arg_segments[MAX_CALLBACKS];	
     XtAppContext app;
@@ -856,8 +858,7 @@ XtCallbackRec* WcStringToCallbackList( w, callbacks )
     data anymore, and we really have NO way of knowing when this
     will occur.
 */
-void WcFreeCallbackList( callbackList )
-    XtCallbackRec* callbackList;
+void WcFreeCallbackList(XtCallbackRec* callbackList )
 {
     XtFree( (char*)callbackList );
 }
@@ -874,11 +875,12 @@ void WcFreeCallbackList( callbackList )
 */
 
 /*ARGSUSED*/
-void WcCvtStringToDynamicLibs ( args, num_args, fromVal, toVal )
-    XrmValue*	args;
-    Cardinal*	num_args;
-    XrmValue*	fromVal;
-    XrmValue*	toVal;
+void WcCvtStringToDynamicLibs (
+     XrmValue*	args,
+     Cardinal*	num_args,
+     XrmValue*	fromVal,
+     XrmValue*	toVal
+    )
 {
     Widget	 beingCreated;
     XtAppContext app;
@@ -913,8 +915,7 @@ void WcCvtStringToDynamicLibs ( args, num_args, fromVal, toVal )
 */
 
 
-void WcAddConverters ( app )
-    XtAppContext app;
+void WcAddConverters (XtAppContext app )
 {
     ONCE_PER_XtAppContext( app );
 
