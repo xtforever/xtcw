@@ -40,9 +40,7 @@ static Widget rootWidgets[MAX_ROOT_WIDGETS];
 
 #ifndef XtNameToWidgetBarfsOnGadgets
 
-Widget WcChildNameToWidget( ref, childName )
-    Widget ref;
-    char*  childName;
+Widget WcChildNameToWidget(Widget ref,char* childName)
 {
     return XtNameToWidget( ref, childName );
 }
@@ -53,16 +51,14 @@ Widget WcChildNameToWidget( ref, childName )
 *******************************************************************************
 */
 
-char* WcSkipWhitespace( cp )
-    char* cp;
+char* WcSkipWhitespace(char* cp)
 {
     while ( *cp && isspace(*cp) )
         cp++;
     return cp;
 }
 
-char* WcSkipWhitespace_Comma( cp )
-    char* cp;
+char* WcSkipWhitespace_Comma(char *cp )
 {
     if (*cp == NUL) return cp;
 
@@ -78,9 +74,7 @@ char* WcSkipWhitespace_Comma( cp )
     pointer to whitespace or NUL following clean name.
 */
 
-char* WcCleanName( in, out )
-    char* in;
-    char* out;
+char* WcCleanName( char *in, char *out )
 {
     if (*in == NUL) { *out = NUL ; return in; }
 
@@ -106,8 +100,7 @@ char* WcCleanName( in, out )
     a root: i.e., it can be `*foo' or `root*foo' or similar.
 */
 
-static Widget WcxPathFromAnyRootToWidget( widgetName )
-    char* widgetName;
+static Widget WcxPathFromAnyRootToWidget(char *widgetName )
 {
     int	widgetNameLen = WcStrLen(widgetName);
     int	i;
@@ -167,9 +160,7 @@ static Widget WcxPathFromAnyRootToWidget( widgetName )
     Once the starting point is found, XtNameToWidget is invoked.
 */
 
-Widget WcFullNameToWidget( refWidget, name )
-    Widget refWidget;
-    char*  name;
+Widget WcFullNameToWidget(Widget refWidget,char* name)
 {
     Widget    retWidget;
 
@@ -254,7 +245,8 @@ Widget WcFullNameToWidget( refWidget, name )
     ** See if named widget is descended from reference widget.
     */
     /*ASSIGN_IN_IF*/
-    if (retWidget = WcChildNameToWidget( refWidget, name ))
+    retWidget = WcChildNameToWidget( refWidget, name );
+    if (retWidget )
     {
 	return retWidget;
     }
@@ -270,7 +262,8 @@ Widget WcFullNameToWidget( refWidget, name )
 	while ( refWidget != (Widget)0 )
 	{
 	    /*ASSIGN_IN_IF*/
-	    if ( retWidget = WcChildNameToWidget( parent, name ) )
+	  retWidget = WcChildNameToWidget( parent, name );
+	    if ( retWidget )
 		return retWidget;
 	    parent = XtParent( parent );
 	}
@@ -279,7 +272,8 @@ Widget WcFullNameToWidget( refWidget, name )
     /* Start at top of this tree, and try to find named widget
     */
     /*ASSIGN_IN_IF*/
-    if (retWidget = WcChildNameToWidget( WcRootWidget(refWidget), name ))
+    retWidget = WcChildNameToWidget( WcRootWidget(refWidget), name );
+    if ( retWidget )
     {
 	return retWidget;
     }
@@ -287,7 +281,8 @@ Widget WcFullNameToWidget( refWidget, name )
     /* name not in widget tree under this root, or it begins with a root name.
     */
     /*ASSIGN_IN_IF*/
-    if (retWidget = WcxPathFromAnyRootToWidget( name ))
+    retWidget = WcxPathFromAnyRootToWidget( name );
+    if ( retWidget )
     {
 	return retWidget;
     }
@@ -307,8 +302,7 @@ Widget WcFullNameToWidget( refWidget, name )
 
 static char* nextChar;
 
-static int WcxFullNameLen( w )
-    Widget w;
+static int WcxFullNameLen( Widget w)
 {
     int len = 1 + WcStrLen( XtName(w) );
 
@@ -317,8 +311,7 @@ static int WcxFullNameLen( w )
     return len;
 }
 
-static void WcxWidgetToFullName( w )
-    Widget w;
+static void WcxWidgetToFullName(Widget w)
 {
     char* cp;
 
@@ -334,8 +327,7 @@ static void WcxWidgetToFullName( w )
 	*nextChar++ = *cp++;
 }
 
-char* WcWidgetToFullName( w )
-    Widget w;
+char* WcWidgetToFullName(Widget w )
 {
     char* buff = XtMalloc( WcxFullNameLen( w ) );
 
@@ -347,8 +339,7 @@ char* WcWidgetToFullName( w )
     return buff;
 }
 
-static char* WcxLastSlash( cp )
-    char* cp;
+static char* WcxLastSlash( char *cp )
 {
     char* slash = (char*)0;
 
@@ -364,8 +355,7 @@ static char* WcxLastSlash( cp )
 }
 
 #ifdef VMS
-static char* WcxLastRbrak( cp )
-    char* cp;
+static char* WcxLastRbrak(char *cp )
 {
     char* rbrak = (char*)0;
 
@@ -380,8 +370,7 @@ static char* WcxLastRbrak( cp )
     return rbrak;
 }
 
-static char* WcxFirstDot( cp )
-    char* cp;
+static char* WcxFirstDot(char *cp)
 {
     while ( *cp )
     {
@@ -401,8 +390,7 @@ static char* WcxFirstDot( cp )
     capitalized, or don't worry about it.
 */
 
-char* WcAppNameToAppClass( appName )
-    char* appName;
+char* WcAppNameToAppClass(char* appName )
 {
 #ifndef VMS
     char* lastSlash = WcxLastSlash( appName );
@@ -446,9 +434,7 @@ char* WcAppNameToAppClass( appName )
     If there is no "-name", it uses argv[0].
 */
 
-char* WcAppName( argc, argv )
-    int argc;
-    char** argv;
+char* WcAppName(int argc, char **argv )
 {
     int i;
     for ( i = 0 ; i < argc ; i++ )
@@ -464,9 +450,7 @@ char* WcAppName( argc, argv )
     return XtNewString( argv[0] );
 }
 
-char* WcAppClass( argc, argv )
-    int argc;
-    char** argv;
+char* WcAppClass(int argc, char **argv )
 {
     String appName   = WcAppName( argc, argv );
     String className = WcAppNameToAppClass( appName );
@@ -481,8 +465,7 @@ char* WcAppClass( argc, argv )
 */
 #define isname(c) (isalnum(c) || c == '_')
 
-XrmQuark WcStringToQuark( cp )
-    char* cp;
+XrmQuark WcStringToQuark(char *cp )
 {
     char  lower[NAME_RESOLUTION];
     int   i;
@@ -511,9 +494,10 @@ XrmQuark WcStringToQuark( cp )
     am so pissed I ever took the suggestion to flatten the case.  Its been
     a pain in the ass for years.
 */
-XrmQuark WcSubStringToQuark( cp, end )
-    char* cp;	/* first character of substring */
-    char* end;	/* last character of substring */
+XrmQuark WcSubStringToQuark(
+    char* cp,	/* first character of substring */
+    char* end	/* last character of substring */
+    )
 {
     char  lower[NAME_RESOLUTION];
     int   i;
@@ -528,9 +512,10 @@ XrmQuark WcSubStringToQuark( cp, end )
     return XrmStringToQuark(lower);
 }
 
-XrmQuark WcCsSubStringToQuark( cp, end )
-    char* cp;	/* first character of substring */
-    char* end;	/* last character of substring */
+XrmQuark WcCsSubStringToQuark( 
+     char* cp,	/* first character of substring */
+    char* end	/* last character of substring */
+    )
 {
     char  name[NAME_RESOLUTION];
     int   i;
@@ -553,10 +538,11 @@ XrmQuark WcCsSubStringToQuark( cp, end )
 
 static void WcxPrintTree _(( WcBuffer buf, Widget w, int depth ));
 
-static void WcxPrintTree( buf, w, depth )
-    WcBuffer buf;
-    Widget   w;
-    int      depth;
+static void WcxPrintTree(
+     WcBuffer buf,
+    Widget   w,
+    int      depth
+    )
 {
     int		i;
     char*	class = WcWidgetClassName( w );		/* DONT FREE */
@@ -601,8 +587,7 @@ static void WcxPrintTree( buf, w, depth )
     }
 }
 
-void WcPrintTree( w )
-    Widget w;
+void WcPrintTree(Widget w )
 {
     WcBuffer buf = WcBuffer_New();
 
@@ -629,10 +614,7 @@ void WcPrintTree( w )
     which is added to a root widget's destroy callback list by WcRootWidget.
 */
 /*ARGSUSED*/
-static void ForgetRootCB( w, ignored, unused )
-    Widget	w;
-    XtPointer	ignored;
-    XtPointer	unused;
+static void ForgetRootCB(Widget	w, XtPointer ignored,XtPointer	unused)
 {
     int i;
     for (i = 0 ; i < numRoots ; i++ )
@@ -663,8 +645,7 @@ static void ForgetRootCB( w, ignored, unused )
     gets re-filled as roots are destroyed.
 */
 
-Widget WcRootWidget( w )
-    Widget w;
+Widget WcRootWidget(Widget w )
 {
     int i;
 
@@ -694,9 +675,7 @@ Widget WcRootWidget( w )
 *******************************************************************************
 */
 
-char* WcStrStr( s1, s2 )
-    char* s1;
-    char* s2;
+char* WcStrStr(char *s1, char *s2 )
 {
     while (*s1)
     {
@@ -723,9 +702,7 @@ char* WcStrStr( s1, s2 )
 ** Some are macros in WcCreate.h
 */
 
-char* WcStrCpy( str1, str2 )
-    char* str1;
-    char* str2;
+char* WcStrCpy(char *str1, char *str2 )
 {
     if ( str1 == NULL )
     {
@@ -741,9 +718,7 @@ char* WcStrCpy( str1, str2 )
     return str1;
 }
 
-char* WcStrCat( str1, str2 )
-    char* str1;
-    char* str2;
+char* WcStrCat(char *str1, char *str2 )
 {
     if ( str1 == NULL )
     {
@@ -757,9 +732,7 @@ char* WcStrCat( str1, str2 )
 	return strcat( str1, str2 );
 }
 
-int WcStrCmp( str1, str2 )
-    char* str1;
-    char* str2;
+int WcStrCmp(char *str1, char *str2 )
 {
     if ( WcNonNull(str1) && WcNonNull(str2) )
 	return strcmp( str1, str2 );	/* str1 and str2 are non-null */
@@ -771,10 +744,7 @@ int WcStrCmp( str1, str2 )
 	return 1;			/* anything is greater than NULL */
 }
 
-int WcStrCmpN( str1, str2, num )
-    char* str1;
-    char* str2;
-    int   num;
+int WcStrCmpN(char* str1, char* str2, int   num)
 {
     if ( num > 0 && (WcNonNull(str1) && WcNonNull(str2)) )
 	return strncmp( str1, str2, num);
@@ -829,8 +799,7 @@ up in the shell, pass "~.title: Send %s to %s".
    positive return value means printf() can be safely called with the
    returned number of strings as arguments following the format.
 */
-int WcPrintfFormatStrings( cp )
-    char* cp;
+int WcPrintfFormatStrings(char *cp )
 {
     int strings = 0;
 #ifdef SUNOS_PRINTF
@@ -919,9 +888,7 @@ int WcPrintfFormatStrings( cp )
 **********************************************************************
 */
 
-String WcBreakIntoLines( string, columnsPerLine )
-    String	string;
-    int		columnsPerLine;
+String WcBreakIntoLines( String string, int columnsPerLine )
 {
     int		len, charPos;
     String	cp, retVal, lastWhitespace;
@@ -1010,9 +977,7 @@ String WcBreakIntoLines( string, columnsPerLine )
     return retVal;
 }
 
-String WcSpliceLines( cp, columnsPerLine )
-    String	cp;
-    int		columnsPerLine;
+String WcSpliceLines( String cp, int columnsPerLine )
 {
     String	rp, retVal;
     int		col;
@@ -1133,16 +1098,14 @@ static char* XEvent_names[] = {
 "MappingNotify",        /* 34 */
 "LASTEvent",            /* 35 */        /* must be bigger than any event # */
 };
-int XEvent_numNames = 35;
+int XEvent_numNames = 35;        /* how needs this ?? */
 
-extern char* WcXEventName( event )
-    XEvent* event;
+extern char* WcXEventName( XEvent* event )
 {
     return XEvent_names[ event->type ];
 }
 
-extern char* WcWidgetClassName( widget )
-    Widget widget;
+extern char* WcWidgetClassName( Widget widget )
 {
     return widget->core.widget_class->core_class.class_name;
 }
