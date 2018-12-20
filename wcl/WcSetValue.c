@@ -89,10 +89,7 @@ static char* svUsage = "\n\
     return BARFED;							\
 }
 
-static void WcxBarf( w, id, resSpec )
-    Widget w;
-    int	   id;
-    String resSpec;
+static void WcxBarf(Widget w, int id, String resSpec )
 {
     switch (id) {
     
@@ -186,16 +183,19 @@ static void WcxBarf( w, id, resSpec )
     The return value is BARFED if error, NO_PROBLEMS otherwise.
 */
 
-static int WcxResSpecFindSegments( widget, resSpec, 
-		   nameStart, nameEnd, resStart, resEnd, 
-		   typeStart, typeEnd, valueStart, valueEnd, next )
-Widget widget;			/* needed for warning messages */
-char *resSpec;			/* input resource specification */
-char **nameStart,  **nameEnd;	/* output target widget name */
-char **resStart,   **resEnd;	/* output resource name */
-char **typeStart,  **typeEnd;	/* output optional type name */
-char **valueStart, **valueEnd;	/* output lead/trailing whitespace stripped */
-char **next;			/* output if (next) *next=='(' */
+static int WcxResSpecFindSegments(
+     Widget widget,			/* needed for warning messages */
+     char *resSpec,			/* input resource specification */
+     char **nameStart,
+     char **nameEnd,	/* output target widget name */
+     char **resStart,   
+     char **resEnd,	/* output resource name */
+     char **typeStart,  
+     char **typeEnd,	/* output optional type name */
+     char **valueStart, 
+     char **valueEnd,	/* output lead/trailing whitespace stripped */
+     char **next	/* output if (next) *next=='(' */
+)
 {
     register char* cp;
     int            inParens = 0;
@@ -383,9 +383,10 @@ typedef struct _ParsedResSpec {
 } ParsedResSpecRec, *ParsedResSpec;
 #define MAX_RES_SPECS 128
 
-static void WcxSetValuesFromParseResSpecs( spec, numSpecs )
-    ParsedResSpec	spec;		/* array of ParsedResSpecRecs	*/
-    int			numSpecs;	/* the number of res specs	*/
+static void WcxSetValuesFromParseResSpecs(
+     ParsedResSpec	spec,		/* array of ParsedResSpecRecs	*/
+    int			numSpecs	/* the number of res specs	*/
+    )
 {
     XrmValue    fr_val;
     XrmValue    to_val;
@@ -522,9 +523,7 @@ static void WcxSetValuesFromParseResSpecs( spec, numSpecs )
     can be relative to the reference widget.  A type may optionally be provided.
 */
 
-void WcSetValue( w, resSpec )
-    Widget  w;  
-    char*   resSpec;
+void WcSetValue(Widget w, char *resSpec )
 {
     ParsedResSpecRec spec[MAX_RES_SPECS];
     int		inx = 0;
@@ -628,9 +627,7 @@ free_all_specs:
     returned to the caller.
 */
 
-char* WcGetResourceType( w, res_name )
-    Widget w;
-    char*  res_name;
+char* WcGetResourceType(Widget w, char *res_name )
 {
     XtResource* res_list;
     int         i;
@@ -693,15 +690,16 @@ char* WcGetResourceType( w, res_name )
     because converters generally give their own error messages.
 */
 
-void WcSetValueFromString( w, res_name, res_val )
-    Widget w;		 /* MUST already be init'd */
-    char*  res_name;
-    char*  res_val;	/* NUL terminated, should NOT have whitespace */
+void WcSetValueFromString(
+     Widget w,		 /* MUST already be init'd */
+     char*  res_name,
+     char*  res_val	/* NUL terminated, should NOT have whitespace */
+    )
 {
     char*	res_type;	/* must be XtFree'd */
-
     /*ASSIGN_IN_IF*/
-    if ( res_type = WcGetResourceType( w, res_name ) )
+    res_type = WcGetResourceType( w, res_name );
+    if ( res_type )
     {
 	/* This widget does know about this resource type */
 	WcSetValueFromStringAndType( w, res_name, res_val, res_type );
@@ -709,11 +707,7 @@ void WcSetValueFromString( w, res_name, res_val )
     XtFree( res_type );
 }
 
-void WcSetValueFromStringAndType( w, res_name, res_val, res_type )
-    Widget w;
-    char*  res_name;
-    char*  res_val;
-    char*  res_type;
+void WcSetValueFromStringAndType(Widget w, char* res_name, char* res_val, char*  res_type )
 {
     ParsedResSpecRec spec[1];
 
@@ -736,9 +730,7 @@ void WcSetValueFromStringAndType( w, res_name, res_val, res_type )
     guess clients will too.
 */
 
-void WcSetTranslations( w, translations )
-    Widget w;
-    char* translations;
+void WcSetTranslations(Widget w, char *translations )
 {
     XtTranslations compiledTrans = XtParseTranslationTable( translations );
 
