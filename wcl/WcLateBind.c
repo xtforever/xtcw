@@ -54,13 +54,11 @@ static void  WcxLateBinder_PossiblyRemoveCallback  _(( WcLateBind ));
 */
 
 /*ARGSUSED*/
-void WcLateBinderCB( orig, clientData, callData )
-    Widget	orig;
-    XtPointer	clientData, callData;
+void WcLateBinderCB(Widget w,XtPointer clientData, XtPointer callData)
 {
     WcLateBind lb = (WcLateBind)clientData;
 
-    lb->widget   = orig;
+    lb->widget   = w;
     lb->callData = callData;
 
     WcxLateBinder_Invoke( lb );
@@ -78,16 +76,16 @@ void WcLateBinderCB( orig, clientData, callData )
 */
 static char wcxCallbackName[MAX_XRMSTRING];
 
-void WcLateBinder_RemoveCallback( name )
-    String name;
+void WcLateBinder_RemoveCallback(String name)
 {
     WcStrCpy( wcxCallbackName, name );
 }
 
-static void WcxLateBinder_PossiblyRemoveCallback( lb )
-    WcLateBind lb;
+static void WcxLateBinder_PossiblyRemoveCallback(WcLateBind lb)
+
 {
-    if ( WcNonNull( wcxCallbackName ) )
+  //    if ( WcNonNull( wcxCallbackName ) )
+    if ( wcxCallbackName[0] )
     {
 	XtRemoveCallback( lb->widget,
 			  wcxCallbackName,
@@ -106,9 +104,7 @@ static void WcxLateBinder_PossiblyRemoveCallback( lb )
     more resistant to typos in the resource files.
 */
 /*ARGSUSED*/
-static void WcxUndefinedCallbackCB( w, clientData, callData )
-    Widget	w;
-    XtPointer	clientData, callData;
+static void WcxUndefinedCallbackCB (Widget w,XtPointer clientData, XtPointer	callData)
 {
     WcWARN1( w, "WcUndefinedCallback", "invoked",
 	"Wcl Warning: Undefined Callback Invoked: %s", (char*)clientData );
@@ -119,8 +115,7 @@ static void WcxUndefinedCallbackCB( w, clientData, callData )
 */
 static XtCallbackProc WcxUndefinedCallbackAddr = WcxUndefinedCallbackCB;
 
-XtCallbackProc WcSetUndefinedCallback( Proc )
-    XtCallbackProc Proc;
+XtCallbackProc WcSetUndefinedCallback(XtCallbackProc Proc)
 {
     XtCallbackProc Old = WcxUndefinedCallbackAddr;
 
@@ -167,9 +162,7 @@ static void WcxGrowWcxHooks()
     }
 }
 
-void WcAddLateBinderHook( Hook, clientData )
-    WcLateBinderHook	Hook;
-    XtPointer		clientData;
+void WcAddLateBinderHook(WcLateBinderHook Hook,XtPointer clientData )
 {
     int inx;
 
@@ -197,9 +190,7 @@ void WcAddLateBinderHook( Hook, clientData )
     WcAddLateBinderHook( Hook, clientData );
 }
 
-void WcRemoveLateBinderHook( Hook, clientData )
-    WcLateBinderHook	Hook;
-    XtPointer		clientData;
+void WcRemoveLateBinderHook(WcLateBinderHook Hook, XtPointer clientData)
 {
     int inx;
 
@@ -224,8 +215,7 @@ void WcRemoveLateBinderHook( Hook, clientData )
     Always do late binding, so application can at any time change callback
     procedure name to callback procedure mapping.
 */
-static void WcxLateBinder_Invoke( lb )
-    WcLateBind	lb;
+static void WcxLateBinder_Invoke(WcLateBind lb )
 {
     int inx;
 
@@ -304,8 +294,7 @@ static void WcxLateBinder_Invoke( lb )
    We have a library name, but no callback address yet.
    Return 1 if something goes wrong.
 */
-static int WcxLateBinder_DynamicallyBindCallback( lb )
-    WcLateBind	lb;
+static int WcxLateBinder_DynamicallyBindCallback(WcLateBind lb)
 {
 #ifdef WC_HAS_dlopen_AND_dlsym
     lb->libFullPath = WcMapDynLibFind( lb->app, lb->libQ );
@@ -380,8 +369,7 @@ static int WcxLateBinder_DynamicallyBindCallback( lb )
    If we do not find it, we will invoke the undefined callback.
 */
 
-static int WcxLateBinder_BindFromRegistration( lb )
-    WcLateBind	lb;
+static int WcxLateBinder_BindFromRegistration(WcLateBind lb )
 {
     XtCallbackRec* cbRecPtr;
 
@@ -422,9 +410,10 @@ static int WcxLateBinder_BindFromRegistration( lb )
    care if the object is found: the methods must be able to deal with getting
    a NULL object pointer.
 */
-static XtPointer WcxFindObject_DefaultSearch( w, classQ )
-    Widget   w;		/* the widget whcih invoked the callback */
-    XrmQuark classQ;	/* quarkified case sensitive class name */
+static XtPointer WcxFindObject_DefaultSearch( 
+    Widget   w,		/* the widget whcih invoked the callback */
+    XrmQuark classQ	/* quarkified case sensitive class name */
+    )
 {
     XtPointer object;
     do
@@ -438,8 +427,7 @@ static XtPointer WcxFindObject_DefaultSearch( w, classQ )
 
 static WcFindObjectFunc WcxFindObject = WcxFindObject_DefaultSearch;
 
-WcFindObjectFunc WcSetFindObjectFunc( FindFunc )
-    WcFindObjectFunc FindFunc;
+WcFindObjectFunc WcSetFindObjectFunc(WcFindObjectFunc FindFunc )
 {
     WcFindObjectFunc Old = WcxFindObject;
     WcxFindObject = FindFunc;
@@ -449,8 +437,7 @@ WcFindObjectFunc WcSetFindObjectFunc( FindFunc )
 /* Invoke Method after finding the appropriate object instance
 **********************************************************************
 */
-static void WcxLateBinder_InvokeMethod( lb )
-    WcLateBind	lb;
+static void WcxLateBinder_InvokeMethod(WcLateBind lb )
 {
     WcMethodDataRec methodData;
 
@@ -492,8 +479,7 @@ static void WcxLateBinder_InvokeMethod( lb )
     We do not care how slow this proc is, its just for warning messages.
     XtFree the returned string!
 */
-static char* WcxLateBinder_InvocationLine( lb )
-    WcLateBind lb;
+static char* WcxLateBinder_InvocationLine(WcLateBind lb)
 {
     char*	line;
     int		len = 1;	/* always at least a null terminator */
