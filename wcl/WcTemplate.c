@@ -172,9 +172,10 @@ static Bool   WcxCopyEntry            _(( XrmDatabase*, XrmBindingList,
     Returns a STATIC string!  Therefore, use the return value right away...
 */
 
-static String WcxQuarksToResourceName( bindings, quarks )
-    XrmBindingList	bindings;
-    XrmQuarkList	quarks;
+static String WcxQuarksToResourceName(
+     XrmBindingList	bindings,
+    XrmQuarkList	quarks
+    )
 {
     static char resourceName[BUFSIZ];
     int         i, nameLen;
@@ -214,21 +215,21 @@ typedef struct _DumpEntryRec {
 
 /* Return string with blanks to expand a tab after the string parameter
 */
-static String WcxSpacesForTab( len )
-    int len;
+static String WcxSpacesForTab(int len )
 {
     static char tabbuf[] = "        ";	/* eight spaces */
     return tabbuf + len % 8;
 }
 
 /*ARGSUSED*/
-static Bool WcxDumpEntry(db, bindings, quarks, type, value, data)
-    XrmDatabase*	db;
-    XrmBindingList	bindings;
-    XrmQuarkList	quarks;
-    XrmRepresentation*	type;
-    XrmValuePtr		value;
-    XPointer		data;
+static Bool WcxDumpEntry(
+    XrmDatabase*	db,
+    XrmBindingList	bindings,
+    XrmQuarkList	quarks,
+    XrmRepresentation*	type,
+    XrmValuePtr		value,
+    XPointer		data
+    )
 {
     DumpEntry	dumpEntry = (DumpEntry)data;
     String	resourceName = WcxQuarksToResourceName( bindings, quarks );
@@ -301,10 +302,11 @@ static Bool WcxDumpEntry(db, bindings, quarks, type, value, data)
 *******************************************************************************
     Useful for debugging...
 */
-void WcPreCreateDumpResources( parent, name, stream )
-    Widget	parent;
-    char*	name;
-    FILE*	stream;
+void WcPreCreateDumpResources(
+     Widget	parent,
+     char*	name,
+     FILE*	stream
+    )
 {
     Widget		w;
     int			depth;
@@ -379,9 +381,7 @@ void WcPreCreateDumpResources( parent, name, stream )
     WcBuffer_Free( dumpEntryRec.buffer );
 }
 
-void WcPostCreateDumpResources( widget, stream )
-    Widget	widget;
-    FILE*	stream;
+void WcPostCreateDumpResources(Widget widget, FILE* stream)
 {
     Widget		w;
     int			depth;
@@ -459,15 +459,13 @@ void WcPostCreateDumpResources( widget, stream )
     Invoked during initialization, AFTER WcWARN has been initialized.
 */
 /*ARGSUSED*/
-void WcTemplateInitialize( app, wcl )
-    XtAppContext	app;
-    WclRecPtr		wcl;
+void WcTemplateInitialize(XtAppContext app, WclRecPtr wcl)
 {
     char	cleanName[MAX_XRMSTRING];
     char*	next = WcCleanName( wcl->templateFiles, cleanName );
 
     WcQString = XrmPermStringToQuark( "String" );
-    while ( WcNonNull( cleanName ) )
+    while ( cleanName[0] )
     {
 	XrmQuark fileQuark = XrmStringToQuark( cleanName );
 
@@ -565,13 +563,14 @@ typedef struct _CopyData {
    to continue until done.
 */
 /*ARGSUSED*/
-static int WcxCopyEntry(db, bindings, quarks, type, value, data)
-    XrmDatabase*	db;
-    XrmBindingList	bindings;
-    XrmQuarkList	quarks;
-    XrmRepresentation*	type;
-    XrmValue*		value;
-    XPointer		data;
+static int WcxCopyEntry(
+     XrmDatabase*	db,
+     XrmBindingList	bindings,
+     XrmQuarkList	quarks,
+     XrmRepresentation*	type,
+     XrmValue*		value,
+     XPointer		data
+    )
 {
     CopyData	cd = (CopyData)data;
     int		ofTarget, ofTemplate;
@@ -629,11 +628,12 @@ static int WcxCopyEntry(db, bindings, quarks, type, value, data)
 
     Returns 0 if template not found, 1 if template found and loaded.
 */
-int WcApplyTemplate( template, pw, name, trace )
-    XrmQuark	template;
-    Widget	pw;
-    char*	name;
-    int		trace;
+int WcApplyTemplate(
+     XrmQuark	template,
+     Widget	pw,
+     char*	name,
+     int		trace
+    )
 {
     CopyDataRec		copyDataRec;
     Widget		w;
@@ -805,36 +805,34 @@ int WcApplyTemplate( template, pw, name, trace )
 #else  /* pre X11R5, no-op implementations */
 
 /*ARGSUSED*/
-void WcPreCreateDumpResources( parent, name, stream )
-    Widget	parent;
-    char*	name;
-    FILE*	stream;
+void WcPreCreateDumpResources(
+     Widget	parent,
+    char*	name,
+    FILE*	stream
+    )
 {
     return;
 }
 
 /*ARGSUSED*/
-void WcPostCreateDumpResources( widget, stream )
-    Widget	widget;
-    FILE*	stream;
+void WcPostCreateDumpResources(Widget widget, FILE* stream)
 {
     return;
 }
 
 /*ARGSUSED*/
-void WcTemplateInitialize( app, wcl )
-    XtAppContext	app;
-    WclRecPtr		wcl;
+void WcTemplateInitialize(XtAppContext app, WclRecPtr wcl)
 {
     return;
 }
 
 /*ARGSUSED*/
-int WcApplyTemplate( template, pw, name, trace )
-    XrmQuark	template;
-    Widget	pw;
-    char*	name;
-    int		trace;
+int WcApplyTemplate( 
+     XrmQuark	template,
+     Widget	pw,
+     char*	name,
+     int	trace
+    )
 {
     return 1;
 }
