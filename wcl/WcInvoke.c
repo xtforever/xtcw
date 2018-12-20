@@ -32,9 +32,7 @@
 =========================
 */
 
-static char* WcxCvtParamsToClientData ( params, num_params )
-    char**    params;
-    Cardinal* num_params;
+static char* WcxCvtParamsToClientData (char** params, Cardinal* num_params)
 {
     char *cp, *pp, *clientData;
     int  len, par, needToQuote;
@@ -88,10 +86,11 @@ typedef struct _WcxParamsStruct {
     Cardinal	num_params;
 } WcxParamsStruct, *WcxParams;
 
-static void WcxCvtClientDataToParams ( widget, clientData, wcxParams )
-    Widget	widget;
-    char*	clientData;
-    WcxParams	wcxParams;	/* values filled in and returned */
+static void WcxCvtClientDataToParams (
+      Widget	widget,
+      char*	clientData,
+      WcxParams	wcxParams	/* values filled in and returned */
+    )
 {
     char*	params[MAX_ARGS];	/* must copy into alloc'd params[] */
     Cardinal	num_params	= 0;
@@ -155,7 +154,7 @@ static void WcxCvtClientDataToParams ( widget, clientData, wcxParams )
 		/* Skip trailing quote, whitespace, optional comma:
 		*/
 		data++;
-		while (*data && *data  == ' ' || *data == '\t' || *data == '\n')
+		while (*data && (*data  == ' ' || *data == '\t' || *data == '\n') )
 		    data++;
 		if ( *data == ',')
 		    data++;
@@ -178,7 +177,7 @@ static void WcxCvtClientDataToParams ( widget, clientData, wcxParams )
 
 	    /* skip whitespace, optional comma
 	    */
-	    while (*data && *data  == ' ' || *data == '\t' || *data == '\n')
+	    while (*data && (*data  == ' ' || *data == '\t' || *data == '\n'))
 		data++;
 	    if ( *data == ',')
 		data++;
@@ -188,7 +187,7 @@ static void WcxCvtClientDataToParams ( widget, clientData, wcxParams )
 
 	/* skip whitespace which may follow optional comma we've already skipped
 	*/
-	while (*data && *data  == ' ' || *data == '\t' || *data == '\n')
+	while (*data && (*data  == ' ' || *data == '\t' || *data == '\n') )
 	    data++;
 
 	++num_params;
@@ -218,11 +217,12 @@ static void WcxCvtClientDataToParams ( widget, clientData, wcxParams )
 *******************************************************************************
 */
 
-void WcInvokeCallback( Callback, widget, params, num_params )
-    XtCallbackProc	Callback;
-    Widget   		widget;
-    char**		params;
-    Cardinal*		num_params;
+void WcInvokeCallback(
+     XtCallbackProc	Callback,
+     Widget   		widget,
+     char**		params,
+     Cardinal*		num_params
+    )
 {
     if ( *num_params == 0 )
 	Callback( widget, (XtPointer)0, (XtPointer)0 );
@@ -243,10 +243,11 @@ void WcInvokeCallback( Callback, widget, params, num_params )
 *******************************************************************************
 */
 
-void WcInvokeAction( Action, widget, clientData )
-    XtActionProc Action;
-    Widget       widget;
-    char*        clientData;
+void WcInvokeAction(
+     XtActionProc Action,
+     Widget       widget,
+     char*        clientData
+    )
 {
     WcxParamsStruct	wcxParams;
     Cardinal		num_params;	/* must copy cuz Action can change */
@@ -269,10 +270,11 @@ void WcInvokeAction( Action, widget, clientData )
 *******************************************************************************
 */
 
-void WcInvokeNamedAction( actionName, widget, clientData )
-    char*  actionName;
-    Widget widget;
-    char*  clientData;
+void WcInvokeNamedAction(
+     char*  actionName,
+     Widget widget,
+     char*  clientData
+    )
 {
 #ifdef XtSpecificationRelease
     WcxParamsStruct	wcxParams;
