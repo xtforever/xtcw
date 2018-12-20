@@ -126,21 +126,23 @@ int wcWidgetCvtArgsCount = XtNumber(wcWidgetCvtArgs);
 #ifdef XtSpecificationRelease
 /* New Style Resource Converter */
 /*ARGSUSED*/
-Boolean WcCvtStringToWidget( dpy, args, num_args, fromVal, toVal, convData )
-    Display*  dpy;		/* not used */
-    XrmValue* args;
-    Cardinal* num_args;
-    XrmValue* fromVal;
-    XrmValue* toVal;
-    XtPointer* convData;	/* not used */
+Boolean WcCvtStringToWidget(
+     Display*  dpy,		/* not used */
+     XrmValue* args,
+     Cardinal* num_args,
+     XrmValue* fromVal,
+     XrmValue* toVal,
+     XtPointer* convData
+    )/* not used */
 #define DONE new_done
 #else
 /* Old Style Resource Converter */
-void WcCvtStringToWidget( args, num_args, fromVal, toVal )
-    XrmValue* args;
-    Cardinal* num_args;
-    XrmValue* fromVal;
-    XrmValue* toVal;
+void WcCvtStringToWidget( 
+     XrmValue* args,
+     Cardinal* num_args,
+     XrmValue* fromVal,
+     XrmValue* toVal
+    )
 #define DONE done
 #endif
 {
