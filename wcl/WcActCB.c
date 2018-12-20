@@ -217,8 +217,8 @@ static void WcxChgMan(
 		"Wcl Usage: %s( parent, child [, child] ... )", caller );
 	return;
     }
-
-    if ( NULL == (parent = WcFullNameToWidget( w, *params )) )
+    parent = WcFullNameToWidget( w, *params );
+    if ( NULL == parent )
     {
 	WcWARN2( w, caller, "parentNotFound",
 		"Wcl Warning: %s( %s, ... ) - parent not found",
@@ -228,7 +228,8 @@ static void WcxChgMan(
 
     for ( i = 1 ; i < *num_params ; i++ )
     {
-	if ( NULL == (children[i-1] = WcChildNameToWidget( parent, params[i] )))
+      children[i-1] = WcChildNameToWidget( parent, params[i] );
+	if ( NULL == children[i-1] )
 	{
 	    WcWARN2( w, caller, "childNotFound",
 		"Wcl Warning: %s() - child %s not found", caller, params[i] );
@@ -392,7 +393,8 @@ ACTION_DECL( WcInstallAcceleratorsACT )
 	WcWARN( w, "WcInstallAccelerators", "usage", usage );
 	return;
     }
-    if ( NULL == (dest = WcFullNameToWidget( w, params[0] )) )
+    dest = WcFullNameToWidget( w, params[0] );
+    if ( NULL == dest )
     {
 	WcWARN1( w, "WcInstallAccelerators", "destNotFound",
 		"Wcl Warning: Destination widget %s not found.", params[0] );
@@ -401,7 +403,8 @@ ACTION_DECL( WcInstallAcceleratorsACT )
     }
     for ( i = 1 ; i < *num_params ; i++ )
     {
-	if ( NULL == (src = WcFullNameToWidget( w, params[i] )) )
+      src = WcFullNameToWidget( w, params[i] );
+	if ( NULL == src )
 	{
 	    WcWARN1( w, "WcInstallAccelerators", "srcNotFound",
 		    "Wcl Warning: Source widget %s not found.", params[i] );
@@ -429,16 +432,16 @@ ACTION_DECL( WcInstallAllAcceleratorsACT )
 	WcWARN( w, "WcInstallAllAccelerators", "usage", usage );
 	return;
     }
-
-    if ( NULL == (dest = WcFullNameToWidget( w, params[0] )) )
+    dest = WcFullNameToWidget( w, params[0] );
+    if ( NULL == dest )
     {
 	WcWARN1( w, "WcInstallAllAccelerators", "destNotFound",
 		"Wcl Warning: Destination widget %s not found.", params[0] );
 	WcWARN( w, "WcInstallAllAccelerators", "usage", usage );
 	return;
     }
-
-    if ( NULL == (src = WcFullNameToWidget( w, params[1] )) )
+    src = WcFullNameToWidget( w, params[1] );
+    if ( NULL == src )
     {
 	WcWARN1( w, "WcInstallAccelerators", "srcNotFound",
 		"Wcl Warning: Source widget %s not found.", params[1] );
@@ -719,8 +722,8 @@ static void WcxCreateKids (Widget w,
     children = WcCleanName( parent_children, parentName );
 
     children = WcSkipWhitespace_Comma( children );
-
-    if ((Widget)NULL == (parent = WcFullNameToWidget( w, parentName )) )
+    parent = WcFullNameToWidget( w, parentName );
+    if ( NULL == parent )
     {
 	WcWARN2( w, caller, "parentNotFound",
 		"Wcl Warning: %s( %s ...) - Parent widget not found.",
@@ -887,8 +890,8 @@ static void WcxAddOrRemoveCallbacks (
 
     string = WcCleanName( string, name );	/* name of a widget */
     string = WcSkipWhitespace_Comma( string );
-
-    if ( NULL == (target = WcFullNameToWidget( w, name )) )
+    target = WcFullNameToWidget( w, name );
+    if ( NULL == target )
     {
 	WcWARN2( w, caller, "destNotFound",
 		"Wcl Warning: %s(%s) - Widget not found.", caller, name );
@@ -897,8 +900,8 @@ static void WcxAddOrRemoveCallbacks (
 
     string = WcCleanName( string, name );	/* name now callback name */
     string = WcSkipWhitespace_Comma( string );
-
-    if ( NULL != (callbacks = WcStringToCallbackList( w, string ) ) )
+    callbacks = WcStringToCallbackList( w, string );
+    if ( NULL != callbacks )
     {
 	AddOrRemove( target, name, callbacks );
 	WcFreeCallbackList( callbacks );
@@ -953,8 +956,8 @@ void WcOnceOnlyCB (
 
     callbacks = WcCleanName( callbacks, name );
     callbacks = WcSkipWhitespace_Comma( callbacks );
-
-    if ( NULL != ( callbackRecs = WcStringToCallbackList( w, callbacks ) ) )
+    callbackRecs = WcStringToCallbackList( w, callbacks );
+    if ( NULL != callbackRecs )
     {
 	for ( cb = callbackRecs  ;  cb->callback != 0  ;  cb++ )
 	{
@@ -1000,7 +1003,8 @@ void WcTranslationsCB (
 
     translations = WcCleanName( (char*)name_trans, name );
     translations = WcSkipWhitespace_Comma( translations );
-    if ( NULL == (target = WcFullNameToWidget( w, name ) ) )
+    target = WcFullNameToWidget( w, name );
+    if ( NULL == target )
     {
 	WcWARN1( w, "WcTranslations", "notFound",
 		"Wcl Warning: WcTranslations(%s ... ) - Widget not found.",
@@ -1210,8 +1214,8 @@ void WcDynamicInvoke(
     {
 	sharedLibrary = librarySpec; /* It must be a path name */
     }
-
-    if ( NULL == (handle = dlopen( sharedLibrary, RTLD_LAZY )) )
+    handle = dlopen( sharedLibrary, RTLD_LAZY );
+    if ( NULL == handle )
     {
 	WcWARN2( w, "WcDynamicCallback", "dlopenFailed",
 		 dlopenFailed, sharedLibrary, dlerror() );
