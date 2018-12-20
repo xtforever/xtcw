@@ -18,6 +18,7 @@
 */
 
 #include <stdlib.h>		/* getenv, getuid	*/
+#include <unistd.h>
 #include <X11/IntrinsicP.h>
 
 #ifdef sun
@@ -61,8 +62,7 @@ static void WcxLoadWarnMalloc _(( Widget, char* name ));
 
 static WcDatabaseFunction WcGetFileDatabaseFunction;
 
-WcDatabaseFunction WcSetDatabaseFunction( func )
-    WcDatabaseFunction func;
+WcDatabaseFunction WcSetDatabaseFunction(WcDatabaseFunction func )
 {
 	WcDatabaseFunction old_value = WcGetFileDatabaseFunction;
 	WcGetFileDatabaseFunction = func;
@@ -78,8 +78,7 @@ WcDatabaseFunction WcSetDatabaseFunction( func )
 	a function that the user has written himself.
 */
 
-static XrmDatabase WcGetFileDatabase( filename )
-    char *filename;
+static XrmDatabase WcGetFileDatabase(char *filename )
 {
 	if (WcGetFileDatabaseFunction) {
 		return((*WcGetFileDatabaseFunction)(filename));
@@ -98,8 +97,7 @@ static XrmDatabase WcGetFileDatabase( filename )
 
 #define THIS_USER ((char*)0)
 
-char* WcHomeDirectory( user )
-    char* user;
+char* WcHomeDirectory(char *user )
 {
     struct passwd *pw;
     char* homeDir = "";
@@ -139,11 +137,12 @@ char* WcHomeDirectory( user )
     the same as for application class resource file.
 */
 
-int WcLoadResourceFile ( w,  name )
-    Widget w;		/* Wcl 1.x had this declared as a Display*	*/
-    char*  name;	/* X resources file name			*/
+int WcLoadResourceFile (
+     Widget w,		/* Wcl 1.x had this declared as a Display*	*/
+     char*  name	/* X resources file name			*/
+    )
 {
-    int		loaded = 0;
+  //    int		loaded = 0;
     XrmQuark	filenameQuark;
     XrmDatabase	dbUsedByXt;
 
@@ -202,10 +201,11 @@ int WcLoadResourceFile ( w,  name )
     The return value is true if a resource file was found and loaded.
 */
 
-int WcLoadResourceFileIntoDatabase( w, fileName, dbPointer )
-    Widget       w;		/* for warning messages only		      */
-    char*        fileName;	/* file name to load	     		      */
-    XrmDatabase* dbPointer;	/* existing db or NULL: see XrmMergeDatabases */
+int WcLoadResourceFileIntoDatabase(
+     Widget       w,		/* for warning messages only		      */
+     char*        fileName,	/* file name to load	     		      */
+     XrmDatabase* dbPointer	/* existing db or NULL: see XrmMergeDatabases */
+    )
 {
     int loaded;
 
@@ -275,10 +275,11 @@ int WcLoadResourceFileIntoDatabase( w, fileName, dbPointer )
 }
 
 /*ARGSUSED*/
-static int WcxLoadFileFromCurrentDirectory( w, name, dbPointer )
-    Widget	 w;		/* for calling consistency only */
-    char*        name;
-    XrmDatabase* dbPointer;
+static int WcxLoadFileFromCurrentDirectory(
+     Widget	 w,		/* for calling consistency only */
+    char*        name,
+    XrmDatabase* dbPointer
+    )
 {
     XrmDatabase rdb = WcGetFileDatabase( name );
 
@@ -292,10 +293,11 @@ static int WcxLoadFileFromCurrentDirectory( w, name, dbPointer )
 }
 
 
-static int WcxLoadFileUsingTildaPathname( w, name, dbPointer )
-    Widget	 w;
-    char*        name;
-    XrmDatabase* dbPointer;
+static int WcxLoadFileUsingTildaPathname(
+    Widget	 w,
+    char*        name,
+    XrmDatabase* dbPointer
+    )
 {
     XrmDatabase rdb;
     char*	homeDir;
@@ -331,8 +333,8 @@ static int WcxLoadFileUsingTildaPathname( w, name, dbPointer )
 
     WcStrCpy( path, homeDir );
     WcStrCat( path, from );
-
-    if ( (XrmDatabase)0 != (rdb = WcGetFileDatabase( path )) )
+    rdb = WcGetFileDatabase( path );
+    if ( (XrmDatabase)0 != rdb )
     {
 	XrmMergeDatabases( rdb, dbPointer );
 	WcxLoadTrace( path );
@@ -345,10 +347,11 @@ static int WcxLoadFileUsingTildaPathname( w, name, dbPointer )
     }
 }
 
-static int WcxLoadSystemFile( w, name, dbPointer )
-    Widget	 w;
-    char*        name;
-    XrmDatabase* dbPointer;
+static int WcxLoadSystemFile(
+     Widget	 w,
+     char*        name,
+     XrmDatabase* dbPointer
+    )
 {
 #ifdef XtSpecificationRelease
     /*
@@ -394,8 +397,8 @@ static int WcxLoadSystemFile( w, name, dbPointer )
     WcStrCpy( filename, sysResDir );
     WcStrCat( filename, "/" );
     WcStrCat( filename, name );
-
-    if ( (XrmDatabase)0 != (rdb = WcGetFileDatabase(filename)) )
+    rdb = WcGetFileDatabase(filename);
+    if ( (XrmDatabase)0 != rdb )
     {
 	XrmMergeDatabases( rdb, dbPointer );
 	WcxLoadTrace( filename );
@@ -406,10 +409,11 @@ static int WcxLoadSystemFile( w, name, dbPointer )
 #endif
 }
 
-static int WcxLoadUserFile( w, name, dbPointer )
-    Widget	 w;
-    char*        name;
-    XrmDatabase* dbPointer;
+static int WcxLoadUserFile(
+     Widget	 w,
+     char*        name,
+     XrmDatabase* dbPointer
+    )
 {
 #ifdef XtSpecificationRelease
     /*
@@ -526,8 +530,8 @@ static int WcxLoadUserFile( w, name, dbPointer )
 	}
 	WcStrCpy( filename, xApplResDir );
 	WcStrCat( filename, name );
-
-	if ( (XrmDatabase)0 != ( rdb = WcGetFileDatabase( filename ) ) )
+	rdb = WcGetFileDatabase( filename );
+	if ( (XrmDatabase)0 != rdb )
 	{
 	    XrmMergeDatabases( rdb, dbPointer );
 	    WcxLoadTrace( filename );
@@ -547,8 +551,9 @@ static int WcxLoadUserFile( w, name, dbPointer )
     WcStrCpy( filename, homeDir );
     WcStrCat( filename, "/" );
     WcStrCat( filename, name );
+    rdb = WcGetFileDatabase( filename );
 
-    if ( (XrmDatabase)0 != ( rdb = WcGetFileDatabase( filename ) ) )
+    if ( (XrmDatabase)0 != rdb )
 
     {
 	XrmMergeDatabases( rdb, dbPointer );
@@ -567,9 +572,7 @@ static int WcxLoadUserFile( w, name, dbPointer )
     Called by WcInitialize(), this loads all the resource files specified
     by the wclResFiles resource returning True if any file was loaded.
 */
-int WcMoreResourceFilesToLoad( root, wcl )
-    Widget	root;
-    WclRecPtr	wcl;
+int WcMoreResourceFilesToLoad(Widget root, WclRecPtr wcl)
 {
     char* wcl_resFiles_copy;
     char* next;
@@ -596,8 +599,7 @@ int WcMoreResourceFilesToLoad( root, wcl )
     return loadedSomething;
 }
 
-static void WcxLoadTrace( filename )
-    String filename;
+static void WcxLoadTrace(String filename )
 {
     if ( wcl->traceResFiles )
     {
@@ -605,52 +607,40 @@ static void WcxLoadTrace( filename )
     }
 }
 
-static void WcxLoadWarnNoFileName( w )
-    Widget w;
+static void WcxLoadWarnNoFileName(Widget w )
 {
 WcWARN( w, "WcLoadResourceFile", "noFileName",
 "Wcl Warning: WcLoadResourceFile() - No file name provided." );
 }
 
-static void WcxLoadWarnNameTooLong( w, fileName )
-    Widget	w;
-    String	fileName;
+static void WcxLoadWarnNameTooLong(Widget w, String fileName )  
 {
 WcWARN1( w, "WcLoadResourceFile", "tooLong",
 "Wcl Warning: WcLoadResourceFile( %s ) - File name too long.",
 fileName );
 }
 
-static void WcxLoadWarnSlashTerminated( w, fileName )
-    Widget	w;
-    String	fileName;
+static void WcxLoadWarnSlashTerminated(Widget w, String fileName )
 {
 WcWARN1( w, "WcLoadResourceFile", "slashTerminated",
 "Wcl Warning: WcLoadResourceFile( %s ) - File must not end with slash ('/')",
 fileName );
 }
 
-static void WcxLoadWarnUnreadable( w, name, filename )
-    Widget	w;
-    String	name, filename;
+static void WcxLoadWarnUnreadable(Widget w, String name, String filename)
 {
 WcWARN2( w, "WcLoadResourceFile", "notReadable",
-"Wcl Warning: WcLoadResourceFile( %s )\n\t- File <%s> not found, not readable, or wrong type.",
-name, filename );
+"Wcl Warning: WcLoadResourceFile( %s )\n\t- File <%s> not found, not readable, or wrong type.",name, filename );
 }
 
-static void WcxLoadWarnTooLong( w, name, path, file )
-    Widget	w;
-    String	name, path, file;
+static void WcxLoadWarnTooLong(Widget	w,String name,String path,String file)
 {
 WcWARN3( w, "WcLoadResourceFile", "tooLongExpanded",
 "Wcl Warning: WcLoadResourceFile( %s )\n\t- Expanded name too long: %s%s", 
 name, path, file );
 }
 
-static void WcxLoadWarnMalloc( w, name )
-    Widget w;
-    String name;
+static void WcxLoadWarnMalloc(Widget w,String name )
 {
 WcWARN1( w,  "WcLoadResourceFile", "mallocFailed",
 "Wcl Warning: WcLoadResourceFile( %s ) - malloc failed",
