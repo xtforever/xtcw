@@ -15,6 +15,7 @@
 */
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifdef WC_HAS_dlopen_AND_dlsym
 #include <dlfcn.h>
@@ -49,13 +50,14 @@
 
 typedef void (*PFVWidget) _((Widget));
 
-static void WcxActProcWidget( reqType, caller, w, params, num_params, Proc )
-    int		reqType;	/* some things only work for widgets	*/
-    char*	caller;		/* action invoked by translation mgr	*/
-    Widget	w;		/* action invoked on this widget	*/
-    char**	params;		/* action arguments			*/
-    Cardinal*	num_params;	/* count of params			*/
-    PFVWidget	Proc;		/* the procedure to be invoked		*/
+static void WcxActProcWidget( 
+    int		reqType,	/* some things only work for widgets	*/
+    char*	caller,		/* action invoked by translation mgr	*/
+    Widget	w,		/* action invoked on this widget	*/
+    char**	params,		/* action arguments			*/
+    Cardinal*	num_params,	/* count of params			*/
+    PFVWidget	Proc 		/* the procedure to be invoked		*/
+	)
 {
     int		i;
     for ( i = 0 ; i < *num_params ; i++ )
@@ -101,15 +103,15 @@ static void WcxActProcWidget( reqType, caller, w, params, num_params, Proc )
 
 typedef void (*PFVWidInt) _((Widget,int));
 
-static void WcxActProcWidgetInt( reqType, caller, w, params, num_params,
-				 Proc, arg )
-    int		reqType;
-    char*	caller;
-    Widget	w;
-    char**	params;
-    Cardinal*	num_params;
-    PFVWidInt	Proc;
-    int		arg;		/* arg reqd by Proc */
+static void WcxActProcWidgetInt( 
+    int		reqType,
+    char*	caller,
+    Widget	w,
+    char**	params,
+    Cardinal*	num_params,
+    PFVWidInt	Proc,
+    int		arg		/* arg reqd by Proc */
+	)
 {
     int		i;
     for ( i = 0 ; i < *num_params ; i++ )
@@ -155,11 +157,11 @@ static void WcxActProcWidgetInt( reqType, caller, w, params, num_params,
 */
 
 #define ACTION_DECL(name)			\
-void name( w, unused, params, num_params )	\
-    Widget	w;				\
-    XEvent*	unused;				\
-    char**	params;				\
-    Cardinal*	num_params;
+void name(                                	\
+    Widget	w,				\
+    XEvent*	unused,				\
+    char**	params,				\
+    Cardinal*	num_params)
 
 
 /*  --	Manage or Unmanage Widgets
@@ -197,12 +199,13 @@ ACTION_DECL( WcUnmanageACT )
 
 typedef void (*PFVWidsCard) _((WidgetList,Cardinal));
 
-static void WcxChgMan( caller, Proc, w, params, num_params )
-    char*	caller;
-    PFVWidsCard	Proc;
-    Widget	w;
-    char**	params;
-    Cardinal*	num_params;
+static void WcxChgMan( 
+    char*	caller,
+    PFVWidsCard	Proc,
+    Widget	w,
+    char**	params,
+    Cardinal*	num_params
+	)
 {
     Widget	parent;
     Widget	children[MAX_CHILDREN];
@@ -285,14 +288,14 @@ ACTION_DECL( WcDestroyACT )
 ACTION_DECL( WcSetSensitiveACT )
 {
  WcxActProcWidgetInt( MUST_BE_WIDGET, "WcSetSensitive", w, params, num_params,
-		      XtSetSensitive, TRUE );
+		      (PFVWidInt)XtSetSensitive, TRUE );
 }
 
 /*ARGSUSED*/
 ACTION_DECL( WcSetInsensitiveACT )
 {
  WcxActProcWidgetInt( MUST_BE_WIDGET, "WcSetInsensitive", w, params, num_params,
-		      XtSetSensitive, FALSE );
+		      (PFVWidInt)XtSetSensitive, FALSE );
 }
 
 /* -- Popup and Popdown widgets
@@ -309,14 +312,14 @@ ACTION_DECL( WcSetInsensitiveACT )
 ACTION_DECL( WcPopupACT )
 {
     WcxActProcWidgetInt( MUST_BE_SHELL, "WcPopup", w, params, num_params, 
-			 XtPopup, XtGrabNone );
+			 (PFVWidInt)XtPopup, XtGrabNone );
 }
 
 /*ARGSUSED*/
 ACTION_DECL( WcPopupGrabACT )
 {
     WcxActProcWidgetInt( MUST_BE_SHELL, "WcPopupGrab", w, params, num_params,
-			 XtPopup, XtGrabExclusive );
+			 (PFVWidInt)XtPopup, XtGrabExclusive );
 }
 
 #ifdef XtPopdown
@@ -696,11 +699,11 @@ ACTION_DECL( WcExitACT )
 
 typedef void (*PVFWidStr) _((Widget,char*));
 
-static void WcxCreateKids ( w, parent_children, caller, CreateFunc )
-    Widget	w;
-    char*	parent_children;	/* parent + list of named children */
-    char*	caller;			/* name of calling CB func 	   */
-    PVFWidStr	CreateFunc;
+static void WcxCreateKids (Widget w,
+    char*	parent_children,	/* parent + list of named children */
+    char*	caller,			/* name of calling CB func 	   */
+    PVFWidStr	CreateFunc
+	)
 {
     char*	children;
     Widget	parent;
@@ -737,20 +740,20 @@ static void WcxCreateKids ( w, parent_children, caller, CreateFunc )
 }
 
 /*ARGSUSED*/
-void WcCreateChildrenCB ( w, mom_children, unused )
-    Widget	w;
-    XtPointer	mom_children;	/* parent + list of named children */
-    XtPointer	unused;
+void WcCreateChildrenCB (Widget	w,
+    XtPointer	mom_children,	/* parent + list of named children */
+    XtPointer	unused
+)
 {
     WcxCreateKids(w, (char*)mom_children,
 			"WcCreateChildren", WcCreateNamedChildren);
 }
 
 /*ARGSUSED*/
-void WcCreatePopupsCB ( w, mom_children, unused )
-    Widget	w;
-    XtPointer	mom_children;	/* parent + list of named children */
-    XtPointer	unused;
+void WcCreatePopupsCB (Widget w,
+    XtPointer	mom_children,	/* parent + list of named children */
+    XtPointer	unused
+	)
 {
     WcxCreateKids(w, (char*)mom_children,
 			"WcCreatePopups", WcCreateNamedPopups );
@@ -763,10 +766,10 @@ void WcCreatePopupsCB ( w, mom_children, unused )
 */
 
 /*ARGSUSED*/
-void WcPositionTransientCB( w, ignored, unused )
-    Widget	w;
-    XtPointer	ignored;
-    XtPointer	unused;
+void WcPositionTransientCB(Widget w,
+    XtPointer	ignored,
+    XtPointer	unused
+	)
 {
     Widget		 child, transientFor;
     XtWidgetGeometry	 request;
@@ -818,10 +821,10 @@ void WcPositionTransientCB( w, ignored, unused )
 */
 
 /*ARGSUSED*/
-void WcSetValueCB ( w, name_res_resType_resVal, unused )
-    Widget	w;  
-    XtPointer	name_res_resType_resVal;
-    XtPointer	unused;
+void WcSetValueCB (Widget w,  
+    XtPointer	name_res_resType_resVal,
+    XtPointer	unused
+	)
 {
     WcSetValue( w, (char*)name_res_resType_resVal );
 }
@@ -833,10 +836,10 @@ void WcSetValueCB ( w, name_res_resType_resVal, unused )
 */
 
 /*ARGSUSED*/
-void WcTraceCB ( w, annotation, unused )
-    Widget	w;
-    XtPointer	annotation;	/* client data, traceback annotation */
-    XtPointer	unused;
+void WcTraceCB (Widget	w,
+    XtPointer	annotation,	/* client data, traceback annotation */
+    XtPointer	unused
+     )
 {
     char* name = WcWidgetToFullName( w );
 
@@ -851,10 +854,9 @@ void WcTraceCB ( w, annotation, unused )
 */
 
 /*ARGSUSED*/
-void WcSystemCB ( w, shellCmdString, unused )
-    Widget	w;
-    XtPointer	shellCmdString;
-    XtPointer	unused;
+void WcSystemCB (Widget	w,
+    XtPointer	shellCmdString,
+    XtPointer	unused)
 {
     system( (char*)shellCmdString );
 }
@@ -872,11 +874,12 @@ void WcSystemCB ( w, shellCmdString, unused )
 
 typedef void (*AddOrRemoveProc) _(( Widget, char*, XtCallbackRec* ));
 
-static void WcxAddOrRemoveCallbacks ( w, string, caller, AddOrRemove )
-    Widget		w;
-    char*		string;
-    char*		caller;
-    AddOrRemoveProc	AddOrRemove;
+static void WcxAddOrRemoveCallbacks ( 
+     Widget		w,
+    char*		string,
+    char*		caller,
+    AddOrRemoveProc	AddOrRemove
+    )
 {
     char                name[MAX_XRMSTRING];
     XtCallbackRec*      callbacks;
@@ -903,23 +906,23 @@ static void WcxAddOrRemoveCallbacks ( w, string, caller, AddOrRemove )
 }
 
 /*ARGSUSED*/
-void WcAddCallbacksCB ( w,  callbackString, unused )
-    Widget      w;
-    XtPointer   callbackString;
-    XtPointer   unused;
+void WcAddCallbacksCB ( Widget w,
+     XtPointer   callbackString,
+    XtPointer   unused
+    )
 {
     WcxAddOrRemoveCallbacks( w, (char*)callbackString,
-				"WcAddCallbacks", XtAddCallbacks );
+			     "WcAddCallbacks", (AddOrRemoveProc) XtAddCallbacks );
 }
 
 /*ARGSUSED*/
-void WcRemoveCallbacksCB ( w,  callbackString, unused )
-    Widget      w;
-    XtPointer   callbackString;
-    XtPointer   unused;
+void WcRemoveCallbacksCB (Widget w,
+    XtPointer   callbackString,
+    XtPointer   unused
+    )
 {
     WcxAddOrRemoveCallbacks( w, (char*)callbackString,
-				"WcRemoveCallbacks", XtRemoveCallbacks );
+			     "WcRemoveCallbacks", (AddOrRemoveProc) XtRemoveCallbacks );
 }
 
 /*  -- Invoke Callback Once Only
@@ -932,10 +935,11 @@ void WcRemoveCallbacksCB ( w,  callbackString, unused )
     at conversion time, as the converter does not have enough information.
 */
 
-void WcOnceOnlyCB ( w, name_callbackString, passedAlong )
-    Widget	w;
-    XtPointer	name_callbackString;
-    XtPointer	passedAlong;
+void WcOnceOnlyCB ( 
+    Widget	w,
+    XtPointer	name_callbackString,
+    XtPointer	passedAlong
+    )
 {
     static char* usage = 
 "Wcl Usage: WcOnceOnly( name, callback(clientData) [callback(clientData) ...] )\n\
@@ -984,10 +988,11 @@ void WcOnceOnlyCB ( w, name_callbackString, passedAlong )
 */
 
 /*ARGSUSED*/
-void WcTranslationsCB ( w, name_trans, unused )
-    Widget	w;
-    XtPointer	name_trans;
-    XtPointer	unused;
+void WcTranslationsCB ( 
+     Widget	w,
+    XtPointer	name_trans,
+    XtPointer	unused
+    )
 {
     char	name[MAX_XRMSTRING];
     char*	translations	= (String)name_trans;
@@ -1021,11 +1026,12 @@ void WcTranslationsCB ( w, name_trans, unused )
     converter and WcLateBinder()
 */
 /*ARGSUSED*/
-void WcDynamicInvoke( w, clientData, callData, invokeAction, caller )
-    Widget	w;
-    XtPointer	clientData, callData;
-    int		invokeAction;
-    char*	caller;
+void WcDynamicInvoke( 
+     Widget	w,
+    XtPointer	clientData, 
+    int		invokeAction,
+    char*	caller
+    )
 {
 #ifndef WC_HAS_dlopen_AND_dlsym
 
@@ -1238,9 +1244,7 @@ void WcDynamicInvoke( w, clientData, callData, invokeAction, caller )
 }
 
 /*ARGSUSED*/
-void WcDynamicActionCB( w, clientData, callData )
-    Widget	w;
-    XtPointer	clientData, callData;
+void WcDynamicActionCB(Widget w, XtPointer clientData, XtPointer callData)
 {
 #ifdef WC_HAS_dlopen_AND_dlsym
     WcDynamicInvoke( w, clientData, callData, 1, "WcDynamicAction" );
@@ -1251,9 +1255,7 @@ void WcDynamicActionCB( w, clientData, callData )
 }
 
 /*ARGSUSED*/
-void WcDynamicCallbackCB( w, clientData, callData )
-    Widget	w;
-    XtPointer	clientData, callData;
+void WcDynamicCallbackCB(Widget w, XtPointer clientData, XtPointer callData)
 {
 #ifdef WC_HAS_dlopen_AND_dlsym
     WcDynamicInvoke( w, clientData, callData, 0, "WcDynamicCallback" );
@@ -1270,10 +1272,7 @@ void WcDynamicCallbackCB( w, clientData, callData )
 */
 
 #define CB_INVOKES_ACT( cb, act )		\
-void    cb( w, client_data, unused )		\
-    Widget	w;				\
-    XtPointer	client_data;			\
-    XtPointer	unused;				\
+void cb( Widget w, XtPointer client_data, XtPointer unused) \
 {						\
     WcInvokeAction( act, w, client_data );	\
 }
@@ -1327,8 +1326,7 @@ CB_INVOKES_ACT( WcExitCB,			WcExitACT		)
     normally never call this directly.
 */
 
-void WcRegisterWcCallbacks ( app )
-    XtAppContext app;
+void WcRegisterWcCallbacks ( XtAppContext app )
 {
     ONCE_PER_XtAppContext( app );
 
@@ -1416,11 +1414,11 @@ void WcRegisterWcCallbacks ( app )
 */
 
 #define ACT_INVOKES_CB( act, cb )			\
-void    act( w, unused, params, num_params )		\
-    Widget	w;					\
-    XEvent*	unused;					\
-    char**	params;					\
-    Cardinal*	num_params;				\
+  void    act(						\
+       Widget	w,					\
+       XEvent*	unused,					\
+       char**	params,					\
+       Cardinal* num_params)			        \
 {							\
     WcInvokeCallback( cb, w, params, num_params );	\
 }
@@ -1456,8 +1454,7 @@ ACT_INVOKES_CB( WcDynamicCallbackACT,	WcDynamicCallbackCB	)
    applications usually do not call this directly.
 */
 
-void WcRegisterWcActions ( app )
-XtAppContext app;
+void WcRegisterWcActions ( XtAppContext app )
 {
     static XtActionsRec WcActions[] = {
 
