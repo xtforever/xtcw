@@ -22,9 +22,7 @@
 #ifdef _NO_VSPRINTF
 static void vsprintf _(( String buf, String fmt, va_list argPtr ));
 
-static void vsprintf( buf, fmt, argPtr )
-    String	buf, fmt;
-    va_list	argPtr;
+static void vsprintf(String buf, String fmt, va_list argPtr )
 {
     strcpy( buf, fmt );
 }
@@ -50,8 +48,7 @@ static XrmDatabase wcxErrorDB;
 */
 static String WcxNumToStr _((int));
 
-static String WcxNumToStr( num )
-    int num;
+static String WcxNumToStr(int num )
 {
     switch ( num )
     {
@@ -76,9 +73,7 @@ static String WcxNumToStr( num )
 **====================**
 */
 /*ARGSUSED*/
-void WcWarningInitialize( app, wcl )
-    XtAppContext	app;
-    WclRecPtr		wcl;
+void WcWarningInitialize(XtAppContext app, WclRecPtr wcl )
 {
     if ( (String)0 != wcl->errorDatabaseFile )
     {
@@ -90,9 +85,7 @@ void WcWarningInitialize( app, wcl )
 **================================**
 */
 /*ARGSUSED*/
-String WcErrorDatabaseText( w, func, msgName )
-    Widget w;			/* we don't need this anymore! */
-    String func, msgName;
+String WcErrorDatabaseText(Widget w, String func, String msgName )
 {
     char	func_name[BUFSIZ];
     String	ignored_type;
@@ -162,15 +155,18 @@ static void WcxPrint( msg, va_alist )
 **========================================================================**
 */
 static void WcxWarn _(( int, String, String, ... ));
-
+#if 0
 #if NeedFunctionPrototypes
 static void WcxWarn( int numStringArgs, String defFmt, String dbFmt, ... )
 #else
-static void WcxWarn( numStringArgs, defFmt, dbFmt, va_alist )
+static void WcxWarn(int numStringArgs, defFmt, dbFmt, va_alist )
     int		numStringArgs;
     String	defFmt, dbFmt;
     va_dcl
 #endif
+#endif
+
+static void WcxWarn( int numStringArgs, String defFmt, String dbFmt, ... )
 {
     char	buf[10*BUFSIZ];		/* a HUGE buffer	*/
     int		numPercentS;
@@ -278,8 +274,7 @@ WcBuffer WcBuffer_New()
     return this;
 }
 
-void WcBuffer_Free( this )
-    WcBuffer this;
+void WcBuffer_Free(WcBuffer this )
 {
     if ( this != NULL )
     {
@@ -290,7 +285,7 @@ void WcBuffer_Free( this )
 	XtFree( (char*)this );
     }
 }
-
+#if 0
 #if NeedFunctionPrototypes
 void WcBuffer_Append( WcBuffer this, String msg, ... )
 #else
@@ -299,6 +294,8 @@ void WcBuffer_Append( this, msg, va_alist )
     String   msg;
     va_dcl
 #endif
+#endif
+void WcBuffer_Append( WcBuffer this, String msg, ... )
 {
     va_list argPtr;
 
@@ -360,33 +357,22 @@ String WcBuffer_String( this )
 	return this->buffer;
 }
 
-
-
-
-void WcWARN( w, func, msgName, defMsg )
-    Widget w;
-    String func, msgName, defMsg;
+void WcWARN(Widget w,String func, String msgName, String defMsg)
 {
     WcxWarn( 0, defMsg, WcErrorDatabaseText( w, func, msgName ) );
 }
 
-void WcWARN1( w, func, msgName, defMsg, a1 )
-    Widget w;
-    String func, msgName, defMsg, a1;
+void WcWARN1(Widget w,String func,String msgName,String defMsg,String a1)
 {
     WcxWarn( 1, defMsg, WcErrorDatabaseText( w, func, msgName ), a1 );
 }
 
-void WcWARN2( w, func, msgName, defMsg, a1, a2 )
-    Widget w;
-    String func, msgName, defMsg, a1, a2;
+void WcWARN2(Widget w,String func,String msgName,String defMsg,String a1,String a2)
 {
     WcxWarn( 2, defMsg, WcErrorDatabaseText( w, func, msgName ), a1, a2 );
 }
 
-void WcWARN3( w, func, msgName, defMsg, a1, a2, a3 )
-    Widget w;
-    String func, msgName, defMsg, a1, a2, a3;
+void WcWARN3(Widget w,String func,String msgName,String defMsg,String a1,String a2,String a3 )
 {
     WcxWarn( 3, defMsg, WcErrorDatabaseText( w, func, msgName ), a1, a2, a3 );
 }
