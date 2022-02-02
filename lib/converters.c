@@ -212,12 +212,8 @@ _CvtStringToArrayChar (
 )
 {
     String      str = (String)fromVal->addr ;
-    static int  cvtval;
-    int cnt;
-    char *endptr;
-
+  
     if( str == 0 || strlen(str) == 0 ) {
-    error:
 	XtStringConversionWarning(fromVal->addr, XtRDistance);
 	return False ;
     }
@@ -252,7 +248,6 @@ _CvtStringToArrayInt (
     String      str = (String)fromVal->addr ;
 
     if( str == 0 || strlen(str) == 0 ) {
-    error:
 	XtStringConversionWarning(fromVal->addr, XtRArrayInt);
 	return False ;
     }
@@ -284,7 +279,6 @@ _CvtStringToQVar (
     String      str = (String)fromVal->addr ;
 
     if( str == 0 || strlen(str) == 0 ) {
-    error:
 	XtStringConversionWarning(fromVal->addr, XtRArrayInt);
 	return False ;
     }
@@ -399,7 +393,7 @@ _CvtDistanceToString (
 )
 {
     Cardinal size;
-    static char *s = "DistanceToString conversion error";
+    //    static char *s = "DistanceToString conversion error";
     static char buf[60];
     int m = *(int *)fromVal->addr;
     size = sprintf( buf, "%d", m ) +1;
@@ -421,7 +415,6 @@ _CvtStringToStringMArray (
     String      str = (String)fromVal->addr ;
 
     if( str == 0 || strlen(str) == 0 ) {
-    error:
 	XtStringConversionWarning(fromVal->addr, XtRString);
 	return False ;
     }
@@ -458,7 +451,6 @@ _CvtStringMArrayToString (
     int i;
 
     if( strlist_m == 0 ) {
-    error:
 	XtStringConversionWarning(fromVal->addr, XtRStringMArray);
 	return False ;
     }
