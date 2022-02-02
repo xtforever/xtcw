@@ -61,14 +61,15 @@
 */
 
 /* ARGSUSED */
-static  Boolean
-_CvtStringToDistance(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtStringToDistance (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     String      str = (String)fromVal->addr ;
     static int  cvtval;
@@ -200,14 +201,15 @@ static int repl_esc_char(int ch)
 
 
 /* ARGSUSED */
-static  Boolean
-_CvtStringToArrayChar(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtStringToArrayChar (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     String      str = (String)fromVal->addr ;
     static int  cvtval;
@@ -237,14 +239,15 @@ _CvtStringToArrayChar(dpy, args, num_args, fromVal, toVal, data)
 }
 
 /* ARGSUSED */
-static  Boolean
-_CvtStringToArrayInt(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtStringToArrayInt (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     String      str = (String)fromVal->addr ;
 
@@ -268,14 +271,15 @@ _CvtStringToArrayInt(dpy, args, num_args, fromVal, toVal, data)
 }
 
 /* ARGSUSED */
-static  Boolean
-_CvtStringToQVar(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtStringToQVar (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     String      str = (String)fromVal->addr ;
 
@@ -311,14 +315,15 @@ _CvtStringToQVar(dpy, args, num_args, fromVal, toVal, data)
 
 /* int to Anesthetic */
 /* ARGSUSED */
-static  Boolean
-_CvtIntToAnesthetic(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtIntToAnesthetic (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
   static char *Anesthetic_names[] = { "Ag ", "Hal", "Enf", "Iso", "Des", "Sev" };
   int anesthetic_number = *(int *)fromVal->addr ;
@@ -332,14 +337,15 @@ _CvtIntToAnesthetic(dpy, args, num_args, fromVal, toVal, data)
 
 /* ArrayInt to String */
 /* ARGSUSED */
-static  Boolean
-_CvtArrayIntToString(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtArrayIntToString (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     int i,p;
     static int buf = 0;
@@ -357,14 +363,15 @@ _CvtArrayIntToString(dpy, args, num_args, fromVal, toVal, data)
 
 /* ArrayInt to String */
 /* ARGSUSED */
-static  Boolean
-_CvtArrayCharToString(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtArrayCharToString (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     Cardinal size;
     static char *s = "ArrayCharToString conversion error";
@@ -381,14 +388,15 @@ _CvtArrayCharToString(dpy, args, num_args, fromVal, toVal, data)
 
 /* Distance to String */
 /* ARGSUSED */
-static  Boolean
-_CvtDistanceToString(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtDistanceToString (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     Cardinal size;
     static char *s = "DistanceToString conversion error";
@@ -400,14 +408,15 @@ _CvtDistanceToString(dpy, args, num_args, fromVal, toVal, data)
 
 
 /* ARGSUSED */
-static  Boolean
-_CvtStringToStringMArray(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtStringToStringMArray (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     String      str = (String)fromVal->addr ;
 
@@ -433,14 +442,15 @@ static inline char *m2s(int m, int p)
 }
 
 /* ARGSUSED */
-static  Boolean
-_CvtStringMArrayToString(dpy, args, num_args, fromVal, toVal, data)
-    Display     *dpy ;
-    XrmValuePtr args;           /* unused */
-    Cardinal    *num_args;      /* unused */
-    XrmValuePtr fromVal;
-    XrmValuePtr toVal;
-    XtPointer   *data ;
+static Boolean 
+_CvtStringMArrayToString (
+    Display *dpy,
+    XrmValuePtr args,           /* unused */
+    Cardinal *num_args,      /* unused */
+    XrmValuePtr fromVal,
+    XrmValuePtr toVal,
+    XtPointer *data
+)
 {
     static int buf_m = 0;
     if( buf_m == 0 ) buf_m = m_create(100,1);
