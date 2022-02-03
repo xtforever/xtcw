@@ -44,14 +44,12 @@
 /* Allocate, Grow, and Free Arrays of TableLocRec's
 **==================================================**
 */
-XpTableLoc  XpTableLocNew(  n )
-    int n;
+XpTableLoc  XpTableLocNew(  int n )
 {
     return (XpTableLoc) XtCalloc( n+1, sizeof(XpTableLocRec) );
 }
 
-XpTableLoc  XpTableLocGrow(  loc )
-    XpTableLoc loc;
+XpTableLoc  XpTableLocGrow(  XpTableLoc loc )
 {
     static XpTableLocRec  nullLoc;	/* all zeros, as if XtCalloc'd */
 
@@ -72,8 +70,7 @@ XpTableLoc  XpTableLocGrow(  loc )
     return new;
 }
 
-XpTableLoc  XpTableLocCopy(  loc )
-    XpTableLoc  loc;
+XpTableLoc  XpTableLocCopy( XpTableLoc  loc)
 {
     int len = XpTableLocLen(  loc );
     XpTableLoc  copy = XpTableLocNew(  len );
@@ -82,8 +79,7 @@ XpTableLoc  XpTableLocCopy(  loc )
     return copy;
 }
 
-void XpTableLocFree(  loc )
-    XpTableLoc  loc;
+void XpTableLocFree(XpTableLoc  loc )
 {
     XtFree( (char*)loc );
 }
@@ -120,8 +116,7 @@ where the meaning of each field is:
 The options are interpreted in the TableChildPosition() method.
 */
 
-XpTableLoc  XpTableLocParse(  layout )
-    char* layout;
+XpTableLoc  XpTableLocParse(  char *layout )
 {
 #ifndef CHILD_NAME_LEN
 #define CHILD_NAME_LEN 127
@@ -198,14 +193,14 @@ XpTableLoc  XpTableLocParse(  layout )
 
 	i = 0;
 	while ( *cp && i < CHILD_NAME_LEN &&
-		*cp == 'l' || *cp == 'r' || *cp == 't' || *cp == 'b' ||
-		*cp == 'w' || *cp == 'h' || *cp == 'W' || *cp == 'H' )
+		( *cp == 'l' || *cp == 'r' || *cp == 't' || *cp == 'b' ||
+		  *cp == 'w' || *cp == 'h' || *cp == 'W' || *cp == 'H' ) )
 	    buf[i++] = *cp++;
 	buf[i] = '\0';
 	if ( i )
 	    loc->options = XpTableOptsParse( buf);
 
-	while (*cp && *cp <= ' ' || *cp == ';' ) cp++;
+	while (*cp && (*cp <= ' ' || *cp == ';' ) ) cp++;
 
 	loc++;
     }
@@ -221,8 +216,7 @@ XpTableLoc  XpTableLocParse(  layout )
 }
 
 
-int XpTableLocLen( loc)
-    XpTableLoc  loc;
+int XpTableLocLen(XpTableLoc  loc)
 {
     int i = 0;
 
@@ -236,9 +230,10 @@ int XpTableLocLen( loc)
    Linear search of TableLoc array looking for various parameters
 */
 
-XpTableLoc  XpTableLocFind(  loc, w )
-    XpTableLoc  loc;		/* Table Locations to examine	*/
-    Widget	w;		/* Widget to find		*/
+XpTableLoc  XpTableLocFind(  
+			   XpTableLoc  loc,		/* Table Locations to examine	*/
+			   Widget	w		/* Widget to find		*/
+			     )
 {
     if ( loc && w )
     {
@@ -252,9 +247,10 @@ XpTableLoc  XpTableLocFind(  loc, w )
     return (XpTableLoc)0;
 }
 
-XpTableLoc  XpTableLocFindDefault(  loc, w )
-    XpTableLoc  loc;		/* Table Locations to examine   */
-    Widget	w;		/* Widget to find		*/
+XpTableLoc  XpTableLocFindDefault( 
+				  XpTableLoc  loc,		/* Table Locations to examine   */
+				  Widget	w		/* Widget to find		*/
+    )
 {
     if ( loc && w )
     {
@@ -267,9 +263,11 @@ XpTableLoc  XpTableLocFindDefault(  loc, w )
     return (XpTableLoc)0;
 }
 
-XpTableLoc  XpTableLocFindAtPosition(  loc, col, row )
-    XpTableLoc  loc;		/* Table Locations to examine   */
-    int		col, row;	/* position of widget to find	*/
+XpTableLoc  XpTableLocFindAtPosition(  
+				     XpTableLoc  loc,		/* Table Locations to examine   */
+				     int		col,	/* position of widget to find	*/
+				      int		row	/* position of widget to find	*/
+				       )
 {
     if ( loc && (0 <= col) && (0 <= row) )
     {
@@ -304,9 +302,10 @@ XpTableLoc  XpTableLocFindAtPosition(  loc, col, row )
    transient widgets become very small (size 1).
 */
 
-int XpTableLocPreferredWidth(  loc, tw )
-    XpTableLoc     loc;  	/* preferred size of widget in this loc	*/
-    XpTableWidget  tw;  	/* The widget containing this loc	*/
+int XpTableLocPreferredWidth(  
+			     XpTableLoc     loc,  	/* preferred size of widget in this loc	*/
+			     XpTableWidget  tw  	/* The widget containing this loc	*/
+)
 {
     /* First take care of situations where SameSize resources apply
     */
@@ -367,9 +366,10 @@ int XpTableLocPreferredWidth(  loc, tw )
     }
 }
 
-int XpTableLocPreferredHeight(  loc, tw )
-    XpTableLoc     loc;  	/* preferred size of widget in this loc	*/
-    XpTableWidget  tw;  	/* The widget containing this loc	*/
+int XpTableLocPreferredHeight(  
+			      XpTableLoc     loc,  	/* preferred size of widget in this loc	*/
+			      XpTableWidget  tw  	/* The widget containing this loc	*/
+				)
 {
     if ( loc->same_height && loc->same_border )
     {
@@ -414,8 +414,7 @@ int XpTableLocPreferredHeight(  loc, tw )
     }
 }
 
-int XpTableLocNumCols(  loc )
-    XpTableLoc  loc;
+int XpTableLocNumCols(  XpTableLoc  loc)
 {
     int cols;
     for ( cols = 0  ;  loc && loc->w_quark != NULLQUARK  ; loc++ )
@@ -424,8 +423,7 @@ int XpTableLocNumCols(  loc )
     return cols;
 }
 
-int XpTableLocNumRows(  loc )
-    XpTableLoc  loc;
+int XpTableLocNumRows( XpTableLoc  loc)
 {
     int rows;
     for ( rows = 0  ;  loc && loc->w_quark != NULLQUARK  ;  loc++)
@@ -437,8 +435,7 @@ int XpTableLocNumRows(  loc )
 /* Used by qsort when the real_layout table is sorted by
 ** span before doing distribution of space to rows or columns.
 */
-int XpTableLocCompareColSpan(  loc1, loc2 )
-    XpTableLoc  loc1, loc2;
+int XpTableLocCompareColSpan( XpTableLoc  loc1, XpTableLoc  loc2)
 {
     if ( loc1->col_span == loc2->col_span )
 	return loc1->col - loc2->col;
@@ -446,8 +443,7 @@ int XpTableLocCompareColSpan(  loc1, loc2 )
     return loc1->col_span - loc2->col_span;
 }
 
-int XpTableLocCompareRowSpan(  loc1, loc2 )
-    XpTableLoc  loc1, loc2;
+int XpTableLocCompareRowSpan( XpTableLoc  loc1, XpTableLoc  loc2)
 {
     if ( loc1->row_span == loc2->row_span )
 	return loc1->row - loc2->row;
