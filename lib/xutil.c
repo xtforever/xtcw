@@ -130,7 +130,7 @@ static int xft_font_angle( const char *name,int *n )
 int load_pixmap_from_file(Widget w, char *name, Pixmap *pixmap, Pixmap *mask )
 {
     XpmAttributes attr;
-    load_pixmap_from_file_attr(w,name,pixmap,mask,&attr);
+    return load_pixmap_from_file_attr(w,name,pixmap,mask,&attr);
 }
 
 int load_pixmap_from_file_attr(Widget w, char *name, Pixmap *pixmap, Pixmap *mask, XpmAttributes *attr)
