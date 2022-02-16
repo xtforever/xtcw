@@ -335,8 +335,7 @@ STRING classfilename = 0;
  * end of |classes|. It is assumed that |c->next| is already set to |NULL|.
  */
 
-void add_class(c)
-	Class c;
+void add_class(Class c)
 {
 	c->next = classes;
 	classes = c;
