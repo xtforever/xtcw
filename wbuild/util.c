@@ -362,8 +362,7 @@ void add_class(c)
  * with RMS --nemo
  */
 
-void *xmalloc(size)
-	size_t size;
+void *xmalloc(size_t size)
 {
 	void *t;
 
@@ -377,8 +376,7 @@ void *xmalloc(size)
 	return t;
 }
 
-char * xstrdup(s)
-	char *s;
+char * xstrdup(char *s)
 {
 	char *t;
 	if (s) {
@@ -412,8 +410,7 @@ static int nused = 0;
  * characters of the string.
  */
 
-static int hashval(name)
-	char* name;
+static int hashval(char *name)
 {
 	char *p;
 	unsigned int h = 0, g, n = 20;
@@ -513,8 +510,7 @@ void delete(STRING s)
  * used.
  */
 
-char *get(s)
-	STRING s;
+char *get(STRING s)
 {
 	if (!s)
 		return "";
@@ -522,8 +518,7 @@ char *get(s)
 		return s->s;
 }
 
-STRING hdup(s)
-	STRING s;
+STRING hdup(STRING s)
 {
 	if (!s)
 		return 0;
@@ -575,8 +570,7 @@ STRING catstr(int n,...)
  * equivalent to |strlen(get(s))|, but it also works if |s| is |NULL|.
  */
 
-size_t Strlen(s)
-	STRING s;
+size_t Strlen(STRING s)
 {
 	return s ? (s->s != NULL ? strlen(s->s) : 0) : 0;
 }
@@ -587,8 +581,7 @@ size_t Strlen(s)
  * If the first letter is a \$, it is omitted.
  */
 
-STRING get_classname(s)
-	STRING s;
+STRING get_classname(STRING s)
 {
 	char *h, *h1;
 	STRING t;
@@ -606,8 +599,7 @@ STRING get_classname(s)
  * If the first letter is a \$, it is omitted.
  */
 
-STRING get_instname(s)
-	STRING s;
+STRING get_instname(STRING s)
 {
 	char *h, *h1;
 	STRING t;
@@ -624,8 +616,7 @@ STRING get_instname(s)
  * word is defined as a C identifier.
  */
 
-STRING get_word(s)
-	char *s;
+STRING get_word(char *s)
 {
 	char *word;
 	STRING t;
