@@ -86,6 +86,7 @@ char* WcCleanName( char *in, char *out )
     return in;  /* this points at 1st whitespace or comma following "out" */
 }
 
+
 /*
 ******************************************************************************
 **  -- Full Name To Widget and Supporting Static Functions
@@ -649,9 +650,10 @@ Widget WcRootWidget(Widget w )
 {
     int i;
 
-    if (w)
-    {
-	while ( XtParent(w) )
+    if ( ! w )
+       return rootWidgets[0];
+
+      while ( XtParent(w) )
 	    w = XtParent(w);
 
 	for (i = 0 ; i < numRoots ; i++)
@@ -664,11 +666,7 @@ Widget WcRootWidget(Widget w )
 	numRoots++;
 	XtAddCallback( w, XtNdestroyCallback, ForgetRootCB, NULL );
 	return w;
-    }
-    else
-    {
-	return rootWidgets[0];
-    }
+
 }
 
 /* -- Equivalent to ANSI C library function strstr()
